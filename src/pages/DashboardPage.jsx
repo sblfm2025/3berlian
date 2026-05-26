@@ -76,33 +76,26 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
     }
   ];
 
-  const quickActions = [
-    { label: 'Sewa', target: 'rent', icon: ShoppingBag, accent: 'bg-blue-50 text-blue-700' },
-    { label: 'Kembali', target: 'return', icon: ArrowLeftRight, accent: 'bg-amber-50 text-amber-700' },
-    { label: 'Pelanggan', target: 'customers', icon: Users, accent: 'bg-emerald-50 text-emerald-700' },
-    { label: 'Laporan', target: 'reports', icon: FileText, accent: 'bg-violet-50 text-violet-700' }
-  ];
-
   const menuGroups = [
     {
       title: 'Transaksi',
       items: [
-        { label: 'Sewa Kostum', target: 'rent', icon: ShoppingBag },
-        { label: 'Pengembalian', target: 'return', icon: ArrowLeftRight }
+        { label: 'Sewa Kostum', target: 'rent', icon: ShoppingBag, color: 'bg-blue-50 text-blue-700 group-hover:bg-blue-700 group-hover:text-white' },
+        { label: 'Pengembalian', target: 'return', icon: ArrowLeftRight, color: 'bg-amber-50 text-amber-700 group-hover:bg-amber-500 group-hover:text-white' }
       ]
     },
     {
       title: 'Data Master',
       items: [
-        { label: 'Produk', target: 'products', icon: Package },
-        { label: 'Pelanggan', target: 'customers', icon: Users },
-        { label: 'Pengguna', target: 'users', icon: UserCog }
+        { label: 'Produk', target: 'products', icon: Package, color: 'bg-sky-50 text-sky-700 group-hover:bg-sky-600 group-hover:text-white' },
+        { label: 'Pelanggan', target: 'customers', icon: Users, color: 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white' },
+        { label: 'Pengguna', target: 'users', icon: UserCog, color: 'bg-indigo-50 text-indigo-700 group-hover:bg-indigo-600 group-hover:text-white' }
       ]
     },
     {
       title: 'Analitik',
       items: [
-        { label: 'Laporan', target: 'reports', icon: FileText }
+        { label: 'Laporan', target: 'reports', icon: FileText, color: 'bg-violet-50 text-violet-700 group-hover:bg-violet-600 group-hover:text-white' }
       ]
     }
   ];
@@ -122,25 +115,6 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
               <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">Pengembalian terstruktur</span>
               <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">Karyawan kasir siap</span>
             </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {quickActions.map(action => {
-                const Icon = action.icon;
-                return (
-                  <button
-                    key={action.target}
-                    type="button"
-                    onClick={() => onNavigate(action.target)}
-                    className="rounded-[22px] bg-white/10 border border-white/20 px-4 py-3 text-left backdrop-blur-sm hover:bg-white/15 transition"
-                  >
-                    <div className={`inline-flex rounded-[16px] px-3 py-2 ${action.accent}`}>
-                      <Icon size={18} />
-                    </div>
-                    <p className="mt-3 text-sm font-bold text-white">{action.label}</p>
-                    <p className="mt-1 text-[11px] text-white/80">Buka halaman {action.label.toLowerCase()}</p>
-                  </button>
-                );
-              })}
-            </div>
           </div>
           <div className="grid grid-cols-2 gap-3 min-w-[280px]">
             <div className="rounded-[22px] bg-white/10 backdrop-blur-sm p-4 border border-white/20">
@@ -157,25 +131,6 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 md:hidden">
-        {quickActions.slice(0, 4).map(action => {
-          const Icon = action.icon;
-          return (
-            <button
-              key={action.target}
-              type="button"
-              onClick={() => onNavigate(action.target)}
-              className="rounded-[18px] border border-slate-200 bg-white p-4 text-left shadow-sm active:scale-95"
-            >
-              <div className={`inline-flex rounded-[14px] p-2 ${action.accent}`}>
-                <Icon size={18} />
-              </div>
-              <p className="mt-3 text-sm font-black text-slate-900">{action.label}</p>
-            </button>
-          );
-        })}
       </div>
 
       <div className="rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -208,7 +163,7 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
                       onClick={() => onNavigate(item.target)}
                       className="group flex flex-col items-center rounded-[20px] px-2 py-2 text-center transition hover:bg-blue-50"
                     >
-                      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-700 shadow-sm transition group-hover:bg-blue-700 group-hover:text-white">
+                      <span className={`flex h-16 w-16 items-center justify-center rounded-full shadow-sm transition ${item.color}`}>
                         <Icon size={27} strokeWidth={2.4} />
                       </span>
                       <span className="mt-2 min-h-[28px] text-xs font-bold leading-tight text-slate-700">{item.label}</span>
