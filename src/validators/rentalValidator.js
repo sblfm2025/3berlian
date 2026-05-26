@@ -24,6 +24,12 @@ export const validateRentalPayload = ({
   }
   if (!customerAddress) errors.push('Alamat pelanggan belum diisi.');
   if (!Array.isArray(cart) || cart.length === 0) errors.push('Keranjang masih kosong.');
+  cart.forEach((item, index) => {
+    const itemLabel = item.productName || item.product?.name || `Item ${index + 1}`;
+    if (!(item.productId || item.product?.id)) errors.push(`${itemLabel} belum memiliki ID produk.`);
+    if (Number(item.qty || 0) <= 0) errors.push(`${itemLabel} harus memiliki qty lebih dari 0.`);
+    if (!String(item.size || item.product?.size || '').trim()) errors.push(`${itemLabel} belum memiliki ukuran.`);
+  });
   if (!returnDate) errors.push('Tanggal kembali belum dipilih.');
   if (!paymentMethod) errors.push('Metode pembayaran belum dipilih.');
 
@@ -43,7 +49,7 @@ export const validateRentalPayload = ({
 
 export const validateCartAgainstProducts = ({ cart = [], products = [] }) => (
   cart.reduce((issues, item) => {
-    const latestProduct = products.find(product => product.id === item.product?.id);
+    const latestProduct = products.find(product => product.id === (item.productId || item.product?.id));
     const qty = Number(item.qty || 0);
 
     if (!latestProduct) {

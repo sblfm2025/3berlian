@@ -12,6 +12,7 @@ export default function CheckoutPanel({
   grandTotal,
   paymentMethod,
   checkoutChecklist,
+  checkoutErrors = [],
   customerNameInput,
   setCustomerNameInput,
   setShowSuggestions,
@@ -38,6 +39,7 @@ export default function CheckoutPanel({
   setDepositAmountInput,
   cart,
   removeCartItem,
+  updateCartItem,
   updateCartQty,
   discountType,
   setDiscountType,
@@ -102,12 +104,11 @@ export default function CheckoutPanel({
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:space-y-4 md:p-5">
-          {/* Checklist Pembayaran - Hanya tampil di step 4 pada mobile */}
-          <div className={`rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px] ${activeStep === 4 ? 'block' : 'hidden'} md:block`}>
+          <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Checklist sewa</p>
-                <p className="mt-2 text-sm font-bold text-slate-900">{checkoutChecklist.every(item => item.ok) ? 'Semua langkah siap' : 'Lengkapi langkah yang masih tertinggal'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Checklist Transaksi</p>
+                <p className="mt-2 text-sm font-bold text-slate-900">{checkoutChecklist.every(item => item.ok) ? 'Transaksi siap checkout' : 'Periksa bagian yang belum lengkap'}</p>
               </div>
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">{checkoutChecklist.filter(item => item.ok).length}/{checkoutChecklist.length}</span>
             </div>
@@ -123,10 +124,20 @@ export default function CheckoutPanel({
                 );
               })}
             </div>
+
+            {checkoutErrors.length > 0 && (
+              <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3">
+                <p className="text-xs font-bold text-red-700">Checkout belum lengkap</p>
+                <ul className="mt-2 space-y-1">
+                  {checkoutErrors.map(error => (
+                    <li key={error} className="text-xs font-semibold text-red-700">- {error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
-          {/* Form Pelanggan - Tampil di step 3 pada mobile */}
-          <div className={`${activeStep === 3 ? 'block' : 'hidden'} md:block`}>
+          <div>
             <CustomerQuickForm
               customerNameInput={customerNameInput}
               setCustomerNameInput={setCustomerNameInput}
@@ -159,39 +170,43 @@ export default function CheckoutPanel({
             />
           </div>
 
-          {/* Keranjang Sewa - Tampil di step 2 pada mobile */}
-          <div className={`${activeStep === 2 ? 'block' : 'hidden'} md:block`}>
+          <div>
             <RentalCart
               cart={cart}
               removeCartItem={removeCartItem}
+              updateCartItem={updateCartItem}
               updateCartQty={updateCartQty}
               formatCurrency={formatCurrency}
             />
           </div>
 
-          {/* Ringkasan Pembayaran - Tampil di step 4 pada mobile */}
-          <div className={`${activeStep === 4 ? 'block' : 'hidden'} md:block`}>
-            <PaymentSummary
-              discountType={discountType}
-              setDiscountType={setDiscountType}
-              setDiscountValue={setDiscountValue}
-              discountValue={discountValue}
-              paymentMethod={paymentMethod}
-              setPaymentMethod={setPaymentMethod}
-              cashReceived={cashReceived}
-              setCashReceived={setCashReceived}
-              grandTotal={grandTotal}
-              cashPresets={cashPresets}
-              finalCashReceived={finalCashReceived}
-              changeAmount={changeAmount}
-              formatCurrency={formatCurrency}
-              formatNumberDot={formatNumberDot}
-            />
+          <div>
+            {cart.length > 0 ? (
+              <PaymentSummary
+                discountType={discountType}
+                setDiscountType={setDiscountType}
+                setDiscountValue={setDiscountValue}
+                discountValue={discountValue}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                cashReceived={cashReceived}
+                setCashReceived={setCashReceived}
+                grandTotal={grandTotal}
+                cashPresets={cashPresets}
+                finalCashReceived={finalCashReceived}
+                changeAmount={changeAmount}
+                formatCurrency={formatCurrency}
+                formatNumberDot={formatNumberDot}
+              />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-5 text-sm font-semibold text-slate-500">
+                Tambahkan produk ke keranjang untuk mulai pembayaran.
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Footer Pembayaran & Aksi - Tampil di step 4 pada mobile */}
-        <div className={`border-t border-slate-100 bg-white px-4 py-3 md:px-5 md:py-4 ${activeStep === 4 ? 'block' : 'hidden'} md:block`}>
+        <div className="border-t border-slate-100 bg-white px-4 py-3 md:px-5 md:py-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-slate-600">
               <span>Subtotal</span>
@@ -218,7 +233,7 @@ export default function CheckoutPanel({
           <button
             type="button"
             onClick={handleCheckoutClick}
-            disabled={isCheckingOut || cart.length === 0 || getStockIssue().length > 0 || (paymentMethod === 'Tunai' && finalCashReceived < grandTotal)}
+            disabled={isCheckingOut || cart.length === 0}
             className="mt-3 w-full rounded-xl bg-emerald-900 hover:bg-emerald-950 px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:rounded-2xl"
           >
             {isCheckingOut ? 'Memproses pembayaran...' : getStockIssue().length > 0 ? 'Periksa ulang stok' : 'Bayar & Cetak Nota'}

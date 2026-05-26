@@ -30,6 +30,7 @@ export const useRentalCheckout = ({
   subTotal
 }) => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutErrors, setCheckoutErrors] = useState([]);
 
   const handleCheckoutClick = async () => {
     if (isCheckingOut) return undefined;
@@ -51,10 +52,11 @@ export const useRentalCheckout = ({
     const stockIssues = getStockIssue();
     const validationErrors = [
       ...validation.errors,
-      ...stockIssues.map(issue => `${issue.item.product.name}: ${issue.reason}`)
+      ...stockIssues.map(issue => `${issue.item.productName || issue.item.product?.name || 'Produk'}: ${issue.reason}`)
     ];
 
     if (validationErrors.length > 0) {
+      setCheckoutErrors(validationErrors);
       onValidationError?.(validationErrors);
       return undefined;
     }
@@ -64,10 +66,13 @@ export const useRentalCheckout = ({
       c => c.name.toLowerCase().trim() === customerNameInput.toLowerCase().trim()
     );
     if (matchingCustomer && matchingCustomer.isBlocked) {
-      onValidationError?.([`Pelanggan "${matchingCustomer.name}" berstatus DIBLOKIR oleh sanggar dan tidak diizinkan menyewa kostum.`]);
+      const blockedErrors = [`Pelanggan "${matchingCustomer.name}" berstatus DIBLOKIR oleh sanggar dan tidak diizinkan menyewa kostum.`];
+      setCheckoutErrors(blockedErrors);
+      onValidationError?.(blockedErrors);
       return undefined;
     }
 
+    setCheckoutErrors([]);
     setIsCheckingOut(true);
     try {
       const bookingId = localStorage.getItem('checkout_active_booking_id') || null;
@@ -89,7 +94,8 @@ export const useRentalCheckout = ({
         paymentMethod,
         cashReceived: paymentMethod === 'Tunai' ? finalCashReceived : 0,
         change: paymentMethod === 'Tunai' ? changeAmount : 0,
-        status: 'disewa',
+        paymentStatus: finalCashReceived >= grandTotal || paymentMethod !== 'Tunai' ? 'paid' : finalCashReceived > 0 ? 'partial' : 'unpaid',
+        status: 'rented',
         lateFee: 0,
         bookingId,
         operationToken
@@ -112,5 +118,5 @@ export const useRentalCheckout = ({
     return undefined;
   };
 
-  return { handleCheckoutClick, isCheckingOut };
+  return { checkoutErrors, handleCheckoutClick, isCheckingOut };
 };

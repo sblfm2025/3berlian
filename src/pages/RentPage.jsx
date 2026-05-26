@@ -78,6 +78,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
     getStockIssue,
     removeCartItem,
     setCart,
+    updateCartItem,
     updateCartQty
   } = useRentalCart({
     onCartWarning: (message) => onNotify?.({ title: 'Stok belum cukup', message, type: 'warning' }),
@@ -177,11 +178,11 @@ export default function RentPage({ products, customers, transactions = [], onChe
   const customerProfileReady = customerMissingFields.length === 0;
 
   const flowSteps = [
-    { label: 'Pilih barang', done: cart.length > 0 },
-    { label: 'Lengkapi pelanggan', done: customerNameInput.trim().length > 0 && customerProfileReady },
-    { label: 'Bayar & cetak nota', done: paymentMethod !== 'Tunai' || finalCashReceived >= grandTotal }
+    { label: 'Produk', done: cart.length > 0 },
+    { label: 'Pelanggan', done: customerNameInput.trim().length > 0 && customerProfileReady },
+    { label: 'Pembayaran', done: paymentMethod !== 'Tunai' || finalCashReceived >= grandTotal }
   ];
-  const nextFlowStep = flowSteps.find(step => !step.done)?.label || 'Pembayaran siap';
+  const incompleteFlowCount = flowSteps.filter(step => !step.done).length;
 
   const paymentSummaryLabel = totalItems === 0
     ? 'Tambah barang untuk mulai transaksi'
@@ -200,7 +201,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
     { label: 'Pembayaran cukup', ok: paymentMethod !== 'Tunai' || grandTotal === 0 || finalCashReceived >= grandTotal }
   ];
 
-  const { handleCheckoutClick, isCheckingOut } = useRentalCheckout({
+  const { checkoutErrors, handleCheckoutClick, isCheckingOut } = useRentalCheckout({
     cart,
     changeAmount,
     clearCart,
@@ -281,7 +282,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
           <div className="max-w-2xl">
             <p className="text-xs md:text-sm font-bold uppercase tracking-[0.18em] text-white/80">Status kasir</p>
             <p className="mt-2 text-sm font-semibold leading-relaxed text-white/90 sm:text-base">
-              {paymentSummaryLabel}. Langkah berikutnya: {nextFlowStep}.
+              {paymentSummaryLabel}. Checklist transaksi: {flowSteps.length - incompleteFlowCount}/{flowSteps.length} siap.
             </p>
           </div>
 
@@ -352,7 +353,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Alur transaksi cepat</p>
-            <p className="mt-1 text-sm font-bold text-slate-700">Langkah berikutnya: {nextFlowStep}</p>
+            <p className="mt-1 text-sm font-bold text-slate-700">Checklist transaksi non-linear</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {flowSteps.map((step, index) => (
@@ -433,10 +434,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
       <div className="md:hidden bg-white border border-slate-200 p-4 rounded-2xl mb-1 shadow-sm">
         <div className="flex justify-between w-full relative">
           <div className="absolute top-4 left-4 right-4 h-[2px] bg-slate-100 z-0" />
-          <div
-            className="absolute top-4 left-4 h-[2px] bg-emerald-900 z-0 transition-all duration-300"
-            style={{ width: `calc(${((activeStep - 1) / 3) * 100}% - 8px)` }}
-          />
+          <div className="absolute top-4 left-4 right-4 h-[2px] bg-emerald-900/30 z-0" />
 
           {[
             { step: 1, label: 'Katalog' },
@@ -448,18 +446,6 @@ export default function RentPage({ products, customers, transactions = [], onChe
               key={s.step}
               type="button"
               onClick={() => {
-                if (s.step === 2 && cart.length === 0) {
-                  onNotify?.({ title: 'Keranjang Kosong', message: 'Silakan pilih kostum terlebih dahulu.', type: 'warning' });
-                  return;
-                }
-                if (s.step === 3 && cart.length === 0) {
-                  onNotify?.({ title: 'Keranjang Kosong', message: 'Silakan pilih kostum terlebih dahulu.', type: 'warning' });
-                  return;
-                }
-                if (s.step === 4 && !customerNameInput?.trim()) {
-                  onNotify?.({ title: 'Pelanggan Kosong', message: 'Isi nama pelanggan terlebih dahulu.', type: 'warning' });
-                  return;
-                }
                 setActiveStep(s.step);
                 if (s.step > 1) {
                   setShowMobileCheckout(true);
@@ -528,6 +514,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
           grandTotal={grandTotal}
           paymentMethod={paymentMethod}
           checkoutChecklist={checkoutChecklist}
+          checkoutErrors={checkoutErrors}
           customerNameInput={customerNameInput}
           setCustomerNameInput={setCustomerNameInput}
           setShowSuggestions={setShowSuggestions}
@@ -554,6 +541,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
           setDepositAmountInput={setDepositAmountInput}
           cart={cart}
           removeCartItem={removeCartItem}
+          updateCartItem={updateCartItem}
           updateCartQty={updateCartQty}
           discountType={discountType}
           setDiscountType={setDiscountType}

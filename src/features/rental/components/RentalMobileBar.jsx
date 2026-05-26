@@ -5,61 +5,26 @@ export default function RentalMobileBar({
   setActiveStep,
   totalItems,
   grandTotal,
-  customerNameInput,
-  paymentMethod,
   setShowMobileCheckout,
   formatCurrency,
   handleCheckoutClick,
   isCheckingOut,
-  getStockIssue,
-  finalCashReceived,
   onNotify
 }) {
   if (totalItems === 0) return null;
 
   const handleNextStep = () => {
     if (activeStep === 1) {
-      if (totalItems === 0) {
-        onNotify?.({
-          title: 'Keranjang Kosong',
-          message: 'Silakan pilih minimal 1 kostum adat dari katalog.',
-          type: 'warning'
-        });
-        return;
-      }
       setActiveStep(2);
-      setShowMobileCheckout(true); // Membuka panel checkout overlay di mobile
+      setShowMobileCheckout(true);
     } else if (activeStep === 2) {
-      if (totalItems === 0) return;
       setActiveStep(3);
+      setShowMobileCheckout(true);
     } else if (activeStep === 3) {
-      if (!customerNameInput?.trim()) {
-        onNotify?.({
-          title: 'Nama Pelanggan Wajib',
-          message: 'Silakan isi atau pilih nama pelanggan terlebih dahulu.',
-          type: 'warning'
-        });
-        return;
-      }
       setActiveStep(4);
+      setShowMobileCheckout(true);
     } else if (activeStep === 4) {
-      // Pemicu checkout akhir secara langsung
-      if (getStockIssue().length > 0) {
-        onNotify?.({
-          title: 'Stok Tidak Cukup',
-          message: 'Ada item di keranjang yang melebihi batas stok tersedia.',
-          type: 'error'
-        });
-        return;
-      }
-      if (paymentMethod === 'Tunai' && finalCashReceived < grandTotal) {
-        onNotify?.({
-          title: 'Pembayaran Kurang',
-          message: 'Uang tunai yang diterima kurang dari total tagihan.',
-          type: 'warning'
-        });
-        return;
-      }
+      onNotify?.({ title: 'Memeriksa checkout', message: 'Validasi lengkap dijalankan sekarang.', type: 'info' });
       handleCheckoutClick();
     }
   };
@@ -82,11 +47,7 @@ export default function RentalMobileBar({
   };
 
   const isNextDisabled = () => {
-    if (activeStep === 1 && totalItems === 0) return true;
-    if (activeStep === 2 && totalItems === 0) return true;
-    if (activeStep === 3 && !customerNameInput?.trim()) return true;
-    if (activeStep === 4 && (isCheckingOut || getStockIssue().length > 0 || (paymentMethod === 'Tunai' && finalCashReceived < grandTotal))) return true;
-    return false;
+    return activeStep === 4 && isCheckingOut;
   };
 
   return (
