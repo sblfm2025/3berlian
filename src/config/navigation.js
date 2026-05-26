@@ -55,7 +55,7 @@ export const getRoleNavItems = (role) => {
 export const getMobileNavItems = (role) => {
   const mobileIds = role === 'admin'
     ? ['dashboard', 'rent', 'return', 'products', 'reports']
-    : ['dashboard', 'rent', 'return', 'customers'];
+    : ['dashboard', 'return', 'rent', 'customers'];
 
   return getRoleNavItems(role).filter(item => mobileIds.includes(item.id));
 };

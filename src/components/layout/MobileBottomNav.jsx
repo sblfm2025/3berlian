@@ -1,38 +1,50 @@
 export default function MobileBottomNav({ currentView, navItems, onNavigate }) {
+  const primaryItem = navItems.find(item => item.id === 'rent');
+  const sideItems = navItems.filter(item => item.id !== 'rent');
+  const leftItems = sideItems.slice(0, 2);
+  const rightItems = sideItems.slice(2, 4);
+  const paddedLeftItems = [...leftItems, ...Array.from({ length: Math.max(0, 2 - leftItems.length) }, (_, index) => ({ id: `left-spacer-${index}`, isSpacer: true }))];
+  const paddedRightItems = [...rightItems, ...Array.from({ length: Math.max(0, 2 - rightItems.length) }, (_, index) => ({ id: `right-spacer-${index}`, isSpacer: true }))];
+
+  const renderSideItem = (item) => (
+    item.isSpacer ? <div key={item.id} aria-hidden="true" /> :
+    <button
+      key={item.id}
+      onClick={() => onNavigate(item.id)}
+      aria-label={`Buka ${item.label}`}
+      aria-current={currentView === item.id ? 'page' : undefined}
+      className={`flex min-w-0 flex-1 flex-col items-center justify-center transition-all px-0.5 ${currentView === item.id ? 'text-blue-700' : 'text-slate-400 hover:text-slate-600'}`}
+    >
+      <div className={`mb-0.5 flex h-9 w-9 items-center justify-center rounded-full transition-all ${currentView === item.id ? 'bg-blue-50 scale-110 shadow-sm' : 'bg-transparent'}`}>
+        <item.icon size={21} className={currentView === item.id ? 'stroke-blue-700' : ''} />
+      </div>
+      <span className={`max-w-full truncate text-[10px] text-center leading-tight tracking-tight ${currentView === item.id ? 'font-bold text-blue-800' : 'font-medium'}`}>
+        {item.label}
+      </span>
+    </button>
+  );
+
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] z-40 pb-3 pt-2 px-1">
-      <div className="flex w-full justify-between items-end">
-        {navItems.map(item => (
-          item.id === 'rent' ? (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] z-40 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 px-2">
+      <div className="grid w-full grid-cols-[1fr_1fr_82px_1fr_1fr] items-end gap-1">
+        {paddedLeftItems.map(renderSideItem)}
+
+        {primaryItem && (
           <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            aria-label={`Buka ${item.label}`}
-            aria-current={currentView === item.id ? 'page' : undefined}
-            className="relative -mt-8 flex flex-1 flex-col items-center justify-center text-blue-700"
+            key={primaryItem.id}
+            onClick={() => onNavigate(primaryItem.id)}
+            aria-label={`Buka ${primaryItem.label}`}
+            aria-current={currentView === primaryItem.id ? 'page' : undefined}
+            className="relative -mt-9 flex flex-col items-center justify-center text-blue-700"
           >
-            <div className={`flex h-16 w-16 items-center justify-center rounded-[22px] bg-blue-700 text-white shadow-[0_18px_36px_-20px_rgba(13,71,161,0.95)] transition-all ${currentView === item.id ? 'scale-105 bg-blue-800' : ''}`}>
-              <item.icon size={30} strokeWidth={2.5} />
+            <div className={`flex h-[68px] w-[68px] items-center justify-center rounded-[24px] bg-blue-700 text-white shadow-[0_18px_36px_-20px_rgba(13,71,161,0.95)] ring-4 ring-white transition-all ${currentView === primaryItem.id ? 'scale-105 bg-blue-800' : ''}`}>
+              <primaryItem.icon size={31} strokeWidth={2.5} />
             </div>
-            <span className="mt-1 text-[10px] font-black leading-tight text-blue-800">{item.label}</span>
+            <span className="mt-1 text-[10px] font-black leading-tight text-blue-800">{primaryItem.label}</span>
           </button>
-          ) : (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            aria-label={`Buka ${item.label}`}
-            aria-current={currentView === item.id ? 'page' : undefined}
-            className={`flex flex-col items-center justify-center flex-1 transition-all px-0.5 ${currentView === item.id ? 'text-blue-700' : 'text-slate-400 hover:text-slate-600'}`}
-          >
-            <div className={`p-1.5 rounded-full mb-0.5 transition-all ${currentView === item.id ? 'bg-blue-50 scale-110 shadow-sm' : 'bg-transparent'}`}>
-              <item.icon size={22} className={currentView === item.id ? 'stroke-blue-700' : ''} />
-            </div>
-            <span className={`text-[10px] text-center leading-tight tracking-tight ${currentView === item.id ? 'font-bold text-blue-800' : 'font-medium'}`}>
-              {item.label}
-            </span>
-          </button>
-          )
-        ))}
+        )}
+
+        {paddedRightItems.map(renderSideItem)}
       </div>
     </nav>
   );
