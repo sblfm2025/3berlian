@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState, useEffect } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState, useEffect } from 'react';
 
 import { signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { normalizeProduct } from './utils/product';
@@ -473,6 +473,78 @@ export default function App() {
     return () => window.removeEventListener('popstate', handleAppBack);
   }, [user]);
 
+  const appNotifications = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const activeTransactions = transactions.filter(transaction => transaction.status === 'disewa');
+    const overdueTransactions = activeTransactions.filter(transaction => transaction.expectedReturnDate && transaction.expectedReturnDate < today);
+    const dueTodayTransactions = activeTransactions.filter(transaction => transaction.expectedReturnDate === today);
+    const lowStockProducts = products.filter(product => Number(product.stock || 0) > 0 && Number(product.stock || 0) <= 2);
+    const outOfStockProducts = products.filter(product => Number(product.stock || 0) <= 0);
+    const notices = [];
+
+    if (dataLoadError) {
+      notices.push({
+        id: 'data-error',
+        title: 'Data perlu dicek',
+        message: dataLoadError,
+        tone: 'danger',
+        target: currentView
+      });
+    }
+
+    if (!isAppDataLoaded) {
+      notices.push({
+        id: 'data-loading',
+        title: 'Data masih dimuat',
+        message: appLoadingMessage,
+        tone: 'info',
+        target: currentView
+      });
+    }
+
+    if (overdueTransactions.length > 0) {
+      notices.push({
+        id: 'overdue-return',
+        title: `${overdueTransactions.length} nota terlambat`,
+        message: 'Segera proses pengembalian agar stok dan denda tetap akurat.',
+        tone: 'danger',
+        target: 'return'
+      });
+    }
+
+    if (dueTodayTransactions.length > 0) {
+      notices.push({
+        id: 'due-today',
+        title: `${dueTodayTransactions.length} nota jatuh tempo hari ini`,
+        message: 'Pantau pelanggan yang harus mengembalikan kostum hari ini.',
+        tone: 'warning',
+        target: 'return'
+      });
+    }
+
+    if (lowStockProducts.length > 0) {
+      notices.push({
+        id: 'low-stock',
+        title: `${lowStockProducts.length} produk stok rendah`,
+        message: 'Cek item yang sisa stoknya tinggal sedikit sebelum transaksi berikutnya.',
+        tone: 'warning',
+        target: user?.role === 'admin' ? 'products' : 'rent'
+      });
+    }
+
+    if (outOfStockProducts.length > 0) {
+      notices.push({
+        id: 'empty-stock',
+        title: `${outOfStockProducts.length} produk habis`,
+        message: 'Produk habis perlu ditinjau agar tidak mengganggu pemilihan kostum.',
+        tone: 'info',
+        target: user?.role === 'admin' ? 'products' : 'rent'
+      });
+    }
+
+    return notices;
+  }, [appLoadingMessage, currentView, dataLoadError, isAppDataLoaded, products, transactions, user?.role]);
+
   if (!user) {
     return (
       <LoginScreen
@@ -515,6 +587,7 @@ export default function App() {
         desktopNavItems={filteredNav}
         firebaseUser={firebaseUser}
         mobileNavItems={mobileNavItems}
+        notifications={appNotifications}
         onLogout={handleLogout}
         onNavigate={navigateToView}
         user={user}
