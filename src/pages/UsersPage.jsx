@@ -28,11 +28,10 @@ export default function UsersPage({ usersList, onUpdateUser }) {
 
   return (
     <div className="max-w-5xl mx-auto space-y-5">
-      <div className="brand-gradient hidden rounded-[24px] p-5 text-white shadow-soft md:block md:p-6">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-100">Pengguna</p>
-        <h2 className="mt-3 text-2xl md:text-3xl font-black leading-tight">Kelola akses kasir dan admin</h2>
-        <p className="mt-2 max-w-2xl text-sm md:text-base text-white/90">
-          Pastikan setiap karyawan memakai akun yang tepat sesuai tugas operasionalnya.
+      <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-100">Ringkasan akses</p>
+        <p className="mt-2 max-w-2xl text-sm font-semibold text-white/90">
+          {usersList.length} akun terdaftar. Pastikan setiap karyawan memakai akun sesuai tugas operasionalnya.
         </p>
       </div>
 

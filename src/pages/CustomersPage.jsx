@@ -380,16 +380,15 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
 
   return (
     <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
-      {/* Header Dashboard Pelanggan Adat */}
+      {/* Ringkasan pelanggan; judul utama sudah ada di AppShell */}
       <div className="brand-gradient rounded-[24px] p-4 text-white shadow-soft md:p-5 relative overflow-hidden">
         {/* Tenun Watermark */}
         <div className="absolute inset-0 bg-tenun opacity-[0.035] pointer-events-none" />
 
         <div className="relative max-w-2xl">
-          <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-gold-400">Sanggar 3 Berlian</p>
-          <h2 className="mt-2 text-lg font-bold leading-tight sm:text-2xl md:text-3xl text-gold-100">Profil Pelanggan &amp; Pengukuran Fitting</h2>
-          <p className="mt-2 text-xs text-white/90 sm:text-sm">
-            Pantau loyalitas penyewa, skor risiko kelancaran, rekap deposit, serta simpan ukuran jahit tubuh untuk fitting kostum yang presisi.
+          <p className="text-xs md:text-sm font-bold uppercase tracking-[0.18em] text-gold-400">Ringkasan pelanggan</p>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-white/90 sm:text-base">
+            {totalCustomerCount} profil aktif dengan {attentionCustomers} perlu perhatian dan {blockedCustomers} diblokir.
           </p>
         </div>
 

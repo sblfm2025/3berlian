@@ -41,10 +41,9 @@ export default function MenuPage({ onNavigate, role }) {
   return (
     <div className="mx-auto max-w-7xl space-y-3 sm:space-y-4">
       <div className="hidden rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm md:block md:p-5">
-        <p className="text-sm font-semibold text-slate-500">Pusat modul</p>
-        <h2 className="mt-1 text-lg font-bold text-slate-900 sm:text-2xl">Menu operasional dan roadmap sanggar</h2>
-        <p className="mt-2 max-w-2xl text-sm text-slate-600">
-          Modul aktif tetap fokus pada rental, sementara slot layanan sanggar disiapkan agar ekspansi tidak mengganggu transaksi lama.
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Ringkasan modul</p>
+        <p className="mt-1 text-sm font-semibold text-slate-700">
+          {activeModules.length} modul aktif tersedia, sementara slot layanan sanggar disiapkan sebagai roadmap berikutnya.
         </p>
       </div>
 

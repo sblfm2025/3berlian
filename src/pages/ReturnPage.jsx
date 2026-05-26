@@ -152,13 +152,12 @@ export default function ReturnPage({ transactions, onReturn }) {
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-3">
-      {/* Return Header Banner */}
+      {/* Status pengembalian; judul utama sudah ada di AppShell */}
       <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
         <div className="max-w-2xl">
-          <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-white/80">Pengembalian</p>
-          <h2 className="mt-3 text-lg font-bold leading-tight sm:text-2xl md:text-3xl">Pengembalian kostum yang jelas dan siap diproses</h2>
-          <p className="mt-3 text-xs text-white/90 sm:text-sm md:text-base">
-            Cek status transaksi aktif, kondisi barang, dan biaya tambahan secara detail sebelum barang dikonfirmasi kembali.
+          <p className="text-xs md:text-sm font-bold uppercase tracking-[0.18em] text-white/80">Status antrean</p>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-white/90 sm:text-base">
+            {activeTransactions.length} nota aktif, {overdueCount} terlambat, {dueTodayCount} jatuh tempo hari ini.
           </p>
         </div>
 

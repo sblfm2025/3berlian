@@ -420,10 +420,9 @@ export default function ProductsPage({
     <div className="max-w-7xl mx-auto">
       <div className={`sticky top-0 z-20 mb-3 grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:static md:mb-5 md:border-0 md:bg-transparent md:p-0 md:shadow-none xl:grid-cols-[1.2fr_1fr] xl:items-end ${searchTerm ? 'hidden md:grid' : ''}`}>
         <div className="hidden md:block">
-          <p className="text-sm font-semibold text-slate-500">Inventaris</p>
-          <h2 className="mt-2 text-lg font-bold text-slate-900 sm:text-2xl sm:font-black">Manajemen produk penyewaan</h2>
-          <p className="mt-2 hidden max-w-2xl text-sm text-slate-600 md:block">
-            Pantau stok, kategori, dan harga sewa dengan cepat agar proses pembayaran dan pengembalian lebih konsisten.
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Ringkasan inventaris</p>
+          <p className="mt-1 text-sm font-semibold text-slate-700">
+            {stats.available} tersedia, {stats.lowStock} stok rendah, {stats.outOfStock} habis.
           </p>
         </div>
 

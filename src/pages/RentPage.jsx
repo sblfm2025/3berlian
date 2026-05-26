@@ -275,14 +275,13 @@ export default function RentPage({ products, customers, transactions = [], onChe
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-3">
-      {/* POS Header Banner */}
+      {/* Status POS; judul utama sudah ada di AppShell */}
       <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
           <div className="max-w-2xl">
-            <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-white/80">POS kasir</p>
-            <h2 className="mt-3 text-lg sm:text-2xl md:text-3xl font-bold leading-tight">Terminal sewa kostum yang cepat, rapi, dan siap transaksi</h2>
-            <p className="mt-3 text-xs sm:text-sm md:text-base text-white/90">
-              Cari produk, tambahkan ke keranjang, pilih pelanggan, dan selesaikan pembayaran dengan tata letak kasir modern untuk desktop maupun tablet.
+            <p className="text-xs md:text-sm font-bold uppercase tracking-[0.18em] text-white/80">Status kasir</p>
+            <p className="mt-2 text-sm font-semibold leading-relaxed text-white/90 sm:text-base">
+              {paymentSummaryLabel}. Langkah berikutnya: {nextFlowStep}.
             </p>
           </div>
 

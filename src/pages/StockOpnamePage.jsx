@@ -208,13 +208,12 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
 
   return (
     <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
-      {/* Banner */}
+      {/* Status ringkas; judul utama sudah ada di AppShell */}
       <div className="rounded-[18px] border border-emerald-100 bg-emerald-950 p-3 text-white shadow-sm md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/75 sm:text-xs sm:tracking-[0.18em]">Audit Gudang & Logistik</p>
-          <h2 className="mt-1.5 text-lg font-bold sm:text-2xl">Stock Opname & Rekonsiliasi Fisik</h2>
-          <p className="mt-1 text-xs text-white/90">
-            Audit fisik kostum adat secara real-time untuk memastikan data laci digital sinkron 100% dengan baju di gantungan rak.
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/75 sm:text-xs sm:tracking-[0.18em]">Sesi audit</p>
+          <p className="mt-1.5 text-sm font-semibold text-white sm:text-base">
+            {isSessionActive ? `${scannedItemsList.length} unit terscan dari ${systemItems.length} unit sistem` : savedSessionResult ? 'Rekonsiliasi terakhir siap dicetak' : 'Pilih area lalu mulai pemindaian fisik'}
           </p>
         </div>
         <span className="rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-bold capitalize flex items-center gap-1.5 shrink-0">

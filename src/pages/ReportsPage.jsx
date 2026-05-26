@@ -490,13 +490,12 @@ export default function ReportsPage({
   return (
     <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
 
-      {/* Header Utama Halaman */}
+      {/* Toolbar laporan; judul utama sudah ada di AppShell */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-bold text-emerald-800 uppercase tracking-widest">Keuangan &amp; Laporan</p>
-          <h2 className="mt-1 text-base font-bold text-slate-800 sm:text-2xl sm:font-black">Rekap Keuangan &amp; Pembukuan</h2>
-          <p className="mt-2 hidden max-w-2xl text-xs text-slate-500 md:block">
-            Pantau omzet sanggar, audit buku besar real-time, rekonsiliasi laci kas harian kasir, serta ekspor laporan ke Excel/PDF.
+          <p className="text-xs font-bold text-emerald-800 uppercase tracking-widest">Periode &amp; aksi</p>
+          <p className="mt-1 hidden max-w-2xl text-sm font-semibold text-slate-600 md:block">
+            {formatCurrency(totalRevenue)} omzet terfilter dari {sortedTransactions.length} transaksi.
           </p>
         </div>
 

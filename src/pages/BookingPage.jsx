@@ -217,13 +217,12 @@ export default function BookingPage({
 
   return (
     <div className="max-w-7xl mx-auto space-y-3 sm:space-y-5">
-      {/* HEADER UTAMA */}
+      {/* Toolbar halaman; judul utama sudah ada di AppShell */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-slate-500">Operasional</p>
-          <h2 className="mt-1 text-lg font-bold text-slate-900 sm:text-2xl">Kalender Booking & Ketersediaan</h2>
-          <p className="mt-1.5 text-xs text-slate-600 sm:mt-2 sm:text-sm">
-            Hindari bentrok penyewaan kostum dengan memantau jadwal sewa aktif dan pesanan di kalender visual.
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Agenda terpilih</p>
+          <p className="mt-1 text-sm font-semibold text-slate-700">
+            {new Date(selectedDateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} - {selectedDateEvents.rentals.length} sewa aktif, {selectedDateEvents.bookings.length} booking
           </p>
         </div>
         <button
