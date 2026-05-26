@@ -125,6 +125,7 @@ const normalizeTransactionForRental = (payload) => {
  */
 export const createRentalTransaction = async (payload, cart = payload.items || []) => {
   const baseTransactionData = normalizeTransactionForRental({ ...payload, items: cart });
+  const bookingId = payload.bookingId || null;
   const productRefs = cart.map(item => ({
     item,
     ref: dataDoc('products', getProductId(item))
@@ -137,7 +138,9 @@ export const createRentalTransaction = async (payload, cart = payload.items || [
     const checkoutDate = new Date();
     const invoiceDateKey = formatDateYYYYMMDD(checkoutDate);
     const invoiceCounterRef = dataDoc('counters', `invoice-${invoiceDateKey}`);
+    const bookingRef = bookingId ? dataDoc('bookings', bookingId) : null;
     const invoiceCounterSnapshot = await dbTransaction.get(invoiceCounterRef);
+    const bookingSnapshot = bookingRef ? await dbTransaction.get(bookingRef) : null;
     const productSnapshots = await Promise.all(productRefs.map(({ ref }) => dbTransaction.get(ref)));
     const lastInvoiceSequence = Number(invoiceCounterSnapshot.exists() ? invoiceCounterSnapshot.data().lastSequence || 0 : 0);
     const invoiceSequence = lastInvoiceSequence + 1;
@@ -149,6 +152,17 @@ export const createRentalTransaction = async (payload, cart = payload.items || [
       invoiceNumber,
       invoiceSequence
     };
+
+    if (bookingRef) {
+      if (!bookingSnapshot.exists()) {
+        throw new Error(`Booking ${bookingId} tidak ditemukan.`);
+      }
+
+      const bookingData = bookingSnapshot.data();
+      if (bookingData.status === 'cancelled' || bookingData.status === 'converted_to_rental') {
+        throw new Error(`Booking ${bookingId} sudah tidak dapat diproses menjadi sewa.`);
+      }
+    }
 
     productSnapshots.forEach((snapshot, index) => {
       const { item } = productRefs[index];
@@ -253,6 +267,23 @@ export const createRentalTransaction = async (payload, cart = payload.items || [
       after: transactionData,
       entityId: transactionData.id
     }));
+
+    if (bookingRef) {
+      dbTransaction.update(bookingRef, {
+        convertedAt: new Date().toISOString(),
+        convertedToTransactionId: invoiceNumber,
+        status: 'converted_to_rental',
+        updatedAt: new Date().toISOString()
+      });
+      dbTransaction.set(auditDoc('CONVERT_BOOKING_TO_RENTAL', bookingId), buildAuditPayload({
+        action: 'CONVERT_BOOKING_TO_RENTAL',
+        after: { bookingId, transactionId: invoiceNumber },
+        before: bookingSnapshot.data(),
+        entityId: bookingId,
+        entityType: 'booking',
+        operatorId: transactionData.createdBy || 'system'
+      }));
+    }
 
     savedTransaction = transactionData;
   });

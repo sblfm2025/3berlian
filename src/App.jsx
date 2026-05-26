@@ -517,7 +517,7 @@ export default function App() {
     products: appDataStatus.products,
     opname: appDataStatus.products,
     customers: appDataStatus.customers,
-    booking: appDataStatus.products,
+    booking: appDataStatus.products && appDataStatus.bookings,
     users: appDataStatus.users,
     reports: appDataStatus.transactions,
     menu: true

@@ -1,4 +1,4 @@
-import { CalendarDays, FileText, Mic2, Music2, Package, Sparkles, UserCog, Users } from 'lucide-react';
+import { Barcode, CalendarDays, FileText, Mic2, Music2, Package, Sparkles, UserCog, Users } from 'lucide-react';
 
 const futureModules = [
   {
@@ -30,7 +30,9 @@ const futureModules = [
 
 export default function MenuPage({ onNavigate, role }) {
   const activeModules = [
+    { title: 'Booking', description: 'Kelola kalender pemesanan dan cek bentrok jadwal kostum.', icon: CalendarDays, target: 'booking', roles: ['admin', 'cashier'] },
     { title: 'Produk', description: 'Kelola inventaris kostum, stok, harga sewa, dan denda.', icon: Package, target: 'products', roles: ['admin'] },
+    { title: 'Stock Opname', description: 'Audit fisik rak, scan unit kostum, dan rekonsiliasi selisih stok.', icon: Barcode, target: 'opname', roles: ['admin'] },
     { title: 'Pelanggan', description: 'Lihat data pelanggan, riwayat kunjungan, deposit, dan identitas.', icon: Users, target: 'customers', roles: ['admin', 'cashier'] },
     { title: 'Laporan', description: 'Rekap transaksi, omzet, pembayaran, dan export laporan.', icon: FileText, target: 'reports', roles: ['admin'] },
     { title: 'Pengguna', description: 'Kelola akses admin dan kasir.', icon: UserCog, target: 'users', roles: ['admin'] }
