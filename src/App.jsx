@@ -32,6 +32,32 @@ const UsersPage = lazy(() => import('./pages/UsersPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 
 const isKnownAppView = (view) => Object.prototype.hasOwnProperty.call(pageMeta, view);
+const APP_SESSION_KEY = 'pos-3berlian-session';
+
+const getStoredUserSession = () => {
+  try {
+    const stored = window.localStorage.getItem(APP_SESSION_KEY);
+    if (!stored) return null;
+
+    const parsed = JSON.parse(stored);
+    if (!parsed?.username || !parsed?.role) return null;
+    return parsed;
+  } catch {
+    window.localStorage.removeItem(APP_SESSION_KEY);
+    return null;
+  }
+};
+
+const saveUserSession = (nextUser) => {
+  const sessionUser = {
+    id: nextUser.id,
+    name: nextUser.name,
+    username: nextUser.username,
+    role: nextUser.role,
+    email: nextUser.email
+  };
+  window.localStorage.setItem(APP_SESSION_KEY, JSON.stringify(sessionUser));
+};
 
 function AppDataSkeleton({ message }) {
   return (
@@ -81,7 +107,7 @@ function PageFallback() {
 // --- KOMPONEN UTAMA (MAIN APP COMPONENT) ---
 export default function App() {
   const [firebaseUser, setFirebaseUser] = useState(null);
-  const [user, setUser] = useState(null); 
+  const [user, setUser] = useState(() => getStoredUserSession()); 
   const [currentView, setCurrentView] = useState('dashboard');
   const [receiptData, setReceiptData] = useState(null); 
   
@@ -421,11 +447,13 @@ export default function App() {
   };
 
   const handleLoginSuccess = (foundUser) => {
+    saveUserSession(foundUser);
     setUser(foundUser);
     setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
+    window.localStorage.removeItem(APP_SESSION_KEY);
     setUser(null);
     setProducts([]);
     setCustomers([]);
