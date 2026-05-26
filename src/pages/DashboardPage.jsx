@@ -3,7 +3,8 @@ import { ArrowLeftRight, FileText, ShoppingBag, Users, X } from 'lucide-react';
 
 import KpiCard from '../components/dashboard/KpiCard';
 import MetricCard from '../components/dashboard/MetricCard';
-import { formatCurrency, formatDate, formatDateInput } from '../utils/format';
+import { useDashboardStats } from '../features/dashboard/hooks/useDashboardStats';
+import { formatCurrency, formatDate } from '../utils/format';
 
 // ==========================================
 // TAMPILAN BERANDA (DASHBOARD)
@@ -15,75 +16,30 @@ const getStatusLabel = (status) => {
 };
 
 export default function DashboardPage({ transactions, products, onNavigate }) {
-  const today = formatDateInput();
-  const nextWeek = new Date();
-  nextWeek.setDate(nextWeek.getDate() + 7);
-
-  const todayTransactions = transactions.filter(t => t.rentDate === today);
-  const completedToday = transactions.filter(t => t.status === 'selesai' && t.rentDate === today);
-  const activeRentals = transactions.filter(t => t.status === 'disewa');
-  const overdueRentals = activeRentals.filter(t => t.expectedReturnDate <= today);
-  const upcomingReturns = activeRentals.filter(t => t.expectedReturnDate > today && t.expectedReturnDate <= formatDateInput(nextWeek));
-  const totalIncomeToday = todayTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
-  const totalRevenue = transactions.reduce((sum, t) => sum + (t.totalAmount || 0) + (t.lateFee || 0), 0);
-  const averageTicket = transactions.length ? Math.round(totalRevenue / transactions.length) : 0;
-  const lowStockProducts = products.filter(p => (p.stock || 0) <= 2);
-  const lowStockCount = lowStockProducts.length;
-  const pendingReturnCount = overdueRentals.length + upcomingReturns.length;
-  const todayRevenueShare = totalRevenue ? Math.round((totalIncomeToday / totalRevenue) * 100) : 0;
-
-  const recentTransactions = [...transactions]
-    .sort((a, b) => (b.rentDate || '').localeCompare(a.rentDate || ''))
-    .slice(0, 5);
-
-  const paymentMix = transactions.reduce((acc, t) => {
-    const method = t.paymentMethod || 'Tunai';
-    acc[method] = (acc[method] || 0) + 1;
-    return acc;
-  }, {});
-
-  const paymentRevenueMix = transactions.reduce((acc, t) => {
-    const method = t.paymentMethod || 'Tunai';
-    const revenue = (t.totalAmount || 0) + (t.lateFee || 0);
-    acc[method] = (acc[method] || 0) + revenue;
-    return acc;
-  }, {});
-
-  const productDemand = transactions.reduce((acc, trx) => {
-    (trx.items || []).forEach(item => {
-      const key = item.product?.name || 'Produk tidak dikenal';
-      acc[key] = (acc[key] || 0) + (item.qty || 0);
-    });
-    return acc;
-  }, {});
-
-  const topProducts = Object.entries(productDemand)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
-
-  const customerCount = new Set(transactions.map(tx => tx.customerName).filter(Boolean)).size;
-  const activeItemsCount = activeRentals.reduce((sum, trx) => {
-    return sum + (trx.items || []).reduce((qtySum, item) => qtySum + (item.qty || 0), 0);
-  }, 0);
-
-  const bestPaymentMethod = Object.entries(paymentRevenueMix)
-    .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Tunai';
-
-  const priorityReturns = [...overdueRentals, ...upcomingReturns]
-    .sort((a, b) => (a.expectedReturnDate || '').localeCompare(b.expectedReturnDate || ''))
-    .slice(0, 5);
-
-  const trend = Array.from({ length: 7 }, (_, index) => {
-    const day = new Date();
-    day.setDate(day.getDate() - (6 - index));
-    const label = day.toLocaleDateString('id-ID', { weekday: 'short' });
-    const key = formatDateInput(day);
-    const total = transactions
-      .filter(t => t.rentDate === key)
-      .reduce((sum, t) => sum + (t.totalAmount || 0) + (t.lateFee || 0), 0);
-
-    return { label, total };
-  });
+  const {
+    activeItemsCount,
+    activeRentals,
+    averageTicket,
+    bestPaymentMethod,
+    completedToday,
+    customerCount,
+    lowStockCount,
+    lowStockProducts,
+    overdueRentals,
+    paymentMix,
+    paymentRevenueMix,
+    pendingReturnCount,
+    priorityReturns,
+    recentTransactions,
+    today,
+    todayRevenueShare,
+    todayTransactions,
+    topProducts,
+    totalIncomeToday,
+    totalRevenue,
+    trend,
+    upcomingReturns
+  } = useDashboardStats({ transactions, products });
 
   const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', data: [] });
   const handleOpenModal = (title, data) => setModalConfig({ isOpen: true, title, data });

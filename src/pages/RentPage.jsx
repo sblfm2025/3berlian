@@ -1,241 +1,111 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Package, Plus, Minus, Search, CheckCircle, AlertCircle, X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate, formatDateInput, formatNumberDot } from '../utils/format';
-import { createInvoiceNumber } from '../utils/invoice';
-
-const PRODUCTS_PER_PAGE = 20;
+import { useCustomerSelection } from '../features/rental/hooks/useCustomerSelection';
+import { usePaymentCalculation } from '../features/rental/hooks/usePaymentCalculation';
+import { PRODUCTS_PER_PAGE, useProductFiltering } from '../features/rental/hooks/useProductFiltering';
+import { useRentalCart } from '../features/rental/hooks/useRentalCart';
+import { useRentalCheckout } from '../features/rental/hooks/useRentalCheckout';
+import { getCustomerMissingFields } from '../features/rental/utils/rentalValidation';
 
 // ==========================================
 export default function RentPage({ products, customers, transactions = [], onCheckout }) {
-  const [cart, setCart] = useState([]);
-  const [customerNameInput, setCustomerNameInput] = useState('');
-  const [customerPhoneInput, setCustomerPhoneInput] = useState('');
-  const [customerAddressInput, setCustomerAddressInput] = useState('');
-  const [customerNoteInput, setCustomerNoteInput] = useState('');
-  const [customerIdentityType, setCustomerIdentityType] = useState('KTP');
-  const [customerIdentityNumber, setCustomerIdentityNumber] = useState('');
-  const [depositAmountInput, setDepositAmountInput] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const defaultDateStr = formatDateInput(tomorrow);
-  const [returnDateInput, setReturnDateInput] = useState(defaultDateStr);
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [showMobileCheckout, setShowMobileCheckout] = useState(false);
-  const [discountType, setDiscountType] = useState('nominal');
-  const [discountValue, setDiscountValue] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('Tunai');
-  const [cashReceived, setCashReceived] = useState('');
-  const [productPage, setProductPage] = useState(1);
+  const [depositAmountInput, setDepositAmountInput] = useState('');
 
-  const categories = useMemo(() => {
-    return ['Semua', ...new Set(products.map(product => product.category).filter(Boolean))];
-  }, [products]);
+  const {
+    cart,
+    clearCart,
+    getStockIssue,
+    removeCartItem,
+    setCart,
+    updateCartQty
+  } = useRentalCart({
+    products,
+    onEmptyCart: () => setShowMobileCheckout(false)
+  });
 
-  const availableProducts = useMemo(() => products.filter(product => {
-    const productText = [
-      product.name,
-      product.sku,
-      product.category,
-      product.size,
-      product.color
-    ].filter(Boolean).join(' ').toLowerCase();
-    const matchesSearch = productText.includes(search.toLowerCase());
-    const matchesCategory = selectedCategory === 'Semua' || product.category === selectedCategory;
-    return product.stock > 0 && matchesSearch && matchesCategory;
-  }), [products, search, selectedCategory]);
+  const {
+    availableProducts,
+    categories,
+    categoryCounts,
+    favoriteProducts,
+    paginatedProducts,
+    productEndNumber,
+    productPageCount,
+    productStartNumber,
+    safeProductPage,
+    search,
+    selectedCategory,
+    selectCategory,
+    setProductPage,
+    sortedProducts,
+    updateSearch
+  } = useProductFiltering({ products, transactions, cart });
 
-  const categoryCounts = useMemo(() => {
-    return categories.filter(category => category !== 'Semua').map(category => ({
-      category,
-      count: products.filter(product => product.category === category && product.stock > 0).length
-    }));
-  }, [categories, products]);
-
-  const sortedProducts = useMemo(() => {
-    return [...availableProducts].sort((a, b) => {
-      const aSelected = cart.some(item => item.product.id === a.id);
-      const bSelected = cart.some(item => item.product.id === b.id);
-      if (aSelected !== bSelected) return aSelected ? -1 : 1;
-      if (a.stock !== b.stock) return b.stock - a.stock;
-      return a.name.localeCompare(b.name);
-    });
-  }, [availableProducts, cart]);
-
-  const productPageCount = Math.max(1, Math.ceil(sortedProducts.length / PRODUCTS_PER_PAGE));
-  const safeProductPage = Math.min(productPage, productPageCount);
-  const paginatedProducts = sortedProducts.slice(
-    (safeProductPage - 1) * PRODUCTS_PER_PAGE,
-    safeProductPage * PRODUCTS_PER_PAGE
-  );
-  const productStartNumber = sortedProducts.length === 0 ? 0 : ((safeProductPage - 1) * PRODUCTS_PER_PAGE) + 1;
-  const productEndNumber = Math.min(safeProductPage * PRODUCTS_PER_PAGE, sortedProducts.length);
-
-  const favoriteProducts = useMemo(() => {
-    const demand = transactions.reduce((acc, trx) => {
-      (trx.items || []).forEach(item => {
-        const productId = item.product?.id || item.product?.name;
-        if (!productId) return;
-        acc[productId] = (acc[productId] || 0) + (item.qty || 0);
-      });
-      return acc;
-    }, {});
-
-    return products
-      .filter(product => product.stock > 0)
-      .sort((a, b) => {
-        const aDemand = demand[a.id] || 0;
-        const bDemand = demand[b.id] || 0;
-        if (aDemand !== bDemand) return bDemand - aDemand;
-        return a.name.localeCompare(b.name);
-      })
-      .slice(0, 5);
-  }, [products, transactions]);
-
-  const lastCompletedTransaction = useMemo(() => {
-    return [...transactions]
-      .filter(transaction => Array.isArray(transaction.items) && transaction.items.length > 0)
-      .sort((a, b) => {
-        const aDate = new Date(a.rentDate || a.expectedReturnDate || 0).getTime();
-        const bDate = new Date(b.rentDate || b.expectedReturnDate || 0).getTime();
-        return bDate - aDate;
-      })[0];
-  }, [transactions]);
-
-  const filteredCustomers = customers
-    .filter(c => c.name.toLowerCase().includes(customerNameInput.toLowerCase()) && customerNameInput.length > 0)
-    .slice(0, 6);
-  const recentCustomers = useMemo(() => {
-    return [...customers]
-      .filter(customer => customer?.name)
-      .sort((a, b) => new Date(b.lastRentDate || 0) - new Date(a.lastRentDate || 0))
-      .slice(0, 4);
-  }, [customers]);
-
-  const customerActivity = useMemo(() => {
-    const counts = (transactions || []).reduce((acc, trx) => {
-      const name = (trx.customerName || '').trim();
-      if (!name) return acc;
-      acc[name] = (acc[name] || 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.entries(counts)
-      .map(([name, count]) => ({
-        name,
-        count,
-        customer: customers.find(customer => customer.name === name)
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 4);
-  }, [customers, transactions]);
-
-  const favoriteCustomers = useMemo(() => {
-    return customerActivity
-      .map(item => ({
-        ...item.customer,
-        name: item.name,
-        count: item.count,
-        source: 'favorit'
-      }))
-      .filter(item => item.name);
-  }, [customerActivity]);
-
-  const applyCustomer = (customer) => {
-    setCustomerNameInput(customer.name || '');
-    setCustomerPhoneInput(customer.phone || '');
-    setCustomerAddressInput(customer.address || '');
-    setCustomerNoteInput(customer.note || '');
-    setCustomerIdentityType(customer.identityType || 'KTP');
-    setCustomerIdentityNumber(customer.identityNumber || '');
-    setDepositAmountInput(customer.depositAmount ? String(customer.depositAmount) : '');
-    setShowSuggestions(false);
-  };
-
-  const applyLastTransaction = () => {
-    if (!lastCompletedTransaction) {
-      alert('Belum ada transaksi sebelumnya untuk diulang.');
-      return;
-    }
-
-    const restoredItems = (lastCompletedTransaction.items || [])
-      .map(item => {
-        const currentProduct = products.find(product => product.id === item.product?.id);
-        return currentProduct ? { product: currentProduct, qty: item.qty || 1 } : null;
-      })
-      .filter(Boolean);
-
-    if (restoredItems.length === 0) {
-      alert('Produk dari transaksi terakhir tidak tersedia untuk diulang.');
-      return;
-    }
-
-    setCart(restoredItems);
-    setCustomerNameInput(lastCompletedTransaction.customerName || '');
-    setCustomerPhoneInput(lastCompletedTransaction.customerPhone || '');
-    setCustomerAddressInput(lastCompletedTransaction.customerAddress || '');
-    setCustomerNoteInput(lastCompletedTransaction.customerNote || '');
-    setCustomerIdentityType(lastCompletedTransaction.customerIdentityType || 'KTP');
-    setCustomerIdentityNumber(lastCompletedTransaction.customerIdentityNumber || '');
-    setDepositAmountInput(lastCompletedTransaction.depositAmount ? String(lastCompletedTransaction.depositAmount) : '');
-    setReturnDateInput(lastCompletedTransaction.expectedReturnDate || defaultDateStr);
-    setPaymentMethod(lastCompletedTransaction.paymentMethod || 'Tunai');
-    setCashReceived(lastCompletedTransaction.cashReceived ? String(lastCompletedTransaction.cashReceived) : '');
-    setDiscountType('nominal');
-    setDiscountValue('');
-    setShowMobileCheckout(true);
-  };
-
-  const resetCustomer = () => {
-    setCustomerNameInput('');
-    setCustomerPhoneInput('');
-    setCustomerAddressInput('');
-    setCustomerNoteInput('');
-    setCustomerIdentityType('KTP');
-    setCustomerIdentityNumber('');
-    setDepositAmountInput('');
-    setShowSuggestions(false);
-  };
-
-  const getStockIssue = () => {
-    return cart.reduce((issues, item) => {
-      const latestProduct = products.find(product => product.id === item.product.id);
-      if (!latestProduct) {
-        issues.push({ item, reason: 'Produk tidak ditemukan' });
-        return issues;
-      }
-      if (latestProduct.stock <= 0) {
-        issues.push({ item, reason: 'Produk sudah habis' });
-        return issues;
-      }
-      if (item.qty > latestProduct.stock) {
-        issues.push({ item, reason: `Stok tersisa ${latestProduct.stock} unit` });
-      }
-      return issues;
-    }, []);
-  };
-
-  const subTotal = cart.reduce((sum, item) => sum + (item.product.rentPrice * item.qty), 0);
-  const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
-  const rawDiscount = Number(discountValue) || 0;
-  const discountAmount = discountType === 'percent' ? subTotal * (rawDiscount / 100) : rawDiscount;
-  const depositAmount = Number(depositAmountInput) || 0;
-  const grandTotal = Math.max(0, subTotal - discountAmount);
-  const finalCashReceived = Number(cashReceived) || 0;
-  const changeAmount = paymentMethod === 'Tunai' ? Math.max(0, finalCashReceived - grandTotal) : 0;
-  const cashPresets = Array.from(new Set([
+  const {
+    cashPresets,
+    cashReceived,
+    changeAmount,
+    depositAmount,
+    discountAmount,
+    discountType,
+    discountValue,
+    finalCashReceived,
     grandTotal,
-    Math.max(grandTotal, 100000),
-    Math.max(Math.round(grandTotal * 1.1), 100000),
-    Math.max(Math.round(grandTotal * 1.25), 200000)
-  ])).sort((a, b) => a - b);
+    paymentMethod,
+    setCashReceived,
+    setDiscountType,
+    setDiscountValue,
+    setPaymentMethod,
+    subTotal,
+    totalItems
+  } = usePaymentCalculation({ cart, depositAmountInput });
+
+  const {
+    applyCustomer,
+    applyLastTransaction,
+    customerAddressInput,
+    customerIdentityNumber,
+    customerIdentityType,
+    customerNameInput,
+    customerNoteInput,
+    customerPhoneInput,
+    defaultDateStr,
+    favoriteCustomers,
+    filteredCustomers,
+    lastCompletedTransaction,
+    recentCustomers,
+    resetAfterCheckout,
+    resetCustomer,
+    returnDateInput,
+    setCustomerAddressInput,
+    setCustomerIdentityNumber,
+    setCustomerIdentityType,
+    setCustomerNameInput,
+    setCustomerNoteInput,
+    setCustomerPhoneInput,
+    setReturnDateInput,
+    setShowSuggestions,
+    showSuggestions
+  } = useCustomerSelection({
+    customers,
+    transactions,
+    products,
+    cart,
+    depositAmountInput,
+    setCart,
+    setPaymentMethod,
+    setDiscountType,
+    setDiscountValue,
+    setCashReceived,
+    setDepositAmountInput,
+    openCheckout: () => setShowMobileCheckout(true)
+  });
+
   const lowStockCount = products.filter(product => product.stock > 0 && product.stock <= 2).length;
   const currentDate = formatDateInput();
-  const customerMissingFields = [];
-  if (!customerPhoneInput.trim()) customerMissingFields.push('Nomor telepon');
-  if (!customerAddressInput.trim()) customerMissingFields.push('Alamat');
-  if (!customerIdentityNumber.trim()) customerMissingFields.push('Nomor identitas');
+  const customerMissingFields = getCustomerMissingFields({ customerPhoneInput, customerAddressInput, customerIdentityNumber });
   const customerProfileReady = customerMissingFields.length === 0;
   const flowSteps = [
     { label: 'Pilih barang', done: cart.length > 0 },
@@ -259,106 +129,30 @@ export default function RentPage({ products, customers, transactions = [], onChe
     { label: 'Pembayaran cukup', ok: paymentMethod !== 'Tunai' || grandTotal === 0 || finalCashReceived >= grandTotal }
   ];
 
-  const clearCart = () => {
-    setCart([]);
-    setShowMobileCheckout(false);
-  };
-
-  const removeCartItem = (productId) => {
-    const nextCart = cart.filter(item => item.product.id !== productId);
-    setCart(nextCart);
-    if (nextCart.length === 0) setShowMobileCheckout(false);
-  };
-
-  const updateCartQty = (product, delta) => {
-    const existing = cart.find(item => item.product.id === product.id);
-
-    if (product.stock <= 0 && delta > 0) {
-      alert(`Produk ${product.name} sedang habis.`);
-      return;
-    }
-
-    if (!existing && delta > 0) {
-      setCart([...cart, { product, qty: 1 }]);
-      return;
-    }
-
-    if (existing) {
-      const nextQty = existing.qty + delta;
-      if (nextQty <= 0) {
-        setCart(cart.filter(item => item.product.id !== product.id));
-        if (cart.length === 1 && nextQty <= 0) setShowMobileCheckout(false);
-        return;
-      }
-
-      if (nextQty > product.stock) {
-        alert(`Stok ${product.name} tersisa ${product.stock} unit.`);
-        return;
-      }
-
-      setCart(cart.map(item => item.product.id === product.id ? { ...item, qty: nextQty } : item));
-    }
-  };
-
-  const handleCheckoutClick = () => {
-    if (cart.length === 0) return alert('Pilih barang terlebih dahulu');
-    if (!customerNameInput.trim()) return alert('Masukkan nama pelanggan');
-    if (!returnDateInput) return alert('Masukkan tanggal pengembalian');
-
-    const stockIssues = getStockIssue();
-    if (stockIssues.length > 0) {
-      const firstIssue = stockIssues[0];
-      return alert(`${firstIssue.item.product.name}: ${firstIssue.reason}`);
-    }
-
-    const todayDate = new Date();
-    const rentDate = formatDateInput(todayDate);
-    const invoiceNumber = createInvoiceNumber(todayDate);
-    if (new Date(returnDateInput) < new Date(rentDate)) {
-      return alert('Tanggal pengembalian tidak boleh lebih awal dari tanggal sewa');
-    }
-
-    if (paymentMethod === 'Tunai' && finalCashReceived < grandTotal) {
-      return alert('Transaksi Ditolak: Uang tunai yang diterima kurang dari total tagihan!');
-    }
-
-    onCheckout({
-      id: invoiceNumber,
-      invoiceNumber,
-      customerName: customerNameInput,
-      customerPhone: customerPhoneInput,
-      customerAddress: customerAddressInput,
-      customerNote: customerNoteInput,
-      customerIdentityType,
-      customerIdentityNumber,
-      depositAmount,
-      items: cart,
-      rentDate,
-      expectedReturnDate: returnDateInput,
-      subTotal,
-      discountAmount,
-      totalAmount: grandTotal,
-      paymentMethod,
-      cashReceived: paymentMethod === 'Tunai' ? finalCashReceived : 0,
-      change: paymentMethod === 'Tunai' ? changeAmount : 0,
-      status: 'disewa',
-      lateFee: 0
-    }, cart);
-
-    setCart([]);
-    setCustomerNameInput('');
-    setCustomerPhoneInput('');
-    setCustomerAddressInput('');
-    setCustomerNoteInput('');
-    setCustomerIdentityType('KTP');
-    setCustomerIdentityNumber('');
-    setDepositAmountInput('');
-    setReturnDateInput(defaultDateStr);
-    setDiscountValue('');
-    setCashReceived('');
-    setPaymentMethod('Tunai');
-    setShowMobileCheckout(false);
-  };
+  const { handleCheckoutClick } = useRentalCheckout({
+    cart,
+    changeAmount,
+    clearCart,
+    customerAddressInput,
+    customerIdentityNumber,
+    customerIdentityType,
+    customerNameInput,
+    customerNoteInput,
+    customerPhoneInput,
+    depositAmount,
+    discountAmount,
+    finalCashReceived,
+    getStockIssue,
+    grandTotal,
+    onCheckout,
+    paymentMethod,
+    resetCustomerAfterCheckout: resetAfterCheckout,
+    returnDateInput,
+    setCashReceived,
+    setDiscountValue,
+    setPaymentMethod,
+    subTotal
+  });
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-4">
@@ -436,7 +230,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
             </div>
             <button
               type="button"
-              onClick={() => setSelectedCategory('Semua')}
+              onClick={() => selectCategory('Semua')}
               className="rounded-[16px] bg-amber-500 px-3 py-2 text-xs font-bold text-slate-900"
             >
               Tampilkan semua
@@ -502,8 +296,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                   placeholder="Cari produk, kategori, atau ukuran"
                   value={search}
                   onChange={event => {
-                    setSearch(event.target.value);
-                    setProductPage(1);
+                    updateSearch(event.target.value);
                   }}
                   className="w-full rounded-[18px] border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm font-medium text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50"
                 />
@@ -516,8 +309,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                   key={category}
                   type="button"
                   onClick={() => {
-                    setSelectedCategory(category);
-                    setProductPage(1);
+                    selectCategory(category);
                   }}
                   className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all ${selectedCategory === category ? 'bg-blue-700 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}
                 >
@@ -597,8 +389,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                 <button
                   type="button"
                   onClick={() => {
-                    setSearch('');
-                    setProductPage(1);
+                    updateSearch('');
                   }}
                   className="rounded-[16px] border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-100"
                 >
