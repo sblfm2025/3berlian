@@ -105,7 +105,7 @@ export default function ReturnPage({ transactions, onReturn }) {
 
       <div className="grid xl:grid-cols-[1.02fr_1.38fr] gap-4 items-start">
         <div className="pos-card p-4 md:p-5">
-          <div>
+          <div className="hidden md:block">
             <p className="text-sm font-semibold text-slate-500">Daftar transaksi aktif</p>
             <h3 className="mt-1 text-lg font-black text-slate-900">Cari nota atau pelanggan</h3>
           </div>

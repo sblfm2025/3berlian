@@ -292,7 +292,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
         <div className="flex-1 flex flex-col gap-4">
           <div className="pos-card sticky top-0 z-20 p-4 md:static md:p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
+              <div className="hidden md:block">
                 <p className="text-sm font-semibold text-slate-500">Katalog produk</p>
                 <h3 className="mt-1 text-lg font-black text-slate-900">Pilih kostum untuk transaksi</h3>
               </div>

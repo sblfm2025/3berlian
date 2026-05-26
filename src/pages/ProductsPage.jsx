@@ -192,7 +192,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="sticky top-0 z-20 mb-5 grid gap-4 rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm md:static md:mb-6 md:border-0 md:bg-transparent md:p-0 md:shadow-none xl:grid-cols-[1.2fr_1fr] xl:items-end">
-        <div>
+        <div className="hidden md:block">
           <p className="text-sm font-semibold text-slate-500">Inventaris</p>
           <h2 className="mt-2 text-2xl font-black text-slate-900">Manajemen produk penyewaan</h2>
           <p className="mt-2 hidden max-w-2xl text-sm text-slate-600 md:block">

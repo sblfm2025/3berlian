@@ -151,7 +151,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
       <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="pos-card sticky top-0 z-20 p-4 md:static md:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
+            <div className="hidden md:block">
               <p className="text-sm font-semibold text-slate-500">Daftar pelanggan</p>
               <h3 className="mt-1 text-lg font-black text-slate-900">Cari nama, telepon, atau alamat</h3>
             </div>

@@ -117,7 +117,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
   return (
     <div className="max-w-7xl mx-auto space-y-5">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-        <div>
+        <div className="hidden md:block">
           <p className="text-sm font-semibold text-slate-500">Laporan</p>
           <h2 className="mt-1 text-2xl font-black text-slate-900">Rekap operasional bulan ini</h2>
           <p className="mt-2 hidden max-w-2xl text-sm text-slate-600 md:block">
