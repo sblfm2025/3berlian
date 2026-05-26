@@ -1,1 +1,54 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --primary: #0d47a1;
+  --primary-2: #1976d2;
+  --accent: #ffc107;
+  --accent-orange: #ff6d00;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(13, 71, 161, 0.12), transparent 30%),
+    linear-gradient(180deg, #f8fafc 0%, #f5f7fa 55%, #eef2f7 100%);
+  color: var(--text);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+::selection {
+  background: rgba(25, 118, 210, 0.2);
+}
+
+@utility shadow-soft {
+  box-shadow: 0 24px 60px -26px rgba(15, 23, 42, 0.35);
+}
+
+@utility brand-gradient {
+  background: linear-gradient(150deg, #0d47a1 0%, #1565c0 62%, #f6c431 100%);
+}
+
+@utility pos-card {
+  @apply border border-slate-200 bg-white rounded-[20px] shadow-soft;
+}
+
+@utility metric-bar {
+  @apply h-2 rounded-full bg-slate-100 overflow-hidden;
+}
+
+.metric-bar > span {
+  @apply block h-full rounded-full bg-gradient-to-r from-blue-600 to-amber-400;
+}
