@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Cloud, X, Printer, Download, MessageCircle } from 'lucide-react';
 import { formatCurrency, formatDate, formatNumberDot } from '../../utils/format';
 import { loadScript } from '../../utils/browser';
+import { createReceiptQrDataUrl, getReceiptQrPayload } from '../../features/receipt/receiptQr';
 
 // ==========================================
 export default function ReceiptModal({ receiptData, onClose }) {
@@ -27,7 +28,9 @@ export default function ReceiptModal({ receiptData, onClose }) {
       ? receiptData.returnHistory[receiptData.returnHistory.length - 1]
       : null);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    const qrPayload = getReceiptQrPayload(receiptData);
+    const qrDataUrl = !isReturnReceipt ? await createReceiptQrDataUrl(qrPayload) : '';
     let printContent = `
       <div class="text-center mb-4 border-b border-black pb-4 border-dashed">
         <h2 class="font-bold text-[18px] mb-1">3 BERLIAN</h2>
@@ -115,12 +118,15 @@ export default function ReceiptModal({ receiptData, onClose }) {
       `;
 
       receiptData.items.forEach(item => {
+        const productName = item.productName || item.product?.name || 'Produk';
+        const rentPrice = Number(item.rentPrice ?? item.product?.rentPrice ?? 0);
+        const size = item.size || item.product?.size || '-';
         printContent += `
           <div class="mb-2">
-            <div class="font-semibold leading-snug break-words">${item.product.name}</div>
+            <div class="font-semibold leading-snug break-words">${productName}</div>
             <div class="flex justify-between mt-1 text-gray-700">
-              <span>${item.qty} x ${formatCurrency(item.product.rentPrice).replace('Rp', '')}</span>
-              <span class="font-bold">${formatCurrency(item.qty * item.product.rentPrice).replace('Rp', '')}</span>
+              <span>${item.qty} x ${formatCurrency(rentPrice).replace('Rp', '')} - ${size}</span>
+              <span class="font-bold">${formatCurrency(item.subtotal ?? (item.qty * rentPrice)).replace('Rp', '')}</span>
             </div>
           </div>
         `;
@@ -152,6 +158,13 @@ export default function ReceiptModal({ receiptData, onClose }) {
         <div class="text-center text-[11px]">
           <p class="text-gray-600">Batas Pengembalian:</p>
           <p class="font-bold text-[13px] border border-black inline-block px-2 py-1 mt-1 mb-3">${formatDate(receiptData.expectedReturnDate)}</p>
+          ${qrDataUrl ? `
+            <div class="mt-2 mb-3 text-center">
+              <img src="${qrDataUrl}" width="128" height="128" style="margin:0 auto;" />
+              <p class="text-[9px] text-gray-500 mt-1">Scan untuk proses pengembalian</p>
+              <p class="text-[9px] font-bold">${qrPayload}</p>
+            </div>
+          ` : ''}
           <p class="text-[9px] text-gray-500 italic mb-2">Catatan: Keterlambatan pengembalian<br/>akan dikenakan denda per hari.</p>
           <p class="font-bold text-[12px] mt-3">*** TERIMA KASIH ***</p>
         </div>
@@ -301,10 +314,13 @@ export default function ReceiptModal({ receiptData, onClose }) {
         doc.setFont("helvetica", "bold"); doc.text("Item Disewa:", left, y); y += 4; doc.setFont("helvetica", "normal");
 
         receiptData.items.forEach(item => {
-            const splitName = doc.splitTextToSize(item.product.name, right - left);
+            const productName = item.productName || item.product?.name || 'Produk';
+            const rentPrice = Number(item.rentPrice ?? item.product?.rentPrice ?? 0);
+            const itemTotal = Number(item.subtotal ?? (Number(item.qty || 0) * rentPrice));
+            const splitName = doc.splitTextToSize(productName, right - left);
             doc.text(splitName, left, y); y += (splitName.length * 3) + 1;
-            const qtyPrice = `${item.qty} x ${formatNumberDot(item.product.rentPrice)}`;
-            const total = formatNumberDot(item.qty * item.product.rentPrice);
+            const qtyPrice = `${item.qty} x ${formatNumberDot(rentPrice)}`;
+            const total = formatNumberDot(itemTotal);
             doc.text(qtyPrice, left + 2, y); doc.text(total, right, y, { align: "right" }); y += 4;
         });
 
@@ -398,7 +414,12 @@ export default function ReceiptModal({ receiptData, onClose }) {
       text += `ID Nota: ${receiptData.id}\nTanggal: ${formatDate(receiptData.rentDate)}\nPelanggan: ${receiptData.customerName || receiptData.customer?.name}\n`;
       if (receiptData.customerAddress) text += `Alamat: ${receiptData.customerAddress}\n`;
       text += `\n*Daftar Item:*\n`;
-      receiptData.items.forEach(item => { text += `- ${item.qty}x ${item.product.name}\n  (${formatCurrency(item.product.rentPrice)} / item)\n`; });
+      receiptData.items.forEach(item => {
+        const productName = item.productName || item.product?.name || 'Produk';
+        const rentPrice = Number(item.rentPrice ?? item.product?.rentPrice ?? 0);
+        const size = item.size || item.product?.size || '-';
+        text += `- ${item.qty}x ${productName} (${size})\n  (${formatCurrency(rentPrice)} / item)\n`;
+      });
 
       if (receiptData.discountAmount > 0) text += `\n*Diskon: -${formatCurrency(receiptData.discountAmount)}*`;
 
@@ -513,15 +534,22 @@ export default function ReceiptModal({ receiptData, onClose }) {
                 </div>
                 <div className="border-b border-black border-dashed mb-3 pb-3 text-[11px]">
                   <p className="font-bold mb-2">Item Disewa:</p>
-                  {receiptData.items.map((item, idx) => (
-                    <div key={idx} className="mb-2">
-                      <div className="break-words font-semibold leading-snug">{item.product.name}</div>
-                      <div className="flex justify-between mt-1 text-gray-700">
-                        <span>{item.qty} x {formatCurrency(item.product.rentPrice).replace('Rp', '')}</span>
-                        <span className="font-bold">{formatCurrency(item.qty * item.product.rentPrice).replace('Rp', '')}</span>
+                  {receiptData.items.map((item, idx) => {
+                    const productName = item.productName || item.product?.name || 'Produk';
+                    const rentPrice = Number(item.rentPrice ?? item.product?.rentPrice ?? 0);
+                    const size = item.size || item.product?.size || '-';
+                    const itemTotal = Number(item.subtotal ?? (Number(item.qty || 0) * rentPrice));
+
+                    return (
+                      <div key={idx} className="mb-2">
+                        <div className="break-words font-semibold leading-snug">{productName}</div>
+                        <div className="flex justify-between mt-1 text-gray-700">
+                          <span>{item.qty} x {formatCurrency(rentPrice).replace('Rp', '')} - {size}</span>
+                          <span className="font-bold">{formatCurrency(itemTotal).replace('Rp', '')}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="border-b border-black border-dashed mb-3 pb-3 text-[11px] space-y-1">
                   <div className="flex justify-between text-gray-600"><span>Subtotal:</span><span>{formatCurrency(receiptData.subTotal || receiptData.totalAmount)}</span></div>
@@ -542,6 +570,10 @@ export default function ReceiptModal({ receiptData, onClose }) {
                 <div className="text-center text-[11px]">
                   <p className="text-gray-600">Batas Pengembalian:</p>
                   <p className="font-bold text-[13px] border border-black inline-block px-2 py-1 mt-1 mb-3">{formatDate(receiptData.expectedReturnDate)}</p>
+                  <div className="mb-3 rounded border border-dashed border-gray-300 p-2">
+                    <p className="text-[9px] text-gray-500">QR pengembalian tersedia saat cetak.</p>
+                    <p className="break-all text-[9px] font-bold">{getReceiptQrPayload(receiptData)}</p>
+                  </div>
                   <p className="text-[9px] text-gray-500 italic mb-2">Catatan: Keterlambatan pengembalian<br/>akan dikenakan denda per hari.</p>
                   <p className="font-bold text-[12px] mt-3">*** TERIMA KASIH ***</p>
                 </div>

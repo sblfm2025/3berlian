@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Package, Search, QrCode } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useReturnWorkflow } from '../features/returns/hooks/useReturnWorkflow';
+import { isReturnableStatus, parseReceiptScan } from '../features/returns/utils/receiptScan';
 import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 // Import Subkomponen Modular
@@ -79,20 +80,40 @@ export default function ReturnPage({ transactions, onReturn }) {
     e.preventDefault();
     if (!qrScanInput.trim()) return;
 
-    const scannedCode = qrScanInput.trim().toUpperCase();
+    const scannedRaw = qrScanInput.trim();
+    const scannedCode = scannedRaw.toUpperCase();
     setQrScanInput('');
+    const parsedScan = parseReceiptScan(scannedRaw);
 
-    // Skenario A: Deteksi jika yang dipindai adalah nomor nota (invoiceNumber) secara langsung
     const foundTrxDirect = transactions.find(t =>
-      t.status !== 'void' && t.status !== 'CANCELLED' &&
-      (t.id === scannedCode || t.invoiceNumber === scannedCode)
+      (parsedScan.type === 'transactionId'
+        ? String(t.id || '').toUpperCase() === parsedScan.value.toUpperCase()
+        : String(t.invoiceNumber || t.id || '').toUpperCase() === parsedScan.value.toUpperCase())
     );
 
     if (foundTrxDirect) {
+      if (['returned', 'COMPLETED', 'completed'].includes(foundTrxDirect.status)) {
+        onReturnNotify({
+          title: 'Transaksi sudah selesai',
+          message: `Nota ${foundTrxDirect.invoiceNumber || foundTrxDirect.id} sudah dikembalikan.`,
+          type: 'warning'
+        });
+        return;
+      }
+
+      if (['void', 'CANCELLED'].includes(foundTrxDirect.status)) {
+        onReturnNotify({
+          title: 'Transaksi dibatalkan',
+          message: `Nota ${foundTrxDirect.invoiceNumber || foundTrxDirect.id} tidak dapat diproses.`,
+          type: 'warning'
+        });
+        return;
+      }
+
       handleSelect(foundTrxDirect);
       onReturnNotify({
         title: 'Nota Ditemukan',
-        message: `Nota ${foundTrxDirect.id} milik ${foundTrxDirect.customerName || 'Pelanggan'} berhasil dibuka.`,
+        message: `Nota ${foundTrxDirect.invoiceNumber || foundTrxDirect.id} milik ${foundTrxDirect.customerName || 'Pelanggan'} berhasil dibuka.`,
         type: 'success'
       });
       return;
@@ -106,7 +127,7 @@ export default function ReturnPage({ transactions, onReturn }) {
 
       // Cari nota aktif yang menyewa kostum ini
       const activeRentals = transactions.filter(t =>
-        t.status !== 'void' && t.status !== 'CANCELLED' && t.status !== 'completed' && t.status !== 'returned'
+        isReturnableStatus(t.status)
       );
 
       const foundTrx = activeRentals.find(t => {
@@ -136,7 +157,7 @@ export default function ReturnPage({ transactions, onReturn }) {
     } else {
       onReturnNotify({
         title: 'Input Tidak Valid',
-        message: 'Masukkan nomor nota aktif atau scan QR unit kostum (e.g. BUGIS-L-001).',
+        message: 'Masukkan nomor nota aktif, QR nota 3BTRX, atau scan QR unit kostum.',
         type: 'warning'
       });
     }

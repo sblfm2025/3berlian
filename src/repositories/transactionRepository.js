@@ -26,6 +26,29 @@ const getProductId = (item) => item.productId || item.product?.id;
 
 const getProductName = (item) => item.productName || item.product?.name || getProductId(item) || 'Produk';
 
+const normalizeRentalItems = (items = []) => (
+  items.map(item => {
+    const qty = getItemQty(item);
+    const rentPrice = Number(item.rentPrice ?? item.product?.rentPrice ?? 0);
+    const deposit = Number(item.deposit ?? item.product?.deposit ?? 0);
+    const discount = Number(item.discount || 0);
+
+    return {
+      ...item,
+      productId: getProductId(item),
+      productName: getProductName(item),
+      size: item.size || item.product?.size || 'All Size',
+      color: item.color || item.product?.color || '',
+      qty,
+      rentPrice,
+      deposit,
+      discount,
+      subtotal: Number(item.subtotal ?? Math.max(0, (qty * rentPrice) - discount)),
+      note: item.note || ''
+    };
+  })
+);
+
 const getCustomerId = (transactionData) => {
   if (!transactionData.customerName) return '';
   return `CUST-${String(transactionData.customerPhone || transactionData.customerName)
@@ -107,12 +130,13 @@ const normalizeTransactionForRental = (payload) => {
     depositStatus: DEPOSIT_STATUS.HELD,
     discount: Number(payload.discount ?? payload.discountAmount ?? 0),
     expectedReturnDate: returnDate,
+    items: normalizeRentalItems(payload.items || []),
     paymentStatus: payload.paymentStatus || 'paid',
     penalty: Number(payload.penalty ?? payload.lateFee ?? 0),
     rentDate: rentedAt,
     rentedAt,
     returnDate,
-    status: RENTAL_STATUS.ACTIVE_RENTAL,
+    status: payload.status || 'rented',
     subTotal: Number(payload.subTotal ?? payload.subtotal ?? 0),
     subtotal: Number(payload.subtotal ?? payload.subTotal ?? 0),
     total,
@@ -164,11 +188,13 @@ export const createRentalTransaction = async (payload, cart = payload.items || [
     const invoiceSequence = lastInvoiceSequence + 1;
     const invoiceNumber = `INV-${invoiceDateKey}-${String(invoiceSequence).padStart(4, '0')}`;
     const transactionRef = dataDoc('transactions', invoiceNumber);
+    const qrPayload = `3BTRX:${transactionRef.id}`;
     const transactionData = {
       ...baseTransactionData,
       id: invoiceNumber,
       invoiceNumber,
       invoiceSequence,
+      qrPayload,
       operationToken
     };
 
