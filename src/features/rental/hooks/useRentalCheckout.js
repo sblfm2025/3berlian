@@ -71,6 +71,7 @@ export const useRentalCheckout = ({
     setIsCheckingOut(true);
     try {
       const bookingId = localStorage.getItem('checkout_active_booking_id') || null;
+      const operationToken = `checkout_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
       await onCheckout({
         customerName: customerNameInput,
         customerPhone: customerPhoneInput,
@@ -90,7 +91,8 @@ export const useRentalCheckout = ({
         change: paymentMethod === 'Tunai' ? changeAmount : 0,
         status: 'disewa',
         lateFee: 0,
-        bookingId
+        bookingId,
+        operationToken
       }, cart);
 
       if (bookingId) {

@@ -126,6 +126,7 @@ const normalizeTransactionForRental = (payload) => {
 export const createRentalTransaction = async (payload, cart = payload.items || []) => {
   const baseTransactionData = normalizeTransactionForRental({ ...payload, items: cart });
   const bookingId = payload.bookingId || null;
+  const operationToken = payload.operationToken || `checkout-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const productRefs = cart.map(item => ({
     item,
     ref: dataDoc('products', getProductId(item))
@@ -139,6 +140,23 @@ export const createRentalTransaction = async (payload, cart = payload.items || [
     const invoiceDateKey = formatDateYYYYMMDD(checkoutDate);
     const invoiceCounterRef = dataDoc('counters', `invoice-${invoiceDateKey}`);
     const bookingRef = bookingId ? dataDoc('bookings', bookingId) : null;
+    const operationRef = dataDoc('operationTokens', operationToken);
+    const operationSnapshot = await dbTransaction.get(operationRef);
+    if (operationSnapshot.exists()) {
+      const existingTransactionId = operationSnapshot.data()?.transactionId;
+      if (!existingTransactionId) {
+        throw new Error('Operasi checkout ini sudah pernah diproses.');
+      }
+
+      const existingTransactionSnapshot = await dbTransaction.get(dataDoc('transactions', existingTransactionId));
+      if (!existingTransactionSnapshot.exists()) {
+        throw new Error(`Transaksi ${existingTransactionId} dari operasi sebelumnya tidak ditemukan.`);
+      }
+
+      savedTransaction = existingTransactionSnapshot.data();
+      return;
+    }
+
     const invoiceCounterSnapshot = await dbTransaction.get(invoiceCounterRef);
     const bookingSnapshot = bookingRef ? await dbTransaction.get(bookingRef) : null;
     const productSnapshots = await Promise.all(productRefs.map(({ ref }) => dbTransaction.get(ref)));
@@ -150,7 +168,8 @@ export const createRentalTransaction = async (payload, cart = payload.items || [
       ...baseTransactionData,
       id: invoiceNumber,
       invoiceNumber,
-      invoiceSequence
+      invoiceSequence,
+      operationToken
     };
 
     if (bookingRef) {
@@ -183,6 +202,12 @@ export const createRentalTransaction = async (payload, cart = payload.items || [
       updatedAt: serverTimestamp()
     }, { merge: true });
     dbTransaction.set(transactionRef, transactionData);
+    dbTransaction.set(operationRef, {
+      createdAt: serverTimestamp(),
+      id: operationToken,
+      operationType: 'checkout',
+      transactionId: invoiceNumber
+    });
 
     // --- PENCATATAN JURNAL KEUANGAN ATOMIK (PHASE 9) ---
     const rentRevenue = Number(transactionData.totalAmount || 0) - Number(transactionData.deposit || 0);

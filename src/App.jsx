@@ -23,7 +23,7 @@ import { saveProduct, deleteProduct, completeLaundry, completeMaintenance, retir
 import { updateCustomerProfile } from './repositories/customerRepository';
 import { createRentalTransaction, completeReturnTransaction, voidTransaction, editTransaction } from './repositories/transactionRepository';
 import { updateAppUser } from './repositories/userRepository';
-import { createBooking, cancelBooking, convertBookingStatus } from './repositories/bookingRepository';
+import { BOOKING_STATUS, createBooking, cancelBooking, convertBookingStatus, expireStaleBookings } from './repositories/bookingRepository';
 import { saveCashClosing } from './repositories/financeRepository';
 
 // Import validators
@@ -152,6 +152,14 @@ export default function App() {
     const timeout = window.setTimeout(() => setToast(null), 4200);
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    if (!user || isDemoMode || !appDataStatus.bookings || bookings.length === 0) return;
+
+    expireStaleBookings(bookings, user?.id || user?.username || 'system').catch((err) => {
+      console.error('Gagal memproses booking expired:', err);
+    });
+  }, [appDataStatus.bookings, bookings, isDemoMode, user]);
 
   // Menyimpan perubahan data
   const handleCheckoutDB = async (newTransaction, cart) => {
@@ -486,8 +494,25 @@ export default function App() {
       });
     }
 
+    const upcomingBookings = bookings.filter(booking => {
+      if (![BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING].includes(booking.status)) return false;
+      if (!booking.startDate) return false;
+      const daysUntilStart = Math.ceil((new Date(booking.startDate) - new Date(today)) / (1000 * 60 * 60 * 24));
+      return daysUntilStart >= 0 && daysUntilStart <= 2;
+    });
+
+    if (upcomingBookings.length > 0) {
+      notices.push({
+        id: 'upcoming-booking',
+        title: `${upcomingBookings.length} booking segera diproses`,
+        message: 'Cek kalender booking agar DP, stok, dan jadwal pengambilan siap.',
+        tone: 'info',
+        target: 'booking'
+      });
+    }
+
     return notices;
-  }, [appLoadingMessage, currentView, dataLoadError, isAppDataLoaded, isAppInstalled, notificationPermission, products, transactions, user?.role, getDevicePlatform]);
+  }, [appLoadingMessage, bookings, currentView, dataLoadError, isAppDataLoaded, isAppInstalled, notificationPermission, products, transactions, user?.role, getDevicePlatform]);
 
   if (!user) {
     return (

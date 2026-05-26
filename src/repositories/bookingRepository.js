@@ -70,6 +70,16 @@ export const checkProductAvailability = (product, transactionsList, bookingsList
   return simulatedAvailable;
 };
 
+const getDefaultBookingExpiry = (bookingData) => {
+  if (bookingData.expiresAt) return bookingData.expiresAt;
+  if (bookingData.status !== BOOKING_STATUS.PENDING || !bookingData.startDate) return '';
+
+  const startDate = new Date(bookingData.startDate);
+  startDate.setDate(startDate.getDate() - 1);
+  startDate.setHours(23, 59, 59, 999);
+  return startDate.toISOString();
+};
+
 /**
  * Membuat data booking baru di Firestore.
  */
@@ -85,7 +95,8 @@ export const createBooking = async (bookingData) => {
     bookingNumber,
     status: bookingData.status || BOOKING_STATUS.CONFIRMED,
     createdAt: new Date().toISOString(),
-    createdBy: bookingData.createdBy || 'system'
+    createdBy: bookingData.createdBy || 'system',
+    expiresAt: getDefaultBookingExpiry(bookingData)
   };
 
   await runTransaction(getDb(), async (dbTransaction) => {
@@ -100,6 +111,51 @@ export const createBooking = async (bookingData) => {
   });
 
   return finalData;
+};
+
+/**
+ * Mengubah booking pending yang melewati expiresAt menjadi EXPIRED.
+ */
+export const expireStaleBookings = async (bookingsList = [], operatorId = 'system') => {
+  const now = new Date();
+  const staleBookings = bookingsList.filter(booking => (
+    booking.status === BOOKING_STATUS.PENDING
+    && booking.expiresAt
+    && new Date(booking.expiresAt) < now
+  ));
+
+  if (staleBookings.length === 0) return [];
+
+  await runTransaction(getDb(), async (dbTransaction) => {
+    staleBookings.forEach((booking) => {
+      const bookingRef = dataDoc('bookings', booking.id);
+      const expiredAt = now.toISOString();
+      const after = {
+        ...booking,
+        expiredAt,
+        expiredBy: operatorId,
+        status: BOOKING_STATUS.EXPIRED,
+        updatedAt: expiredAt
+      };
+
+      dbTransaction.update(bookingRef, {
+        expiredAt,
+        expiredBy: operatorId,
+        status: BOOKING_STATUS.EXPIRED,
+        updatedAt: expiredAt
+      });
+      dbTransaction.set(auditDoc('EXPIRE_BOOKING', booking.id), auditPayload({
+        action: 'EXPIRE_BOOKING',
+        before: booking,
+        after,
+        entityId: booking.id,
+        entityType: 'booking',
+        operatorId
+      }));
+    });
+  });
+
+  return staleBookings;
 };
 
 /**
