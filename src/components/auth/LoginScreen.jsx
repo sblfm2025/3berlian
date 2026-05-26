@@ -62,8 +62,8 @@ export default function LoginScreen({
     <div className="flex min-h-[100dvh] items-center justify-center bg-[linear-gradient(135deg,_#e9f6fb_0%,_#d8edf4_45%,_#f8fafc_100%)] p-3 font-sans sm:p-4 md:p-8">
       <div className="grid w-full max-w-[390px] items-center gap-6 lg:max-w-5xl lg:grid-cols-[0.95fr_1.05fr]">
         <section className="overflow-hidden rounded-[30px] bg-white shadow-[0_30px_90px_-42px_rgba(13,71,161,0.65)]">
-          <div className="relative overflow-hidden bg-[#1688d8] px-5 pb-12 pt-6 text-white sm:px-6 sm:pt-7">
-            <div className="flex items-center justify-between gap-3">
+          <div className="relative bg-[#1688d8] px-5 pb-5 pt-6 text-white sm:px-6 sm:pt-7">
+            <div className="relative z-20 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-white shadow-lg sm:h-14 sm:w-14 sm:rounded-[20px]">
                   <img src="/app-logo-192.png" alt="Logo 3 Berlian" className="h-9 w-9 object-contain sm:h-10 sm:w-10" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
@@ -78,17 +78,17 @@ export default function LoginScreen({
               </div>
             </div>
 
-            <div className="relative mx-auto mt-4 h-[clamp(128px,34vw,190px)] max-w-sm">
+            <div className="relative z-20 mx-auto mt-3 flex h-[142px] max-w-[300px] items-end justify-center sm:h-[164px] sm:max-w-[330px]">
               <img
                 src="/kartun3berlian.png"
                 alt="Ilustrasi 3 Berlian POS"
-                className="absolute left-1/2 top-1/2 h-[120%] w-auto max-w-none -translate-x-1/2 -translate-y-[46%] object-contain drop-shadow-[0_24px_34px_rgba(8,47,111,0.28)]"
+                className="h-full w-full object-contain drop-shadow-[0_22px_32px_rgba(8,47,111,0.3)]"
                 decoding="async"
                 loading="eager"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
             </div>
-            <div className="absolute inset-x-0 bottom-[-1px] h-12 rounded-t-[50%] bg-white" />
+            <div className="absolute inset-x-0 bottom-[-1px] z-10 h-14 rounded-t-[50%] bg-white sm:h-16" />
           </div>
 
           <div className="px-5 pb-6 pt-2 sm:px-6 sm:pb-7">
@@ -197,29 +197,28 @@ export default function LoginScreen({
         </section>
 
         <section className="hidden lg:block">
-          <div className="mx-auto max-w-sm overflow-hidden rounded-[32px] bg-slate-50 shadow-[0_34px_100px_-48px_rgba(15,23,42,0.85)] ring-1 ring-white">
-            <div className="bg-[#1688d8] px-6 pb-20 pt-7 text-white">
-              <div className="flex items-center justify-between">
+          <div className="mx-auto max-w-md overflow-hidden rounded-[34px] bg-white shadow-[0_34px_100px_-48px_rgba(15,23,42,0.85)] ring-1 ring-white">
+            <div className="relative bg-[#1688d8] px-7 pb-8 pt-7 text-white">
+              <div className="relative z-20 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-blue-50">Status Hari Ini</p>
-                  <p className="mt-2 text-2xl font-black">POS Kostum Aktif</p>
+                  <p className="text-sm font-semibold text-blue-50">3 Berlian POS</p>
+                  <p className="mt-2 text-2xl font-black">Rental kostum tertata</p>
                 </div>
-                <img src="/app-logo-192.png" alt="Logo" className="h-12 w-12 rounded-2xl bg-white p-2" />
+                <img src="/app-logo-192.png" alt="Logo" className="h-12 w-12 rounded-2xl bg-white p-2 shadow-lg" />
               </div>
-              <div className="mt-7 rounded-[20px] bg-blue-900/18 p-4 shadow-inner">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-blue-50/80">Transaksi</p>
-                    <p className="mt-1 text-lg font-black">Cepat</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-50/80">Inventaris</p>
-                    <p className="mt-1 text-lg font-black">Realtime</p>
-                  </div>
-                </div>
+              <div className="relative z-20 mx-auto mt-5 flex h-52 max-w-sm items-end justify-center">
+                <img
+                  src="/kartun3berlian.png"
+                  alt="Ilustrasi 3 Berlian POS"
+                  className="h-full w-full object-contain drop-shadow-[0_26px_38px_rgba(8,47,111,0.34)]"
+                  decoding="async"
+                  loading="eager"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
               </div>
+              <div className="absolute inset-x-0 bottom-[-1px] z-10 h-16 rounded-t-[50%] bg-white" />
             </div>
-            <div className="-mt-12 mx-5 rounded-[26px] bg-white p-5 shadow-[0_20px_55px_-32px_rgba(15,23,42,0.55)]">
+            <div className="mx-6 -mt-1 rounded-[26px] border border-slate-100 bg-white p-5 shadow-[0_20px_55px_-36px_rgba(15,23,42,0.55)]">
               <p className="font-black text-blue-800">Menu Kilat</p>
               <div className="mt-4 grid grid-cols-4 gap-4">
                 {quickMenus.map((item) => {
@@ -235,14 +234,20 @@ export default function LoginScreen({
                 })}
               </div>
             </div>
-            <div className="p-5">
-              <p className="text-sm font-black text-blue-800">Prioritas Kerja</p>
-              <div className="mt-3 space-y-3">
-                {['Cek pengembalian hari ini', 'Pantau stok menipis', 'Cetak nota pelanggan'].map((item) => (
-                  <div key={item} className="rounded-[20px] bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">
-                    {item}
-                  </div>
-                ))}
+            <div className="grid gap-3 p-6 pt-5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-[22px] bg-blue-50 px-4 py-3">
+                  <p className="text-xs font-bold text-blue-700">Transaksi</p>
+                  <p className="mt-1 text-lg font-black text-slate-900">Cepat</p>
+                </div>
+                <div className="rounded-[22px] bg-amber-50 px-4 py-3">
+                  <p className="text-xs font-bold text-amber-700">Inventaris</p>
+                  <p className="mt-1 text-lg font-black text-slate-900">Realtime</p>
+                </div>
+              </div>
+              <div className="rounded-[24px] bg-slate-50 px-4 py-4">
+                <p className="text-sm font-black text-blue-800">Prioritas kerja</p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">Cek pengembalian, pantau stok, dan cetak nota dari satu alur kasir.</p>
               </div>
             </div>
           </div>
