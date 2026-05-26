@@ -32,7 +32,7 @@ export default function ProductCatalog({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="hidden md:block">
             <p className="text-sm font-semibold text-slate-500">Katalog produk</p>
-            <h3 className="mt-1 text-lg font-black text-slate-900">Pilih kostum untuk transaksi</h3>
+            <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg">Pilih kostum untuk transaksi</h3>
           </div>
           <div className="relative hidden flex-1 max-w-xl md:block">
             <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -66,7 +66,7 @@ export default function ProductCatalog({
         <div className="mt-4 hidden rounded-[22px] border border-slate-200 bg-slate-50 p-4 md:block">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Produk cepat</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Produk cepat</p>
               <p className="mt-1 text-sm font-bold text-slate-700">Tambahkan barang favorit dari riwayat transaksi.</p>
             </div>
             <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">{favoriteProducts.length} favorit</span>
@@ -81,7 +81,7 @@ export default function ProductCatalog({
                   onClick={() => updateCartQty(product, 1)}
                   className="rounded-[18px] border border-slate-200 bg-white px-3 py-2 text-left shadow-sm"
                 >
-                  <p className="text-sm font-black text-slate-900">{product.name}</p>
+                  <p className="text-sm font-bold text-slate-900">{product.name}</p>
                   <p className="mt-1 text-[11px] text-slate-500">{formatCurrency(product.rentPrice)} - {selectedQty > 0 ? `${selectedQty} di keranjang` : 'Tambah cepat'}</p>
                 </button>
               );
@@ -92,7 +92,7 @@ export default function ProductCatalog({
             <div className="mt-3 rounded-[20px] border border-blue-100 bg-gradient-to-r from-blue-50 to-amber-50 p-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-700">Transaksi terakhir</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-700 sm:text-[11px] sm:tracking-[0.18em]">Transaksi terakhir</p>
                   <p className="mt-1 text-sm font-bold text-slate-900">{lastCompletedTransaction.customerName || 'Pelanggan belum tercatat'}</p>
                   <p className="mt-1 text-[11px] text-slate-600">
                     {formatDate(lastCompletedTransaction.rentDate || lastCompletedTransaction.expectedReturnDate || new Date().toISOString())} - {lastCompletedTransaction.paymentMethod || 'Tunai'}
@@ -146,8 +146,8 @@ export default function ProductCatalog({
         <div className="mt-4 hidden gap-2 sm:grid-cols-2 md:grid xl:grid-cols-3">
           {categoryCounts.map(item => (
             <div key={item.category} className="rounded-[18px] border border-slate-100 bg-slate-50 px-4 py-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">{item.category}</p>
-              <p className="mt-1 text-sm font-black text-slate-900">{item.count} produk siap</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">{item.category}</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{item.count} produk siap</p>
             </div>
           ))}
         </div>
@@ -165,7 +165,7 @@ export default function ProductCatalog({
             <ChevronLeft size={18} strokeWidth={3} />
           </button>
           <div className="min-w-0 text-center">
-            <p className="text-sm font-black text-slate-900">Halaman {safeProductPage} dari {productPageCount}</p>
+            <p className="text-sm font-bold text-slate-900">Halaman {safeProductPage} dari {productPageCount}</p>
             <p className="mt-1 text-xs text-slate-500">{productStartNumber}-{productEndNumber} produk ditampilkan</p>
           </div>
           <button
@@ -214,7 +214,7 @@ export default function ProductCatalog({
           >
             Sebelumnya
           </button>
-          <span className="text-sm font-black text-slate-900">{safeProductPage}/{productPageCount}</span>
+          <span className="text-sm font-bold text-slate-900">{safeProductPage}/{productPageCount}</span>
           <button
             type="button"
             onClick={() => setProductPage(page => Math.min(productPageCount, page + 1))}

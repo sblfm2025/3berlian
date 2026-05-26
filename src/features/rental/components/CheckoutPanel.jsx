@@ -73,17 +73,17 @@ export default function CheckoutPanel({
       onClick={() => showMobileCheckout && setShowMobileCheckout(false)}
     >
       <div
-        className={`bg-white h-full flex flex-col md:rounded-[28px] md:border md:border-slate-200 md:shadow-soft overflow-hidden ${showMobileCheckout ? 'absolute inset-x-0 bottom-0 max-h-[92vh] rounded-t-[28px]' : ''}`}
+        className={`bg-white h-full flex flex-col md:rounded-[18px] md:border md:border-slate-200 md:shadow-sm overflow-hidden ${showMobileCheckout ? 'absolute inset-x-0 bottom-0 max-h-[92vh] rounded-t-[22px]' : ''}`}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 bg-emerald-900 px-4 py-3 text-white md:rounded-t-[28px] md:px-5 md:py-4">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-emerald-900 px-4 py-3 text-white md:rounded-t-[18px] md:px-5">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-emerald-100 sm:text-[11px] sm:tracking-[0.25em]">POS 3 BERLIAN</p>
-            <h3 className="mt-1 text-base font-bold sm:text-lg sm:font-black">
+            <p className="text-[10px] uppercase tracking-[0.12em] text-emerald-100 sm:text-[11px] sm:tracking-[0.18em]">POS 3 BERLIAN</p>
+            <h3 className="mt-1 text-base font-bold sm:text-lg">
               <span className="md:hidden">{stepTitles[activeStep]}</span>
               <span className="hidden md:inline">Ringkasan tagihan</span>
             </h3>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-100 sm:text-[11px] sm:tracking-[0.2em] hidden md:block">
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-100 sm:text-[11px] sm:tracking-[0.18em] hidden md:block">
               {paymentSummaryLabel}
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold sm:mt-3 sm:gap-2 sm:text-[11px]">
@@ -106,7 +106,7 @@ export default function CheckoutPanel({
           <div className={`rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px] ${activeStep === 4 ? 'block' : 'hidden'} md:block`}>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Checklist sewa</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Checklist sewa</p>
                 <p className="mt-2 text-sm font-bold text-slate-900">{checkoutChecklist.every(item => item.ok) ? 'Semua langkah siap' : 'Lengkapi langkah yang masih tertinggal'}</p>
               </div>
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">{checkoutChecklist.filter(item => item.ok).length}/{checkoutChecklist.length}</span>
@@ -191,7 +191,7 @@ export default function CheckoutPanel({
         </div>
 
         {/* Footer Pembayaran & Aksi - Tampil di step 4 pada mobile */}
-        <div className={`border-t border-slate-100 bg-white px-4 py-4 md:px-5 md:py-5 ${activeStep === 4 ? 'block' : 'hidden'} md:block`}>
+        <div className={`border-t border-slate-100 bg-white px-4 py-3 md:px-5 md:py-4 ${activeStep === 4 ? 'block' : 'hidden'} md:block`}>
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-slate-600">
               <span>Subtotal</span>
@@ -210,8 +210,8 @@ export default function CheckoutPanel({
               </div>
             )}
             <div className="flex justify-between pt-3 border-t border-slate-100">
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Total tagihan</span>
-              <span className="text-3xl font-black text-emerald-900">{formatCurrency(grandTotal)}</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.18em]">Total tagihan</span>
+              <span className="text-xl font-bold text-emerald-900 sm:text-2xl">{formatCurrency(grandTotal)}</span>
             </div>
           </div>
 
@@ -219,7 +219,7 @@ export default function CheckoutPanel({
             type="button"
             onClick={handleCheckoutClick}
             disabled={isCheckingOut || cart.length === 0 || getStockIssue().length > 0 || (paymentMethod === 'Tunai' && finalCashReceived < grandTotal)}
-            className="mt-4 w-full rounded-[20px] bg-emerald-900 hover:bg-emerald-950 px-4 py-4 text-lg font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
+            className="mt-3 w-full rounded-xl bg-emerald-900 hover:bg-emerald-950 px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:rounded-2xl"
           >
             {isCheckingOut ? 'Memproses pembayaran...' : getStockIssue().length > 0 ? 'Periksa ulang stok' : 'Bayar & Cetak Nota'}
           </button>

@@ -394,20 +394,20 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
 
         <div className="mt-4 relative grid gap-2 grid-cols-2 sm:grid-cols-4">
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-300 font-bold">Total Pelanggan</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl text-white">{totalCustomerCount}</p>
+            <p className="text-[10px] uppercase tracking-[0.12em] text-gold-300 font-bold sm:tracking-[0.18em]">Total Pelanggan</p>
+            <p className="mt-1 text-base font-bold sm:text-xl text-white">{totalCustomerCount}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-300 font-bold">Loyal (Low Risk)</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl text-white">{loyalCustomers}</p>
+            <p className="text-[10px] uppercase tracking-[0.12em] text-gold-300 font-bold sm:tracking-[0.18em]">Loyal (Low Risk)</p>
+            <p className="mt-1 text-base font-bold sm:text-xl text-white">{loyalCustomers}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-300 font-bold">Perlu Perhatian</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl text-white">{attentionCustomers}</p>
+            <p className="text-[10px] uppercase tracking-[0.12em] text-gold-300 font-bold sm:tracking-[0.18em]">Perlu Perhatian</p>
+            <p className="mt-1 text-base font-bold sm:text-xl text-white">{attentionCustomers}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-300 font-bold">Diblokir (Blocked)</p>
-            <p className="mt-1 text-lg font-black sm:text-2xl text-white">{blockedCustomers}</p>
+            <p className="text-[10px] uppercase tracking-[0.12em] text-gold-300 font-bold sm:tracking-[0.18em]">Diblokir (Blocked)</p>
+            <p className="mt-1 text-base font-bold sm:text-xl text-white">{blockedCustomers}</p>
           </div>
         </div>
       </div>
@@ -469,7 +469,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                 >
                   <ChevronLeft size={14} strokeWidth={3} />
                 </button>
-                <span className="px-2 font-black text-slate-800">{safeCustomerPage} / {customerPageCount}</span>
+                <span className="px-2 font-bold text-slate-800">{safeCustomerPage} / {customerPageCount}</span>
                 <button
                   type="button"
                   onClick={() => setCustomerPage(page => Math.min(customerPageCount, page + 1))}
@@ -511,7 +511,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
 
                       <div className="text-right shrink-0">
                         <span className="rounded-full bg-emerald-50 border border-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-800">{customer.visitCount}x Sewa</span>
-                        <p className="mt-1 text-xs font-black text-slate-800">{formatCurrency(customer.totalSpend)}</p>
+                        <p className="mt-1 text-xs font-bold text-slate-800">{formatCurrency(customer.totalSpend)}</p>
                       </div>
                     </div>
 
@@ -583,7 +583,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                       <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{customer.visitCount} kunjungan</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-black text-emerald-800 block">{formatCurrency(customer.totalSpend)}</span>
+                      <span className="text-xs font-bold text-emerald-800 block">{formatCurrency(customer.totalSpend)}</span>
                     </div>
                   </div>
                 ))}

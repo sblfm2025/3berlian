@@ -405,9 +405,9 @@ export default function BookingPage({
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="w-full max-w-lg overflow-hidden rounded-t-[22px] bg-white shadow-xl sm:rounded-[24px]">
-            <div className="flex items-center justify-between bg-blue-900 px-5 py-4 text-white">
+            <div className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white sm:px-5 sm:py-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-blue-100">Booking</p>
+                <p className="text-[10px] uppercase tracking-[0.12em] text-blue-100 sm:text-xs sm:tracking-[0.18em]">Booking</p>
                 <h3 className="mt-1 text-base font-bold sm:text-lg">Buat Booking Kostum Baru</h3>
               </div>
               <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-full bg-blue-800 p-2 hover:bg-blue-700">
@@ -417,7 +417,7 @@ export default function BookingPage({
 
             <form onSubmit={handleSaveBooking} className="max-h-[80vh] overflow-y-auto bg-slate-50 px-3 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
               <div className="rounded-[24px] bg-white p-4 border border-slate-100 space-y-3">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Informasi Pelanggan</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Informasi Pelanggan</label>
                 <input
                   required
                   placeholder="Nama Lengkap Pelanggan"
@@ -442,7 +442,7 @@ export default function BookingPage({
               </div>
 
               <div className="rounded-[24px] bg-white p-4 border border-slate-100 space-y-3">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Pilih Kostum & Qty</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Pilih Kostum & Qty</label>
                 <select
                   value={formData.productId}
                   onChange={(e) => setFormData(prev => ({ ...prev, productId: e.target.value }))}
@@ -476,7 +476,7 @@ export default function BookingPage({
 
               <div className="grid gap-4 sm:grid-cols-2 rounded-[24px] bg-white p-4 border border-slate-100">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Mulai Booking</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Mulai Booking</label>
                   <input
                     type="date"
                     required
@@ -486,7 +486,7 @@ export default function BookingPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Selesai Booking</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Selesai Booking</label>
                   <input
                     type="date"
                     required
@@ -525,7 +525,7 @@ export default function BookingPage({
               )}
 
               <div className="rounded-[24px] bg-white p-4 border border-slate-100 space-y-3">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Uang Muka / DP Booking</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Uang Muka / DP Booking</label>
                 <input
                   type="text"
                   placeholder="Contoh: 100.000"
@@ -534,7 +534,7 @@ export default function BookingPage({
                   className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-blue-300"
                 />
 
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 pt-2">Catatan Khusus</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 pt-2 sm:text-[11px] sm:tracking-[0.18em]">Catatan Khusus</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
@@ -569,13 +569,13 @@ export default function BookingPage({
       {cancelDialog.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="w-full max-w-md overflow-hidden rounded-t-[22px] bg-white shadow-xl sm:rounded-[24px]">
-            <div className="bg-red-900 px-5 py-4 text-white">
+            <div className="bg-red-900 px-4 py-3 text-white sm:px-5 sm:py-4">
               <h3 className="text-base font-bold">Batalkan Booking Pemesanan?</h3>
               <p className="mt-1 text-xs text-red-200">Aksi ini tidak dapat dibatalkan kembali.</p>
             </div>
             <div className="p-3 space-y-3 sm:p-5 sm:space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Alasan Pembatalan (Wajib)</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Alasan Pembatalan (Wajib)</label>
                 <textarea
                   required
                   value={cancelDialog.reason}

@@ -443,7 +443,7 @@ export default function ProductsPage({
           <button
             type="button"
             onClick={() => openModal()}
-            className="rounded-xl bg-amber-500 px-3 py-2.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-95 sm:rounded-[18px] sm:px-5 sm:py-3 sm:font-black"
+            className="rounded-xl bg-amber-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform active:scale-95 sm:rounded-[18px] sm:px-5 sm:py-3"
           >
             <span className="flex items-center justify-center gap-2">
               <Plus size={18} strokeWidth={3} />
@@ -455,20 +455,20 @@ export default function ProductsPage({
 
       <div className="mb-5 hidden gap-3 sm:grid-cols-2 md:grid xl:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[24px] sm:p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">Total produk</p>
-          <p className="mt-2 text-xl font-bold text-slate-900 sm:mt-3 sm:text-2xl sm:font-black">{normalizedProducts.length}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.18em]">Total produk</p>
+          <p className="mt-2 text-base font-bold text-slate-900 sm:mt-3 sm:text-xl">{normalizedProducts.length}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[24px] sm:p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">Tersedia</p>
-          <p className="mt-2 text-xl font-bold text-emerald-600 sm:mt-3 sm:text-2xl sm:font-black">{stats.available}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.18em]">Tersedia</p>
+          <p className="mt-2 text-base font-bold text-emerald-600 sm:mt-3 sm:text-xl">{stats.available}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[24px] sm:p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">Stok rendah</p>
-          <p className="mt-2 text-xl font-bold text-amber-600 sm:mt-3 sm:text-2xl sm:font-black">{stats.lowStock}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.18em]">Stok rendah</p>
+          <p className="mt-2 text-base font-bold text-amber-600 sm:mt-3 sm:text-xl">{stats.lowStock}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[24px] sm:p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">Nilai stok</p>
-          <p className="mt-2 text-xl font-bold text-blue-700 sm:mt-3 sm:text-2xl sm:font-black">{formatCurrency(stats.totalInventoryValue)}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.18em]">Nilai stok</p>
+          <p className="mt-2 text-base font-bold text-blue-700 sm:mt-3 sm:text-xl">{formatCurrency(stats.totalInventoryValue)}</p>
         </div>
       </div>
 
@@ -534,7 +534,7 @@ export default function ProductsPage({
             <ChevronLeft size={18} strokeWidth={3} />
           </button>
           <div className="min-w-0 text-center">
-            <p className="text-sm font-black text-slate-900">Halaman {safeProductPage} dari {productPageCount}</p>
+            <p className="text-sm font-bold text-slate-900">Halaman {safeProductPage} dari {productPageCount}</p>
             <p className="mt-1 text-xs text-slate-500">{productStartNumber}-{productEndNumber} produk ditampilkan</p>
           </div>
           <button
@@ -550,20 +550,20 @@ export default function ProductsPage({
       )}
 
       {/* TAMPILAN TABEL DESKTOP */}
-      <div className="hidden lg:block bg-white rounded-[28px] border border-slate-200 overflow-hidden shadow-sm">
+      <div className="hidden lg:block bg-white rounded-[18px] border border-slate-200 overflow-hidden shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px]">Foto</th>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px]">Produk</th>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px]">Kode</th>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px]">Kategori</th>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px]">Ukuran</th>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px]">Warna</th>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px]">Sewa / Denda</th>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px]">Status</th>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px] w-64">Detail Rincian Stok</th>
-              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.2em] text-[11px] text-center">Aksi</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px]">Foto</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px]">Produk</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px]">Kode</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px]">Kategori</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px]">Ukuran</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px]">Warna</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px]">Sewa / Denda</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px]">Status</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px] w-64">Detail Rincian Stok</th>
+              <th className="p-4 font-bold text-slate-500 uppercase tracking-[0.14em] text-[10px] text-center">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -594,7 +594,7 @@ export default function ProductsPage({
                   )}
                 </td>
                 <td className="p-4">
-                  <p className="break-words font-black leading-snug text-slate-900">{product.name}</p>
+                  <p className="break-words font-bold leading-snug text-slate-900">{product.name}</p>
                   <p className="mt-1 max-w-sm break-words text-xs leading-relaxed text-slate-500">{product.description || 'Deskripsi belum diisi'}</p>
                 </td>
                 <td className="p-4 break-words font-semibold text-slate-700">{product.sku || '-'}</td>
@@ -604,14 +604,14 @@ export default function ProductsPage({
                 <td className="p-4 break-words font-semibold text-slate-700">{product.size}</td>
                 <td className="p-4 break-words font-semibold text-slate-700">{product.color || '-'}</td>
                 <td className="p-4">
-                  <p className="font-black text-amber-600">{formatCurrency(product.rentPrice)}</p>
+                  <p className="font-bold text-amber-600">{formatCurrency(product.rentPrice)}</p>
                   <p className="text-xs text-red-500 font-semibold">{formatCurrency(product.dailyLateFee)}/hari</p>
                 </td>
                 <td className="p-4">
                   <select
                     value={product.status || 'tersedia'}
                     onChange={(e) => handleQuickSave(product, { status: e.target.value })}
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-black border-0 bg-transparent focus:ring-2 focus:ring-blue-100 transition-colors cursor-pointer ${product.isActive === false || product.status === 'inactive' ? 'bg-slate-100 text-slate-600' : product.status === 'maintenance' ? 'bg-violet-100 text-violet-700' : product.status === 'laundry' ? 'bg-cyan-100 text-cyan-700' : product.availableStock <= 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold border-0 bg-transparent focus:ring-2 focus:ring-blue-100 transition-colors cursor-pointer ${product.isActive === false || product.status === 'inactive' ? 'bg-slate-100 text-slate-600' : product.status === 'maintenance' ? 'bg-violet-100 text-violet-700' : product.status === 'laundry' ? 'bg-cyan-100 text-cyan-700' : product.availableStock <= 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}
                   >
                     <option value="tersedia" className="bg-white text-emerald-700 font-bold">Tersedia</option>
                     <option value="laundry" className="bg-white text-cyan-700 font-bold">Laundry</option>
@@ -638,7 +638,7 @@ export default function ProductsPage({
                           <button
                             type="button"
                             onClick={() => handleOpenQuickAction(product, 'laundry')}
-                            className="bg-cyan-700 text-white rounded-[4px] px-1 py-0.5 hover:bg-cyan-800 text-[9px] font-black"
+                            className="bg-cyan-700 text-white rounded-[4px] px-1 py-0.5 hover:bg-cyan-800 text-[9px] font-semibold"
                             title="Selesaikan Laundry"
                           >
                             Selesai
@@ -655,7 +655,7 @@ export default function ProductsPage({
                           <button
                             type="button"
                             onClick={() => handleOpenQuickAction(product, 'maintenance')}
-                            className="bg-violet-700 text-white rounded-[4px] px-1 py-0.5 hover:bg-violet-800 text-[9px] font-black"
+                            className="bg-violet-700 text-white rounded-[4px] px-1 py-0.5 hover:bg-violet-800 text-[9px] font-semibold"
                             title="Selesaikan Perbaikan"
                           >
                             Selesai
@@ -678,7 +678,7 @@ export default function ProductsPage({
                       </div>
                     )}
 
-                    <div className="pt-1 mt-1 border-t border-slate-200 flex justify-between text-[11px] font-black text-slate-900">
+                    <div className="pt-1 mt-1 border-t border-slate-200 flex justify-between text-[11px] font-bold text-slate-900">
                       <span>Total Fisik:</span>
                       <span>{product.totalStock || 0} unit</span>
                     </div>
@@ -694,7 +694,7 @@ export default function ProductsPage({
                     >
                       <Minus size={13} strokeWidth={3} />
                     </button>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Tersedia</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tersedia</span>
                     <button
                       type="button"
                       onClick={() => handleQuickSave(product, { stock: Number(product.availableStock || 0) + 1 })}
@@ -706,7 +706,7 @@ export default function ProductsPage({
                     <button
                       type="button"
                       onClick={() => handleOpenQuickAction(product, 'retire')}
-                      className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-white hover:bg-slate-950 shadow-sm text-[10px] font-black"
+                      className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-white hover:bg-slate-950 shadow-sm text-[10px] font-semibold"
                       title="Pensiunkan Kostum"
                     >
                       P
@@ -836,7 +836,7 @@ export default function ProductsPage({
           >
             Sebelumnya
           </button>
-          <span className="text-sm font-black text-slate-900">{safeProductPage}/{productPageCount}</span>
+          <span className="text-sm font-bold text-slate-900">{safeProductPage}/{productPageCount}</span>
           <button
             type="button"
             onClick={() => setProductPage(page => Math.min(productPageCount, page + 1))}
@@ -851,11 +851,11 @@ export default function ProductsPage({
       {/* FORM MODAL ADD/EDIT PRODUK */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl">
-            <div className="flex items-center justify-between bg-blue-900 px-5 py-4 text-white">
+          <div className="w-full max-w-lg overflow-hidden rounded-t-[22px] bg-white shadow-xl sm:rounded-[24px]">
+            <div className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white sm:px-5 sm:py-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-blue-100">Produk</p>
-                <h3 className="mt-1 text-lg font-black">{editingProduct ? 'Edit Produk' : 'Tambah Produk Baru'}</h3>
+                <p className="text-[10px] uppercase tracking-[0.12em] text-blue-100 sm:text-xs sm:tracking-[0.18em]">Produk</p>
+                <h3 className="mt-1 text-base font-bold sm:text-lg">{editingProduct ? 'Edit Produk' : 'Tambah Produk Baru'}</h3>
               </div>
               <button type="button" onClick={() => setIsModalOpen(false)} disabled={isUploading} className="rounded-full bg-blue-800 p-2 hover:bg-blue-700">
                 <X size={18} />
@@ -864,7 +864,7 @@ export default function ProductsPage({
 
             <form onSubmit={handleSave} className="max-h-[80vh] overflow-y-auto bg-slate-50 px-5 py-5 space-y-4">
               <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Nama Produk</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Nama Produk</label>
                 <input
                   required
                   value={formData.name}
@@ -875,7 +875,7 @@ export default function ProductsPage({
               </div>
 
               <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-3">Foto Produk (Opsional)</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-3 sm:text-[11px] sm:tracking-[0.18em]">Foto Produk (Opsional)</label>
                 {formData.photo && (
                   <div className="flex justify-center mb-3">
                     <img src={formData.photo} alt="Preview" className="h-28 w-28 rounded-[20px] object-cover border border-slate-100" />
@@ -897,7 +897,7 @@ export default function ProductsPage({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Kategori</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Kategori</label>
                   <input
                     required
                     value={formData.category}
@@ -908,7 +908,7 @@ export default function ProductsPage({
                 </div>
 
                 <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Kode Produk</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Kode Produk</label>
                   <input
                     value={formData.sku}
                     onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
@@ -921,7 +921,7 @@ export default function ProductsPage({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Ukuran</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Ukuran</label>
                   <input
                     required
                     value={formData.size}
@@ -944,7 +944,7 @@ export default function ProductsPage({
                 </div>
 
                 <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Warna</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Warna</label>
                   <input
                     value={formData.color}
                     onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
@@ -956,7 +956,7 @@ export default function ProductsPage({
               </div>
 
               <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Status Operasional</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Status Operasional</label>
                 <div className="flex flex-wrap gap-2">
                   {statusOptions.map(status => (
                     <button
@@ -972,7 +972,7 @@ export default function ProductsPage({
               </div>
 
               <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Deskripsi Singkat</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Deskripsi Singkat</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -985,7 +985,7 @@ export default function ProductsPage({
 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Sewa</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Sewa</label>
                   <input
                     type="text"
                     required
@@ -996,7 +996,7 @@ export default function ProductsPage({
                   />
                 </div>
                 <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Denda</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Denda</label>
                   <input
                     type="text"
                     required
@@ -1007,7 +1007,7 @@ export default function ProductsPage({
                   />
                 </div>
                 <div className="rounded-[24px] bg-white p-4 border border-slate-100">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Stok Tersedia</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Stok Tersedia</label>
                   <input
                     type="number"
                     required
@@ -1022,7 +1022,7 @@ export default function ProductsPage({
               {/* FIELD ALASAN PENYESUAIAN STOK WAJIB JIKA BERUBAH */}
               {editingProduct && Number(formData.stock) !== Number(editingProduct.availableStock) && (
                 <div className="rounded-[24px] bg-amber-50/50 p-4 border border-amber-200">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-amber-800 mb-2">Alasan Penyesuaian Stok (Wajib)</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Alasan Penyesuaian Stok (Wajib)</label>
                   <textarea
                     required
                     value={formData.adjustmentReason || ''}
@@ -1047,7 +1047,7 @@ export default function ProductsPage({
                 <button
                   type="submit"
                   disabled={isUploading || (editingProduct && Number(formData.stock) !== Number(editingProduct.availableStock) && !formData.adjustmentReason?.trim())}
-                  className="flex-1 rounded-[18px] bg-blue-800 py-3.5 text-sm font-black text-white disabled:opacity-50"
+                  className="flex-1 rounded-xl bg-blue-800 py-2.5 text-sm font-semibold text-white disabled:opacity-50 sm:rounded-[18px] sm:py-3"
                 >
                   {isUploading ? 'Proses...' : 'Simpan Produk'}
                 </button>
@@ -1060,18 +1060,18 @@ export default function ProductsPage({
       {/* DIALOG MODAL AKSI CEPAT OPERASIONAL GUDANG */}
       {quickAction.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-2xl">
+          <div className="w-full max-w-md overflow-hidden rounded-t-[22px] bg-white shadow-xl sm:rounded-[24px]">
             <div className="bg-slate-900 px-5 py-4 text-white">
-              <h3 className="text-base font-black">
+              <h3 className="text-base font-bold">
                 {quickAction.type === 'laundry' && 'Selesaikan Cuci Laundry'}
                 {quickAction.type === 'maintenance' && 'Selesaikan Perbaikan Kostum'}
                 {quickAction.type === 'retire' && 'Pensiunkan Kostum Adat'}
               </h3>
               <p className="mt-1 text-xs text-slate-400 font-bold">{quickAction.product?.name}</p>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-3 space-y-3 sm:p-5 sm:space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Jumlah Unit (Qty)</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Jumlah Unit (Qty)</label>
                 <input
                   type="number"
                   min="1"
@@ -1084,7 +1084,7 @@ export default function ProductsPage({
 
               {quickAction.type === 'retire' && (
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Pensiunkan dari Bucket</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Pensiunkan dari Bucket</label>
                   <select
                     value={quickAction.fromBucket}
                     onChange={(e) => setQuickAction(prev => ({ ...prev, fromBucket: e.target.value }))}
@@ -1108,7 +1108,7 @@ export default function ProductsPage({
                 <button
                   type="button"
                   onClick={handleConfirmQuickAction}
-                  className="flex-1 rounded-[16px] bg-blue-900 py-3 text-xs font-black text-white hover:bg-blue-800"
+                  className="flex-1 rounded-xl bg-blue-900 py-2.5 text-xs font-semibold text-white hover:bg-blue-800 sm:rounded-[16px] sm:py-3"
                 >
                   Konfirmasi
                 </button>

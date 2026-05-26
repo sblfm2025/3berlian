@@ -7,7 +7,7 @@ export default function ReturnTransactionCard({ tx, isLate, lateDays, selectedTr
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="break-words text-sm font-bold text-slate-900 sm:font-black">{tx.id}</p>
+          <p className="break-words text-sm font-bold text-slate-900">{tx.id}</p>
           <p className="mt-1 break-words text-xs text-slate-600 sm:text-sm">{tx.customerName || 'Pelanggan belum tercatat'}</p>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold sm:px-3 sm:text-[11px] ${isLate ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>

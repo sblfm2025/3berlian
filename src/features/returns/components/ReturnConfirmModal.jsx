@@ -27,11 +27,11 @@ export default function ReturnConfirmModal({
 
   return (
     <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
-      <div className="bg-white rounded-[28px] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 animate-duration-200">
-        <div className="p-5 bg-blue-900 text-white flex justify-between items-center border-b border-blue-800">
+      <div className="bg-white rounded-t-[22px] sm:rounded-[24px] w-full max-w-lg overflow-hidden shadow-xl animate-in zoom-in-95 animate-duration-200">
+        <div className="p-4 sm:p-5 bg-blue-900 text-white flex justify-between items-center border-b border-blue-800">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">Konfirmasi Final Pengembalian</p>
-            <h3 className="mt-2 text-lg font-black">{selectedTrx.id}</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-100 sm:text-[11px] sm:tracking-[0.18em]">Konfirmasi Final Pengembalian</p>
+            <h3 className="mt-1.5 text-base font-bold sm:text-lg">{selectedTrx.id}</h3>
           </div>
           <button
             type="button"
@@ -42,10 +42,10 @@ export default function ReturnConfirmModal({
             <X size={20} />
           </button>
         </div>
-        <div className="p-5 md:p-6 bg-slate-50 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="p-3 sm:p-5 md:p-6 bg-slate-50 space-y-3 sm:space-y-4 max-h-[60vh] overflow-y-auto">
           <div className="rounded-[20px] bg-white border border-slate-100 p-4 space-y-2 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Detail Pelanggan</p>
-            <p className="text-sm font-black text-slate-900">{selectedTrx.customerName}</p>
+            <p className="text-sm font-bold text-slate-900">{selectedTrx.customerName}</p>
             <p className="text-xs text-slate-500 font-semibold">Mode: <span className="font-bold text-blue-700">{returnModeLabel}</span></p>
           </div>
 
@@ -79,7 +79,7 @@ export default function ReturnConfirmModal({
               <span>Biaya Kondisi Kostum</span>
               <span>{formatCurrency(conditionFee)}</span>
             </div>
-            <div className="flex justify-between border-t border-slate-100 pt-2 font-black text-slate-800">
+            <div className="flex justify-between border-t border-slate-100 pt-2 font-bold text-slate-800">
               <span>Total Biaya Tambahan</span>
               <span>{formatCurrency(totalAdditionalFee)}</span>
             </div>
@@ -97,7 +97,7 @@ export default function ReturnConfirmModal({
                   <span>Deposit Dikembalikan</span>
                   <span>{formatCurrency(depositReturned)}</span>
                 </div>
-                <div className="flex justify-between border-t border-slate-100 pt-2 font-black text-slate-900 text-sm sm:text-base">
+                <div className="flex justify-between border-t border-slate-100 pt-2 font-bold text-slate-900 text-sm sm:text-base">
                   <span>Sisa Bayar Terpisah ({paymentMethod})</span>
                   <span>{formatCurrency(feePaidSeparately)}</span>
                 </div>
@@ -113,7 +113,7 @@ export default function ReturnConfirmModal({
           )}
         </div>
 
-        <div className="p-5 bg-slate-100 border-t border-slate-200 flex flex-wrap justify-end gap-3">
+        <div className="p-3 sm:p-5 bg-slate-100 border-t border-slate-200 flex flex-wrap justify-end gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => setShowConfirmModal(false)}

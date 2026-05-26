@@ -98,10 +98,10 @@ export default function DashboardPage({ transactions, products, user, onNavigate
   return (
     <div className="mx-auto max-w-7xl space-y-4">
       {/* BANNER UTAMA */}
-      <div className="brand-gradient rounded-[24px] p-4 text-white shadow-soft md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="rounded-[18px] border border-emerald-100 bg-emerald-950 p-3 text-white shadow-sm md:p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/80">POS & ANALITIK</p>
-          <h2 className="mt-2 text-lg sm:text-2xl font-black">Selamat bekerja, {user?.name || user?.username || 'Kasir'}!</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/80 sm:text-xs sm:tracking-[0.18em]">POS & Analitik</p>
+          <h2 className="mt-1.5 text-lg font-bold sm:text-xl">Selamat bekerja, {user?.name || user?.username || 'Kasir'}!</h2>
           <p className="mt-1 text-xs text-white/90">
             Semua modul sewa, booking kostum adat, dan operasional sanggar berjalan lancar.
           </p>
@@ -117,21 +117,21 @@ export default function DashboardPage({ transactions, products, user, onNavigate
           <button
             type="button"
             onClick={() => setActiveTab('kasir')}
-            className={`flex-1 py-2.5 text-xs font-black rounded-xl transition ${activeTab === 'kasir' ? 'bg-emerald-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'} min-h-[44px]`}
+            className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition ${activeTab === 'kasir' ? 'bg-emerald-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'} min-h-[44px]`}
           >
             Kasir POS
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('owner')}
-            className={`flex-1 py-2.5 text-xs font-black rounded-xl transition ${activeTab === 'owner' ? 'bg-emerald-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'} min-h-[44px]`}
+            className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition ${activeTab === 'owner' ? 'bg-emerald-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'} min-h-[44px]`}
           >
             Analitik Owner
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('gudang')}
-            className={`flex-1 py-2.5 text-xs font-black rounded-xl transition ${activeTab === 'gudang' ? 'bg-emerald-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'} min-h-[44px]`}
+            className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition ${activeTab === 'gudang' ? 'bg-emerald-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'} min-h-[44px]`}
           >
             Operasional Gudang
           </button>
@@ -151,8 +151,8 @@ export default function DashboardPage({ transactions, products, user, onNavigate
 
           <div className="grid gap-4 xl:grid-cols-[1fr_0.90fr]">
             {/* PINTASAN MODUL */}
-            <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm md:p-6 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Pusat Pintasan Cepat</h3>
+            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm md:p-4 space-y-3 sm:rounded-2xl">
+              <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-sm sm:tracking-[0.18em]">Pusat Pintasan Cepat</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <button
                   type="button"
@@ -163,7 +163,7 @@ export default function DashboardPage({ transactions, products, user, onNavigate
                     <ShoppingBag size={20} />
                   </span>
                   <div>
-                    <p className="text-sm font-black text-slate-900">Sewa Kostum Adat</p>
+                    <p className="text-sm font-bold text-slate-900">Sewa Kostum Adat</p>
                     <p className="text-xs text-slate-500 mt-0.5">Terminal Kasir POS Cepat</p>
                   </div>
                 </button>
@@ -176,7 +176,7 @@ export default function DashboardPage({ transactions, products, user, onNavigate
                     <ArrowLeftRight size={20} className="rotate-90" />
                   </span>
                   <div>
-                    <p className="text-sm font-black text-slate-900">Jadwal Booking</p>
+                    <p className="text-sm font-bold text-slate-900">Jadwal Booking</p>
                     <p className="text-xs text-slate-500 mt-0.5">Kalender & Deteksi Bentrok</p>
                   </div>
                 </button>
@@ -184,8 +184,8 @@ export default function DashboardPage({ transactions, products, user, onNavigate
             </div>
 
             {/* UPCOMING & OVERDUE */}
-            <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm md:p-6 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Jadwal Pengembalian Terdekat</h3>
+            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm md:p-4 space-y-3 sm:rounded-2xl">
+              <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-sm sm:tracking-[0.18em]">Jadwal Pengembalian Terdekat</h3>
               <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
                 {upcomingReturns.length === 0 ? (
                   <div className="text-center text-xs font-bold text-slate-400 py-6">
@@ -216,30 +216,30 @@ export default function DashboardPage({ transactions, products, user, onNavigate
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Omzet Toko Keseluruhan</p>
-              <p className="mt-2 text-xl font-black text-slate-900">{formatCurrency(totalRevenue)}</p>
+              <p className="mt-2 text-base font-bold text-slate-900 sm:text-xl">{formatCurrency(totalRevenue)}</p>
               <p className="mt-1 text-xs text-slate-500">Void nota dikecualikan</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Jumlah Transaksi Terdaftar</p>
-              <p className="mt-2 text-xl font-black text-slate-900">{transactions.length} Nota</p>
+              <p className="mt-2 text-base font-bold text-slate-900 sm:text-xl">{transactions.length} Nota</p>
               <p className="mt-1 text-xs text-slate-500">Termasuk draft & return</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Rata-rata Transaksi (AOV)</p>
-              <p className="mt-2 text-xl font-black text-emerald-800">{formatCurrency(averageTicket)}</p>
+              <p className="mt-2 text-base font-bold text-emerald-800 sm:text-xl">{formatCurrency(averageTicket)}</p>
               <p className="mt-1 text-xs text-slate-500">Per pemesanan selesai</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Jumlah Pelanggan Unik</p>
-              <p className="mt-2 text-xl font-black text-emerald-600">{customerCount} Orang</p>
+              <p className="mt-2 text-base font-bold text-emerald-600 sm:text-xl">{customerCount} Orang</p>
               <p className="mt-1 text-xs text-slate-500">Mempunyai no. telepon aktif</p>
             </div>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
             {/* METODE PEMBAYARAN & PRODUK TERLARIS */}
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Grafik Metode Pembayaran</h3>
+            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-3 sm:rounded-2xl sm:p-4">
+              <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-sm sm:tracking-[0.18em]">Grafik Metode Pembayaran</h3>
               <div className="space-y-3.5">
                 {Object.entries(paymentRevenueMix).map(([method, revenue]) => {
                   const pct = totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0;
@@ -258,8 +258,8 @@ export default function DashboardPage({ transactions, products, user, onNavigate
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Analitik Produk Terlaris</h3>
+            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-3 sm:rounded-2xl sm:p-4">
+              <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-sm sm:tracking-[0.18em]">Analitik Produk Terlaris</h3>
               <div className="space-y-3">
                 {topProducts.slice(0, 4).map(([name, qty]) => (
                   <div key={name} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs font-bold">
@@ -290,7 +290,7 @@ export default function DashboardPage({ transactions, products, user, onNavigate
               </span>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Antrean Laundry</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{warehouseStats.laundryQty} Unit</p>
+                <p className="mt-1 text-sm font-bold text-slate-900 sm:text-lg">{warehouseStats.laundryQty} Unit</p>
               </div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
@@ -299,7 +299,7 @@ export default function DashboardPage({ transactions, products, user, onNavigate
               </span>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Sedang Perbaikan</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{warehouseStats.maintenanceQty} Unit</p>
+                <p className="mt-1 text-sm font-bold text-slate-900 sm:text-lg">{warehouseStats.maintenanceQty} Unit</p>
               </div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
@@ -308,7 +308,7 @@ export default function DashboardPage({ transactions, products, user, onNavigate
               </span>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Kostum Hilang</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{warehouseStats.lostQty} Unit</p>
+                <p className="mt-1 text-sm font-bold text-slate-900 sm:text-lg">{warehouseStats.lostQty} Unit</p>
               </div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
@@ -317,17 +317,17 @@ export default function DashboardPage({ transactions, products, user, onNavigate
               </span>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pensiun / Afkir</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{warehouseStats.retiredQty} Unit</p>
+                <p className="mt-1 text-sm font-bold text-slate-900 sm:text-lg">{warehouseStats.retiredQty} Unit</p>
               </div>
             </div>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[1fr_0.90fr]">
             {/* KOSTUM STOK KRITIS */}
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-3 sm:rounded-2xl sm:p-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Peringatan Stok Kritis (&le; 2)</h3>
-                <span className="bg-red-50 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-full">{lowStockCount} Produk</span>
+                <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-sm sm:tracking-[0.18em]">Peringatan Stok Kritis (&le; 2)</h3>
+                <span className="bg-red-50 text-red-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">{lowStockCount} Produk</span>
               </div>
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {lowStockProducts.length === 0 ? (
@@ -343,7 +343,7 @@ export default function DashboardPage({ transactions, products, user, onNavigate
                     <button
                       type="button"
                       onClick={() => onNavigate('products')}
-                      className="rounded-lg bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 text-[10px] font-black"
+                      className="rounded-lg bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 text-[10px] font-semibold"
                     >
                       Restock
                     </button>
@@ -353,8 +353,8 @@ export default function DashboardPage({ transactions, products, user, onNavigate
             </div>
 
             {/* SUMMARY GUDANG */}
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Petunjuk Logistik</h3>
+            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-3 sm:rounded-2xl sm:p-4">
+              <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-sm sm:tracking-[0.18em]">Petunjuk Logistik</h3>
               <div className="rounded-2xl border border-emerald-50 bg-emerald-50/30 p-4 space-y-3">
                 <div className="flex gap-2">
                   <Sparkles size={16} className="text-emerald-800 mt-0.5 shrink-0" />
@@ -377,14 +377,14 @@ export default function DashboardPage({ transactions, products, user, onNavigate
       {/* DETAIL MODAL OVERLAY */}
       {modalConfig.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl">
-            <div className="flex items-center justify-between bg-emerald-900 px-5 py-4 text-white">
-              <h3 className="text-sm font-bold uppercase tracking-[0.2em]">{modalConfig.title}</h3>
+          <div className="w-full max-w-lg overflow-hidden rounded-t-[22px] bg-white shadow-xl sm:rounded-[24px]">
+            <div className="flex items-center justify-between bg-emerald-900 px-4 py-3 text-white sm:px-5 sm:py-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.12em] sm:tracking-[0.18em]">{modalConfig.title}</h3>
               <button type="button" onClick={handleCloseModal} className="rounded-full bg-emerald-800 p-2 hover:bg-emerald-700 min-h-[32px]">
                 <X size={18} />
               </button>
             </div>
-            <div className="max-h-[60vh] overflow-y-auto bg-slate-50 p-5 space-y-3">
+            <div className="max-h-[60vh] overflow-y-auto bg-slate-50 p-3 space-y-3 sm:p-5">
               {modalConfig.data.length === 0 ? (
                 <p className="text-center text-sm font-semibold text-slate-500 py-6">Tidak ada data untuk ditampilkan.</p>
               ) : modalConfig.data.map((item, idx) => (
@@ -395,9 +395,9 @@ export default function DashboardPage({ transactions, products, user, onNavigate
                   </div>
                   <div className="flex justify-between items-center text-xs gap-3">
                     <span className="font-bold text-slate-400">Nota: {item.id || item.invoiceNumber}</span>
-                    <span className="font-black text-amber-600">{formatCurrency((item.totalAmount || item.grandTotal || 0) + (item.lateFee || 0))}</span>
+                    <span className="font-bold text-amber-600">{formatCurrency((item.totalAmount || item.grandTotal || 0) + (item.lateFee || 0))}</span>
                   </div>
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-black ${isCompletedTransaction(item) ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${isCompletedTransaction(item) ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                     {getStatusLabel(item.status)}
                   </span>
                 </div>

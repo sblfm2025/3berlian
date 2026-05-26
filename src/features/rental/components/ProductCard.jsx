@@ -35,7 +35,7 @@ export default function ProductCard({ product, cartItem, isSelected, updateCartQ
           {stockLabel}
         </div>
         {isSelected && (
-          <div className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-700 text-[10px] font-bold text-white shadow-lg sm:right-3 sm:top-3 sm:h-8 sm:w-8 sm:text-sm sm:font-black">
+          <div className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-700 text-[10px] font-bold text-white shadow-sm sm:right-3 sm:top-3 sm:h-8 sm:w-8 sm:text-sm">
             {cartItem.qty}
           </div>
         )}
@@ -50,21 +50,21 @@ export default function ProductCard({ product, cartItem, isSelected, updateCartQ
             {product.size || 'All Size'}
           </span>
         </div>
-        <h4 className="mt-1.5 line-clamp-2 break-words text-sm font-semibold leading-snug text-slate-900 sm:mt-3 sm:font-black">{product.name}</h4>
-        <p className={`mt-1 text-[10px] font-bold uppercase tracking-[0.12em] sm:mt-2 sm:text-[11px] sm:tracking-[0.2em] ${stockStatus === 'habis' ? 'text-red-600' : stockStatus === 'menipis' ? 'text-amber-700' : 'text-emerald-700'}`}>
+        <h4 className="mt-1.5 line-clamp-2 break-words text-sm font-semibold leading-snug text-slate-900 sm:mt-3 sm:font-bold">{product.name}</h4>
+        <p className={`mt-1 text-[10px] font-bold uppercase tracking-[0.12em] sm:mt-2 sm:text-[11px] sm:tracking-[0.18em] ${stockStatus === 'habis' ? 'text-red-600' : stockStatus === 'menipis' ? 'text-amber-700' : 'text-emerald-700'}`}>
           {statusText}
         </p>
         <div className="mt-2 flex items-end justify-between gap-2 sm:mt-3 sm:flex-row sm:gap-3">
           <div className="min-w-0">
-            <p className="hidden text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:block">Harga sewa</p>
-            <p className="break-words text-sm font-bold text-amber-600 sm:mt-1 sm:text-lg sm:font-black">{formatCurrency(product.rentPrice)}</p>
+            <p className="hidden text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:block">Harga sewa</p>
+            <p className="break-words text-sm font-bold text-amber-600 sm:mt-1 sm:text-base">{formatCurrency(product.rentPrice)}</p>
           </div>
           {isSelected ? (
             <div className="flex shrink-0 items-center gap-1.5 rounded-[14px] border border-blue-100 bg-blue-50 px-1.5 py-1 sm:gap-2 sm:rounded-[18px] sm:px-2 sm:py-1.5">
               <button type="button" onClick={() => updateCartQty(product, -1)} className="rounded-lg bg-white p-1.5 text-blue-700 shadow-sm hover:bg-blue-100 sm:rounded-xl sm:p-2">
                 <Minus size={14} strokeWidth={3} />
               </button>
-              <span className="w-5 text-center text-sm font-bold text-blue-900 sm:w-6 sm:text-base sm:font-black">{cartItem.qty}</span>
+              <span className="w-5 text-center text-sm font-bold text-blue-900 sm:w-6 sm:text-base">{cartItem.qty}</span>
               <button type="button" onClick={() => updateCartQty(product, 1)} className="rounded-lg bg-blue-700 p-1.5 text-white shadow-sm hover:bg-blue-800 sm:rounded-xl sm:p-2">
                 <Plus size={14} strokeWidth={3} />
               </button>

@@ -153,7 +153,7 @@ export default function ReturnPage({ transactions, onReturn }) {
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-3">
       {/* Status pengembalian; judul utama sudah ada di AppShell */}
-      <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
+      <div className="rounded-[18px] border border-emerald-100 bg-emerald-950 hidden p-3 text-white shadow-sm md:block md:p-4">
         <div className="max-w-2xl">
           <p className="text-xs md:text-sm font-bold uppercase tracking-[0.18em] text-white/80">Status antrean</p>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-white/90 sm:text-base">
@@ -163,29 +163,29 @@ export default function ReturnPage({ transactions, onReturn }) {
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Barang disewa</p>
-            <p className="mt-2 text-lg font-black sm:text-2xl">{activeTransactions.length}</p>
+            <p className="text-[10px] uppercase tracking-[0.12em] text-white/80 sm:text-[11px] sm:tracking-[0.18em]">Barang disewa</p>
+            <p className="mt-2 text-base font-bold sm:text-xl">{activeTransactions.length}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Terlambat</p>
-            <p className="mt-2 text-lg font-black sm:text-2xl">{overdueCount}</p>
+            <p className="text-[10px] uppercase tracking-[0.12em] text-white/80 sm:text-[11px] sm:tracking-[0.18em]">Terlambat</p>
+            <p className="mt-2 text-base font-bold sm:text-xl">{overdueCount}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Jatuh hari ini</p>
-            <p className="mt-2 text-lg font-black sm:text-2xl">{dueTodayCount}</p>
+            <p className="text-[10px] uppercase tracking-[0.12em] text-white/80 sm:text-[11px] sm:tracking-[0.18em]">Jatuh hari ini</p>
+            <p className="mt-2 text-base font-bold sm:text-xl">{dueTodayCount}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Mendekati batas</p>
-            <p className="mt-2 text-lg font-black sm:text-2xl">{dueSoonCount}</p>
+            <p className="text-[10px] uppercase tracking-[0.12em] text-white/80 sm:text-[11px] sm:tracking-[0.18em]">Mendekati batas</p>
+            <p className="mt-2 text-base font-bold sm:text-xl">{dueSoonCount}</p>
           </div>
         </div>
       </div>
 
       {/* PANEL SCANNER BARCODE/QR SECARA OFFLINE */}
-      <div className="rounded-[24px] border border-slate-200 bg-white p-4.5 shadow-sm space-y-3">
+      <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-3 sm:rounded-2xl sm:p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-black text-emerald-950 flex items-center gap-1.5"><QrCode size={18} className="text-amber-500 animate-pulse" /> Pemindaian QR/Barcode Pengembalian</h3>
+            <h3 className="text-sm font-bold text-emerald-950 flex items-center gap-1.5"><QrCode size={18} className="text-amber-500 animate-pulse" /> Pemindaian QR/Barcode Pengembalian</h3>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">Scan kode barcode di invoice cetak ATAU scan QR baju adat langsung untuk pengembalian kilat.</p>
           </div>
           <form onSubmit={handleQrScanSubmit} className="flex gap-2 max-w-md w-full shrink-0">
@@ -198,7 +198,7 @@ export default function ReturnPage({ transactions, onReturn }) {
             />
             <button
               type="submit"
-              className="rounded-2xl bg-emerald-900 hover:bg-emerald-950 text-white px-5 py-2.5 text-xs font-black shadow-sm flex items-center gap-1 transition min-h-[44px]"
+              className="rounded-xl bg-emerald-900 hover:bg-emerald-950 text-white px-3 py-2.5 text-xs font-semibold shadow-sm flex items-center gap-1 transition min-h-[44px] sm:rounded-2xl sm:px-5"
             >
               Cari
             </button>
@@ -209,15 +209,15 @@ export default function ReturnPage({ transactions, onReturn }) {
       {/* Return Quick Metrics */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
         <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Saat ini</p>
-          <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-black">{selectedTrx ? selectedTrx.id : 'Pilih nota'}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Saat ini</p>
+          <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-bold">{selectedTrx ? selectedTrx.id : 'Pilih nota'}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Biaya tambahan</p>
-          <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-black">{formatCurrency(totalAdditionalFee)}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Biaya tambahan</p>
+          <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-bold">{formatCurrency(totalAdditionalFee)}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm col-span-2 sm:col-span-1 sm:px-4 sm:py-3 flex flex-col justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Aksi</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Aksi</p>
           <button
             type="button"
             onClick={() => {
@@ -237,7 +237,7 @@ export default function ReturnPage({ transactions, onReturn }) {
         <div className={`pos-card p-3 md:p-5 ${selectedTrx ? 'hidden md:block' : ''}`}>
           <div className="hidden md:block">
             <p className="text-sm font-semibold text-slate-500">Daftar transaksi aktif</p>
-            <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Cari nota atau pelanggan</h3>
+            <h3 className="mt-1 text-sm font-bold text-slate-900 sm:text-base">Cari nota atau pelanggan</h3>
           </div>
 
           <div className="mt-4 hidden md:block relative">
@@ -272,7 +272,7 @@ export default function ReturnPage({ transactions, onReturn }) {
           <div className={`mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 md:mt-4 md:p-4 ${searchTerm ? 'hidden md:block' : ''}`}>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-800 sm:text-[11px] sm:tracking-[0.2em]">Prioritas nota</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 sm:text-[11px] sm:tracking-[0.18em]">Prioritas nota</p>
                 <p className="mt-1 text-sm font-bold text-slate-900">Tindakan paling mendesak untuk hari ini</p>
               </div>
               <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-amber-800">{priorityTransactions.length} fokus</span>
@@ -312,7 +312,7 @@ export default function ReturnPage({ transactions, onReturn }) {
               >
                 <ChevronLeft size={18} strokeWidth={3} />
               </button>
-              <p className="text-sm font-black text-slate-900">{safeReturnPage}/{returnPageCount}</p>
+              <p className="text-sm font-bold text-slate-900">{safeReturnPage}/{returnPageCount}</p>
               <button
                 type="button"
                 onClick={() => setReturnPage(page => Math.min(returnPageCount, page + 1))}
@@ -327,7 +327,7 @@ export default function ReturnPage({ transactions, onReturn }) {
 
           <div className="mt-3 space-y-2.5 md:mt-4 md:space-y-3">
             {filteredTransactions.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-5 text-center text-sm text-slate-500 sm:rounded-[22px] sm:p-6">
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-3 text-center text-sm text-slate-500 sm:rounded-[22px] sm:p-5">
                 Tidak ada transaksi aktif sesuai filter.
               </div>
             ) : paginatedTransactions.map(tx => {
@@ -356,7 +356,7 @@ export default function ReturnPage({ transactions, onReturn }) {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-slate-500">Detail pengembalian</p>
-                  <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">{selectedTrx.id}</h3>
+                  <h3 className="mt-1 text-sm font-bold text-slate-900 sm:text-base">{selectedTrx.id}</h3>
                   <p className="mt-1 text-sm text-slate-600">{selectedTrx.customerName}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -370,16 +370,16 @@ export default function ReturnPage({ transactions, onReturn }) {
               {/* Rental Dates Summary */}
               <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
                 <div className="rounded-2xl bg-emerald-50 p-3 border border-emerald-100 sm:rounded-[22px] sm:p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-800 sm:text-[11px] sm:tracking-[0.2em]">Tanggal sewa</p>
-                  <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-black">{formatDate(selectedTrx.rentDate)}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-800 sm:text-[11px] sm:tracking-[0.18em]">Tanggal sewa</p>
+                  <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-bold">{formatDate(selectedTrx.rentDate)}</p>
                 </div>
                 <div className="rounded-2xl bg-amber-50 p-3 border border-amber-100 sm:rounded-[22px] sm:p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700 sm:text-[11px] sm:tracking-[0.2em]">Batas kembali</p>
-                  <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-black">{formatDate(selectedTrx.expectedReturnDate)}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-700 sm:text-[11px] sm:tracking-[0.18em]">Batas kembali</p>
+                  <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-bold">{formatDate(selectedTrx.expectedReturnDate)}</p>
                 </div>
                 <div className="rounded-2xl bg-emerald-50 p-3 border border-emerald-100 sm:rounded-[22px] sm:p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700 sm:text-[11px] sm:tracking-[0.2em]">Perlu perhatian</p>
-                  <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-black">{lateItemCount} item</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700 sm:text-[11px] sm:tracking-[0.18em]">Perlu perhatian</p>
+                  <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-bold">{lateItemCount} item</p>
                 </div>
               </div>
 
@@ -387,7 +387,7 @@ export default function ReturnPage({ transactions, onReturn }) {
               <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Keterangan pelanggan</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Keterangan pelanggan</p>
                     <p className="mt-2 text-sm font-bold text-slate-900">{selectedTrx.customerName}</p>
                     <p className="mt-1 text-sm text-slate-600">Telepon: {selectedTrx.customerPhone || '-'}</p>
                     <p className="mt-1 text-sm text-slate-600">Alamat: {selectedTrx.customerAddress || 'Alamat belum dicatat'}</p>
@@ -433,7 +433,7 @@ export default function ReturnPage({ transactions, onReturn }) {
 
               {/* Notes Input */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Catatan pengembalian</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Catatan pengembalian</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -453,15 +453,15 @@ export default function ReturnPage({ transactions, onReturn }) {
                 type="button"
                 onClick={() => setShowConfirmModal(true)}
                 disabled={isReturning || totalReturnQty <= 0}
-                className="w-full rounded-[20px] bg-emerald-900 hover:bg-emerald-950 px-4 py-4 text-base font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] flex items-center justify-center transition"
+                className="w-full rounded-xl bg-emerald-900 hover:bg-emerald-950 px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] flex items-center justify-center transition sm:rounded-2xl"
               >
                 {isReturning ? 'Memproses pengembalian...' : totalReturnQty <= 0 ? 'Pilih item kembali' : 'Konfirmasi Pengembalian'}
               </button>
             </div>
           ) : (
-            <div className="hidden min-h-[560px] flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-slate-50/50 text-center p-8 md:flex">
+            <div className="hidden min-h-[520px] flex-col items-center justify-center rounded-[18px] border border-dashed border-slate-200 bg-slate-50/50 text-center p-5 md:flex">
               <Package size={40} className="text-slate-300" />
-              <p className="mt-4 text-lg font-black text-slate-800">Pilih nota terlebih dahulu</p>
+              <p className="mt-4 text-base font-bold text-slate-800">Pilih nota terlebih dahulu</p>
               <p className="mt-2 text-sm text-slate-500">Transaksi aktif akan muncul di panel kiri untuk diproses.</p>
             </div>
           )}

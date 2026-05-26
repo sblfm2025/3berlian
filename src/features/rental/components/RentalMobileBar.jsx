@@ -103,8 +103,8 @@ export default function RentalMobileBar({
         </button>
       ) : (
         <div className="min-w-0 flex-1 pr-2">
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-700">Total Sewa</p>
-          <p className="text-base font-black text-slate-900 truncate mt-0.5">{formatCurrency(grandTotal)}</p>
+          <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700">Total Sewa</p>
+          <p className="text-base font-bold text-slate-900 truncate mt-0.5">{formatCurrency(grandTotal)}</p>
           <p className="text-[10px] text-slate-500 truncate mt-0.5">{totalItems} item kostum dipilih</p>
         </div>
       )}
@@ -114,7 +114,7 @@ export default function RentalMobileBar({
         type="button"
         onClick={handleNextStep}
         disabled={isNextDisabled()}
-        className={`flex-1 min-h-[44px] rounded-xl px-4 text-xs font-black uppercase tracking-[0.1em] text-white shadow-md flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`flex-1 min-h-[44px] rounded-xl px-4 text-xs font-semibold uppercase tracking-[0.08em] text-white shadow-md flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed ${
           activeStep === 4
             ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-100'
             : 'bg-emerald-900 hover:bg-emerald-950 shadow-emerald-100'

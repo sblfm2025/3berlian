@@ -12,7 +12,7 @@ export default function ReturnItemChecklist({
     <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Item yang dikembalikan</h4>
+          <h4 className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Item yang dikembalikan</h4>
           <p className="mt-1 text-xs text-slate-600 sm:text-sm">Setiap item bisa diberi status kondisi berbeda. Gunakan aksi cepat untuk mempercepat proses.</p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700">Checklist</span>
@@ -56,7 +56,7 @@ export default function ReturnItemChecklist({
                   >
                     <Minus size={14} strokeWidth={3} />
                   </button>
-                  <span className="min-w-16 text-center text-xs font-black text-slate-900">
+                  <span className="min-w-16 text-center text-xs font-bold text-slate-900">
                     {returnQtyByProduct[item.product.id] ?? item.returnQty}/{item.qty}
                   </span>
                   <button
@@ -68,10 +68,10 @@ export default function ReturnItemChecklist({
                     <Plus size={14} strokeWidth={3} />
                   </button>
                 </div>
-                <p className="mt-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Biaya kondisi sekarang: {formatCurrency(item.fee)}</p>
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-xs sm:tracking-[0.18em]">Biaya kondisi sekarang: {formatCurrency(item.fee)}</p>
               </div>
               <div className="lg:w-56">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Kondisi</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2 sm:text-[11px] sm:tracking-[0.18em]">Kondisi</label>
                 <select
                   value={item.condition}
                   onChange={(e) => setItemConditions(prev => ({ ...prev, [item.product.id]: e.target.value }))}

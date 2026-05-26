@@ -32,7 +32,7 @@ export default function CustomerQuickForm({
     <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Pelanggan</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Pelanggan</p>
           <p className="mt-2 text-sm font-bold text-slate-900">{customerNameInput || 'Pelanggan belum diisi'}</p>
         </div>
         <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">{totalItems} item</span>
@@ -63,7 +63,7 @@ export default function CustomerQuickForm({
           )}
         </div>
         {showSuggestions && customerNameInput && filteredCustomers.length > 0 && (
-          <ul className="absolute z-20 mt-2 w-full rounded-[18px] border border-slate-200 bg-white shadow-2xl overflow-y-auto max-h-64">
+          <ul className="absolute z-20 mt-2 w-full rounded-[18px] border border-slate-200 bg-white shadow-md overflow-y-auto max-h-64">
             {filteredCustomers.map(customer => (
               <li
                 key={customer.id}
@@ -80,7 +80,7 @@ export default function CustomerQuickForm({
 
       {customerMissingFields.length > 0 && (
         <div className="mt-3 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-800">Peringatan data pelanggan</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 sm:text-[11px] sm:tracking-[0.18em]">Peringatan data pelanggan</p>
           <p className="mt-2 text-sm font-semibold text-amber-900">
             Lengkapi: {customerMissingFields.join(', ')} sebelum pembayaran.
           </p>
@@ -91,7 +91,7 @@ export default function CustomerQuickForm({
         <div className="mt-3 rounded-[20px] border border-slate-100 bg-slate-50 p-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Pelanggan cepat</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Pelanggan cepat</p>
               <p className="mt-1 text-xs text-slate-500">Pilih pelanggan favorit atau terakhir untuk mengisi data dengan cepat.</p>
             </div>
           </div>
@@ -188,13 +188,13 @@ export default function CustomerQuickForm({
         className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 resize-none sm:rounded-[18px] sm:px-4 sm:py-3"
       />
       <div className="mt-3 rounded-[18px] border border-amber-200 bg-amber-50 p-4">
-        <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-amber-800">Deposit / Jaminan (opsional)</label>
+        <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 sm:text-[11px] sm:tracking-[0.18em]">Deposit / Jaminan (opsional)</label>
         <input
           type="text"
           value={formatNumberDot(depositAmountInput)}
           onChange={event => setDepositAmountInput(event.target.value.replace(/[^0-9]/g, ''))}
           placeholder="Rp 0"
-          className="mt-3 w-full rounded-[16px] border border-white bg-white px-4 py-3 text-sm font-black text-amber-900 focus:outline-none"
+          className="mt-3 w-full rounded-[16px] border border-white bg-white px-4 py-3 text-sm font-bold text-amber-900 focus:outline-none"
         />
         <p className="mt-2 text-[11px] text-amber-900/80">Deposit disimpan pada transaksi dan dapat dijadikan acuan pengembalian di tahap berikutnya.</p>
       </div>

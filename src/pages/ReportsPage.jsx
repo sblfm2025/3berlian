@@ -516,7 +516,7 @@ export default function ReportsPage({
           <button
             type="button"
             onClick={() => setIsCashClosingOpen(true)}
-            className="shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-850 hover:bg-emerald-900 hover:text-white px-4 py-2.5 text-xs font-black flex items-center gap-1.5 transition shadow-sm min-h-[44px]"
+            className="shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-850 hover:bg-emerald-900 hover:text-white px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 transition shadow-sm min-h-[44px]"
           >
             <Coins size={14} />
             Tutup Kas Harian
@@ -568,7 +568,7 @@ export default function ReportsPage({
           <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Pencarian &amp; Filter</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:tracking-[0.18em]">Pencarian &amp; Filter</p>
                 <p className="mt-0.5 text-xs text-slate-500 font-semibold">Gunakan filter status dan pencarian untuk merekap nota sewa kostum.</p>
               </div>
 
@@ -624,7 +624,7 @@ export default function ReportsPage({
             {summaryCards.map((card, index) => (
               <div key={card.title} className={`rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm ${index === 4 ? 'col-span-2 md:col-span-1' : ''}`}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{card.title}</p>
-                <p className="mt-2 break-words text-sm font-black text-slate-900 sm:text-lg">{card.value}</p>
+                <p className="mt-2 break-words text-sm font-bold text-slate-900 sm:text-base">{card.value}</p>
                 <p className="mt-1 text-[10px] text-slate-500 font-semibold leading-normal">{card.description}</p>
               </div>
             ))}
@@ -738,7 +738,7 @@ export default function ReportsPage({
                           </td>
                           <td className="p-3.5 text-right text-slate-800">{formatCurrency(rentRevenue)}</td>
                           <td className="p-3.5 text-right text-red-650 font-bold">{formatCurrency(fineRevenue)}</td>
-                          <td className="p-3.5 text-right font-black text-slate-900">{formatCurrency(grandTotalVal)}</td>
+                          <td className="p-3.5 text-right font-bold text-slate-900">{formatCurrency(grandTotalVal)}</td>
                           <td className="p-3.5">
                             <div className="flex justify-center gap-1.5">
                               <button type="button" onClick={() => onViewReceipt(t)} className="rounded-lg bg-amber-50 p-2 text-amber-700 hover:bg-amber-700 hover:text-white" aria-label="Cetak struk sewa"><Printer size={12} /></button>
@@ -774,7 +774,7 @@ export default function ReportsPage({
                         <div>Sewa Bersih: <span className="font-bold text-slate-900">{formatCurrency(rentRevenue)}</span></div>
                         <div>Denda: <span className="font-bold text-red-600">{formatCurrency(fineRevenue)}</span></div>
                         <div>Metode: <span className="font-bold text-slate-900">{t.paymentMethod || 'Tunai'}</span></div>
-                        <div>Total: <span className="font-black text-slate-900">{formatCurrency(grandTotalVal)}</span></div>
+                        <div>Total: <span className="font-bold text-slate-900">{formatCurrency(grandTotalVal)}</span></div>
                       </div>
                       <div className="mt-3 flex justify-end gap-1.5">
                         <button type="button" onClick={() => onViewReceipt(t)} className="rounded-lg bg-amber-50 p-2 text-amber-700" aria-label="Cetak struk sewa mobile"><Printer size={12} /></button>
@@ -825,7 +825,7 @@ export default function ReportsPage({
           <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm text-xs">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Filter Jurnal Kas</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:tracking-[0.18em]">Filter Jurnal Kas</p>
                 <h3 className="mt-0.5 text-xs font-bold text-slate-500">Menganalisis pergerakan kas masuk dan keluar di buku besar</h3>
               </div>
 
@@ -952,7 +952,7 @@ export default function ReportsPage({
                       </td>
                       <td className="p-3.5 capitalize text-slate-500">{r.category || 'rental'}</td>
                       <td className="p-3.5 break-words max-w-[200px] text-slate-600 text-[11px] leading-relaxed">{r.notes || '-'}</td>
-                      <td className={`p-3.5 text-right font-black text-xs ${isIN ? 'text-slate-800' : 'text-red-600'}`}>
+                      <td className={`p-3.5 text-right font-bold text-xs ${isIN ? 'text-slate-800' : 'text-red-600'}`}>
                         {isIN ? '' : '-'}{formatCurrency(r.amount)}
                       </td>
                     </tr>
@@ -1005,28 +1005,28 @@ export default function ReportsPage({
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-3 text-slate-50 group-hover:text-emerald-50/50 transition"><TrendingUp size={45} /></div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Total Omzet Bersih</p>
-              <p className="mt-2 text-base font-black text-emerald-800">{formatCurrency(financeDashboardMetrics.netRevenue)}</p>
+              <p className="mt-2 text-base font-bold text-emerald-800">{formatCurrency(financeDashboardMetrics.netRevenue)}</p>
               <span className="text-[9px] font-semibold text-slate-500 block mt-1">Total sewa + denda - diskon</span>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-3 text-slate-50 group-hover:text-amber-50/50 transition"><Coins size={45} /></div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Deposit Aktif (HELD)</p>
-              <p className="mt-2 text-base font-black text-amber-800">{formatCurrency(financeDashboardMetrics.activeDeposits)}</p>
+              <p className="mt-2 text-base font-bold text-amber-800">{formatCurrency(financeDashboardMetrics.activeDeposits)}</p>
               <span className="text-[9px] font-semibold text-slate-500 block mt-1">Uang deposit di tangan laci kasir</span>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-3 text-slate-50 group-hover:text-red-50/50 transition"><ArrowDownRight size={45} /></div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Deposit Refund Terbayar</p>
-              <p className="mt-2 text-base font-black text-red-750">{formatCurrency(financeDashboardMetrics.totalRefundsPaid)}</p>
+              <p className="mt-2 text-base font-bold text-red-750">{formatCurrency(financeDashboardMetrics.totalRefundsPaid)}</p>
               <span className="text-[9px] font-semibold text-slate-500 block mt-1">Jaminan deposit sudah dikembalikan</span>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-3 text-slate-50 group-hover:text-blue-50/50 transition"><FileText size={45} /></div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Outstanding Piutang</p>
-              <p className="mt-2 text-base font-black text-blue-800">{formatCurrency(financeDashboardMetrics.outstandingBalance)}</p>
+              <p className="mt-2 text-base font-bold text-blue-800">{formatCurrency(financeDashboardMetrics.outstandingBalance)}</p>
               <span className="text-[9px] font-semibold text-slate-500 block mt-1">Sewa aktif belum dilunasi</span>
             </div>
           </div>
@@ -1041,7 +1041,7 @@ export default function ReportsPage({
               <div className="space-y-2 text-xs font-semibold text-slate-700">
                 <div className="flex justify-between border-b pb-1"><span>Uang Sewa Kostum (Gross):</span><span className="font-bold text-slate-900">{formatCurrency(financeDashboardMetrics.totalRentRevenue)}</span></div>
                 <div className="flex justify-between border-b pb-1"><span>Koleksi Denda &amp; Biaya:</span><span className="font-bold text-slate-900">{formatCurrency(financeDashboardMetrics.totalFeesCollected)}</span></div>
-                <div className="flex justify-between font-black text-slate-900 pt-1 text-sm"><span>Total Arus Masuk (Gross):</span><span>{formatCurrency(financeDashboardMetrics.totalIn)}</span></div>
+                <div className="flex justify-between font-bold text-slate-900 pt-1 text-sm"><span>Total Arus Masuk (Gross):</span><span>{formatCurrency(financeDashboardMetrics.totalIn)}</span></div>
               </div>
             </div>
 
@@ -1053,7 +1053,7 @@ export default function ReportsPage({
               <div className="space-y-2 text-xs font-semibold text-slate-700">
                 <div className="flex justify-between border-b pb-1"><span>Jaminan Deposit Dikembalikan:</span><span className="font-bold text-slate-900">{formatCurrency(financeDashboardMetrics.totalRefundsPaid)}</span></div>
                 <div className="flex justify-between border-b pb-1"><span>Dukungan Diskon Pelanggan:</span><span className="font-bold text-red-650">{formatCurrency(financeDashboardMetrics.totalDiscountsGiven)}</span></div>
-                <div className="flex justify-between font-black text-slate-900 pt-1 text-sm"><span>Total Arus Keluar:</span><span>{formatCurrency(financeDashboardMetrics.totalOut)}</span></div>
+                <div className="flex justify-between font-bold text-slate-900 pt-1 text-sm"><span>Total Arus Keluar:</span><span>{formatCurrency(financeDashboardMetrics.totalOut)}</span></div>
               </div>
             </div>
           </div>
@@ -1070,22 +1070,22 @@ export default function ReportsPage({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Total Produk Aktif</p>
-              <p className="mt-2 text-lg font-black text-slate-900">{productAnalytics.totalProducts} Jenis</p>
+              <p className="mt-2 text-base font-bold text-slate-900 sm:text-lg">{productAnalytics.totalProducts} Jenis</p>
               <span className="text-[9px] font-semibold text-slate-500 block mt-1">Kostum tersedia di katalog</span>
             </div>
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 shadow-sm">
               <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-700">Stok Tersedia</p>
-              <p className="mt-2 text-lg font-black text-emerald-800">{productAnalytics.totalStockAvailable} Unit</p>
+              <p className="mt-2 text-base font-bold text-emerald-800 sm:text-lg">{productAnalytics.totalStockAvailable} Unit</p>
               <span className="text-[9px] font-semibold text-emerald-600 block mt-1">Siap disewakan hari ini</span>
             </div>
             <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 shadow-sm">
               <p className="text-[9px] font-bold uppercase tracking-wider text-amber-700">Sedang Disewa</p>
-              <p className="mt-2 text-lg font-black text-amber-800">{productAnalytics.totalStockRented} Unit</p>
+              <p className="mt-2 text-base font-bold text-amber-800 sm:text-lg">{productAnalytics.totalStockRented} Unit</p>
               <span className="text-[9px] font-semibold text-amber-600 block mt-1">Di tangan penyewa aktif</span>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Laundry + Perbaikan</p>
-              <p className="mt-2 text-lg font-black text-slate-700">
+              <p className="mt-2 text-base font-bold text-slate-700 sm:text-lg">
                 {productAnalytics.totalStockLaundry + productAnalytics.totalStockDamaged} Unit
               </p>
               <span className="text-[9px] font-semibold text-slate-500 block mt-1">
@@ -1100,9 +1100,9 @@ export default function ReportsPage({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold text-amber-700 uppercase tracking-widest">Produk Terlaris</p>
-                  <h3 className="mt-0.5 text-sm font-black text-slate-800">Frekuensi Sewa (Semua Waktu)</h3>
+                  <h3 className="mt-0.5 text-sm font-bold text-slate-800">Frekuensi Sewa (Semua Waktu)</h3>
                 </div>
-                <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-black px-2 py-0.5 rounded-full">
+                <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-semibold px-2 py-0.5 rounded-full">
                   Top {productAnalytics.topRented.length}
                 </span>
               </div>
@@ -1117,7 +1117,7 @@ export default function ReportsPage({
                       <div className="flex justify-between items-center text-xs font-bold text-slate-700">
                         <span className="truncate flex items-center gap-1.5">
                           {idx === 0 && <Star size={12} className="text-amber-500 shrink-0" fill="currentColor" />}
-                          <span className="text-[10px] font-black text-slate-400 w-4 shrink-0">#{idx + 1}</span>
+                          <span className="text-[10px] font-bold text-slate-400 w-4 shrink-0">#{idx + 1}</span>
                           {item.name}
                         </span>
                         <span className="shrink-0 text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 text-[10px]">{item.count}× sewa</span>
@@ -1187,7 +1187,7 @@ export default function ReportsPage({
                   <p className="text-xs font-bold text-red-700 uppercase tracking-widest">Peringatan Stok Kritis</p>
                   <h3 className="mt-0.5 text-sm font-bold text-slate-800">Kostum dengan stok tersedia ≤ 2 unit</h3>
                 </div>
-                <span className="bg-red-100 text-red-700 border border-red-200 text-[9px] font-black px-2.5 py-1 rounded-full">
+                <span className="bg-red-100 text-red-700 border border-red-200 text-[9px] font-semibold px-2.5 py-1 rounded-full">
                   {productAnalytics.lowStockProducts.length} Produk
                 </span>
               </div>

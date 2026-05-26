@@ -23,7 +23,7 @@ export default function ReturnSummary({
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
       <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Metode pembayaran biaya tambahan</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Metode pembayaran biaya tambahan</p>
         {depositAmount > 0 && (
           <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-[18px] border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">
             <span>Potong biaya dari deposit</span>
@@ -50,7 +50,7 @@ export default function ReturnSummary({
 
         {/* Input Override Denda */}
         <div className="mt-5 border-t border-slate-200 pt-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Override Denda Keterlambatan</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Override Denda Keterlambatan</p>
           <div className="mt-3 space-y-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-500">Nominal Denda (Rp)</label>
@@ -84,7 +84,7 @@ export default function ReturnSummary({
       </div>
 
       <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Ringkasan biaya</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">Ringkasan biaya</p>
         <div className="mt-3 space-y-2 text-sm">
           <div className="flex justify-between font-bold text-blue-700">
             <span>Mode pengembalian</span>
@@ -96,7 +96,7 @@ export default function ReturnSummary({
               {isPenaltyOverridden ? (
                 <span className="flex items-center gap-1.5">
                   <span className="line-through text-slate-400 font-semibold">{formatCurrency(lateFee)}</span>
-                  <span className="text-red-600 font-black">{formatCurrency(lateFeeOverride)}</span>
+                  <span className="text-red-600 font-bold">{formatCurrency(lateFeeOverride)}</span>
                 </span>
               ) : (
                 formatCurrency(lateFee)
@@ -107,7 +107,7 @@ export default function ReturnSummary({
             <span>Biaya kondisi</span>
             <span>{formatCurrency(conditionFee)}</span>
           </div>
-          <div className="flex justify-between pt-2 border-t border-slate-200 font-black text-slate-900">
+          <div className="flex justify-between pt-2 border-t border-slate-200 font-bold text-slate-900">
             <span>Total tambahan</span>
             <span>{formatCurrency(totalAdditionalFee)}</span>
           </div>

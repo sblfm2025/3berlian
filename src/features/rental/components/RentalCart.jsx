@@ -4,7 +4,7 @@ export default function RentalCart({ cart, removeCartItem, updateCartQty, format
   return (
     <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
       <div className="flex items-center justify-between">
-        <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Keranjang</h4>
+        <h4 className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Keranjang</h4>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{cart.length} item</span>
       </div>
       {cart.length === 0 ? (
@@ -30,12 +30,12 @@ export default function RentalCart({ cart, removeCartItem, updateCartQty, format
                 </button>
               </div>
               <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="text-sm font-black text-blue-800">{formatCurrency(item.product.rentPrice * item.qty)}</p>
+                <p className="text-sm font-bold text-blue-800">{formatCurrency(item.product.rentPrice * item.qty)}</p>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => updateCartQty(item.product, -1)} className="rounded-xl bg-white p-2 text-blue-700 shadow-sm">
                     <Minus size={14} strokeWidth={3} />
                   </button>
-                  <span className="w-7 text-center text-sm font-black text-slate-900">{item.qty}</span>
+                  <span className="w-7 text-center text-sm font-bold text-slate-900">{item.qty}</span>
                   <button type="button" onClick={() => updateCartQty(item.product, 1)} className="rounded-xl bg-blue-700 p-2 text-white shadow-sm">
                     <Plus size={14} strokeWidth={3} />
                   </button>

@@ -16,7 +16,7 @@ export default function PaymentSummary({
 }) {
   return (
     <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
-      <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Diskon & Metode</h4>
+      <h4 className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">Diskon & Metode</h4>
       <div className="mt-4 space-y-4">
         <div className="grid gap-2 sm:grid-cols-[100px_1fr]">
           <select
@@ -55,14 +55,14 @@ export default function PaymentSummary({
 
         {paymentMethod === 'Tunai' && (
           <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-4">
-            <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-amber-800">Uang diterima</label>
+            <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 sm:text-[11px] sm:tracking-[0.18em]">Uang diterima</label>
             <div className="mt-3 flex gap-2">
               <input
                 type="text"
                 value={formatNumberDot(cashReceived)}
                 onChange={event => setCashReceived(event.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="Rp 0"
-                className="flex-1 rounded-[16px] border border-white bg-white px-4 py-3 text-sm font-black text-amber-900 focus:outline-none"
+                className="flex-1 rounded-[16px] border border-white bg-white px-4 py-3 text-sm font-bold text-amber-900 focus:outline-none"
               />
               <button
                 type="button"
@@ -91,8 +91,8 @@ export default function PaymentSummary({
             )}
             {finalCashReceived >= grandTotal && finalCashReceived > 0 && (
               <div className="mt-3 flex items-center justify-between rounded-[16px] bg-white/80 px-3 py-2">
-                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-800">Kembalian</span>
-                <span className="text-lg font-black text-emerald-600">{formatCurrency(changeAmount)}</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 sm:text-[11px] sm:tracking-[0.18em]">Kembalian</span>
+                <span className="text-base font-bold text-emerald-600 sm:text-lg">{formatCurrency(changeAmount)}</span>
               </div>
             )}
           </div>
