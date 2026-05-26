@@ -45,6 +45,16 @@ export const listenToAppData = ({ onProducts, onCustomers, onTransactions, onUse
   };
 };
 
+export const listenToAppUsers = ({ onUsers, onError }) => {
+  const unsubUsers = onSnapshot(
+    dataCollection('users'),
+    (snap) => onUsers(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
+    (error) => onError?.('users', error)
+  );
+
+  return () => unsubUsers();
+};
+
 export const saveCheckoutTransaction = async (newTransaction, cart) => {
   await setDoc(dataDoc('transactions', newTransaction.id), newTransaction);
 

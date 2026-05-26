@@ -9,6 +9,7 @@ import {
   deleteTransaction,
   editTransaction,
   listenToAppData,
+  listenToAppUsers,
   saveCheckoutTransaction,
   saveProduct,
   seedInitialData,
@@ -30,6 +31,38 @@ import ReportsPage from './pages/ReportsPage';
 
 const isKnownAppView = (view) => Object.prototype.hasOwnProperty.call(pageMeta, view);
 
+function AppDataSkeleton({ message }) {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-4 border-blue-100 border-t-blue-700 animate-spin" />
+          <div>
+            <p className="text-sm font-black text-slate-900">Menyiapkan data aplikasi</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">{message}</p>
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        {[0, 1, 2].map((item) => (
+          <div key={item} className="h-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="h-3 w-24 rounded-full bg-slate-200 animate-pulse" />
+            <div className="mt-5 h-7 w-32 rounded-full bg-slate-200 animate-pulse" />
+          </div>
+        ))}
+      </div>
+      <div className="h-80 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="h-4 w-40 rounded-full bg-slate-200 animate-pulse" />
+        <div className="mt-6 grid gap-3">
+          {[0, 1, 2, 3, 4].map((item) => (
+            <div key={item} className="h-10 rounded-xl bg-slate-100 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- KOMPONEN UTAMA (MAIN APP COMPONENT) ---
 export default function App() {
   const [firebaseUser, setFirebaseUser] = useState(null);
@@ -41,8 +74,10 @@ export default function App() {
   const [customers, setCustomers] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [appUsers, setAppUsers] = useState([]); 
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('Menyiapkan data aplikasi...');
+  const [isLoginDataLoaded, setIsLoginDataLoaded] = useState(false);
+  const [isAppDataLoaded, setIsAppDataLoaded] = useState(false);
+  const [loginLoadingMessage, setLoginLoadingMessage] = useState('Menyiapkan halaman login...');
+  const [appLoadingMessage, setAppLoadingMessage] = useState('Memuat data aplikasi...');
   const [dataLoadError, setDataLoadError] = useState('');
   const [isDemoMode, setIsDemoMode] = useState(false);
   const appHistoryReady = useRef(false);
@@ -52,18 +87,18 @@ export default function App() {
     if (!auth) {
       window.setTimeout(() => {
         setDataLoadError('Sesi masuk belum siap. Muat ulang aplikasi lalu coba lagi.');
-        setIsDataLoaded(true);
+        setIsLoginDataLoaded(true);
       }, 0);
       return;
     }
     const authTimeout = window.setTimeout(() => {
       setDataLoadError('Koneksi masuk terlalu lama. Pastikan internet stabil, lalu coba lagi.');
-      setIsDataLoaded(true);
+      setIsLoginDataLoaded(true);
     }, 12000);
 
     const initAuth = async () => {
       try {
-        setLoadingMessage('Menyiapkan sesi kasir...');
+        setLoginLoadingMessage('Menyiapkan sesi kasir...');
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
@@ -72,7 +107,7 @@ export default function App() {
       } catch (err) {
         console.error("Auth error", err);
         setDataLoadError('Gagal menyiapkan sesi masuk. Periksa koneksi internet lalu coba lagi.');
-        setIsDataLoaded(true);
+        setIsLoginDataLoaded(true);
       }
     };
     initAuth();
@@ -86,56 +121,111 @@ export default function App() {
     };
   }, []);
 
-  // Memuat data operasional
+  // Memuat data login
   useEffect(() => {
     if (!db) {
       window.setTimeout(() => {
         setDataLoadError('Database aplikasi belum siap. Muat ulang aplikasi lalu coba lagi.');
-        setIsDataLoaded(true);
+        setIsLoginDataLoaded(true);
       }, 0);
       return;
     }
-    if (!firebaseUser) return;
+    if (!firebaseUser || user || isDemoMode) return;
 
     window.setTimeout(() => {
-      setLoadingMessage('Memuat data produk, transaksi, dan pengguna...');
+      setLoginLoadingMessage('Memuat data pengguna...');
       setDataLoadError('');
     }, 0);
-    const slowConnectionNotice = window.setTimeout(() => {
-      setLoadingMessage('Data masih dimuat. Koneksi sedang lebih lambat dari biasanya...');
-    }, 12000);
-    const loadingTimeout = window.setTimeout(() => {
-      setDataLoadError('Data belum berhasil dimuat. Periksa internet atau coba muat ulang aplikasi.');
-      setIsDataLoaded(true);
-    }, 45000);
+    const loginTimeout = window.setTimeout(() => {
+      setDataLoadError('Data pengguna belum berhasil dimuat. Periksa koneksi lalu coba lagi.');
+      setIsLoginDataLoaded(true);
+    }, 15000);
 
-    const markLoaded = () => {
-      window.clearTimeout(slowConnectionNotice);
-      window.clearTimeout(loadingTimeout);
-      setIsDataLoaded(true);
-    };
-
-    const unsubscribeData = listenToAppData({
-      onProducts: setProducts,
-      onCustomers: setCustomers,
-      onTransactions: setTransactions,
+    const unsubscribeUsers = listenToAppUsers({
       onUsers: (users) => {
         setAppUsers(users);
-        markLoaded();
+        setIsLoginDataLoaded(true);
+        window.clearTimeout(loginTimeout);
       },
       onError: (collectionName, error) => {
         console.error(`Error fetching ${collectionName}:`, error);
-        setDataLoadError(`Data ${collectionName} belum bisa dibaca. Periksa koneksi lalu coba lagi.`);
-        markLoaded();
+        setDataLoadError('Data pengguna belum bisa dibaca. Periksa koneksi lalu coba lagi.');
+        setIsLoginDataLoaded(true);
+        window.clearTimeout(loginTimeout);
       }
     });
 
     return () => {
+      window.clearTimeout(loginTimeout);
+      unsubscribeUsers();
+    };
+  }, [firebaseUser, user, isDemoMode]);
+
+  // Memuat data operasional setelah login
+  useEffect(() => {
+    if (!db || !firebaseUser || !user || isDemoMode) return;
+
+    const startLoadingNotice = window.setTimeout(() => {
+      setIsAppDataLoaded(false);
+      setAppLoadingMessage('Memuat data produk, pelanggan, dan transaksi...');
+      setDataLoadError('');
+    }, 0);
+    const slowConnectionNotice = window.setTimeout(() => {
+      setAppLoadingMessage('Data masih dimuat. Koneksi sedang lebih lambat dari biasanya...');
+    }, 12000);
+    const loadingTimeout = window.setTimeout(() => {
+      setDataLoadError('Sebagian data aplikasi belum berhasil dimuat. Anda masih dapat mencoba memuat ulang aplikasi.');
+      setIsAppDataLoaded(true);
+    }, 45000);
+
+    const loaded = {
+      products: false,
+      customers: false,
+      transactions: false,
+      users: false
+    };
+
+    const markCollectionLoaded = (name) => {
+      loaded[name] = true;
+
+      if (Object.values(loaded).every(Boolean)) {
+        window.clearTimeout(slowConnectionNotice);
+        window.clearTimeout(loadingTimeout);
+        setIsAppDataLoaded(true);
+      }
+    };
+
+    const unsubscribeData = listenToAppData({
+      onProducts: (items) => {
+        setProducts(items);
+        markCollectionLoaded('products');
+      },
+      onCustomers: (items) => {
+        setCustomers(items);
+        markCollectionLoaded('customers');
+      },
+      onTransactions: (items) => {
+        setTransactions(items);
+        markCollectionLoaded('transactions');
+      },
+      onUsers: (users) => {
+        setAppUsers(users);
+        markCollectionLoaded('users');
+      },
+      onError: (collectionName, error) => {
+        console.error(`Error fetching ${collectionName}:`, error);
+        setDataLoadError(`Data ${collectionName} belum bisa dibaca. Periksa koneksi lalu coba lagi.`);
+        markCollectionLoaded(collectionName);
+      }
+    });
+
+    return () => {
+      window.clearTimeout(startLoadingNotice);
       window.clearTimeout(slowConnectionNotice);
       window.clearTimeout(loadingTimeout);
       unsubscribeData();
     };
-  }, [firebaseUser]);
+  }, [firebaseUser, user, isDemoMode]);
 
   // Menyimpan perubahan data
   const handleCheckoutDB = async (newTransaction, cart) => {
@@ -229,13 +319,23 @@ export default function App() {
     setTransactions([]);
     setAppUsers(initialAppUsers);
     setDataLoadError('');
-    setIsDataLoaded(true);
+    setIsLoginDataLoaded(true);
+    setIsAppDataLoaded(true);
     setIsDemoMode(true);
   };
 
   const handleLoginSuccess = (foundUser) => {
     setUser(foundUser);
     setCurrentView('dashboard');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setProducts([]);
+    setCustomers([]);
+    setTransactions([]);
+    setIsAppDataLoaded(false);
+    setDataLoadError('');
   };
 
   const navigateToView = (view) => {
@@ -277,9 +377,9 @@ export default function App() {
         appUsers={appUsers}
         dataLoadError={dataLoadError}
         firebaseUser={firebaseUser}
-        isDataLoaded={isDataLoaded}
+        isDataLoaded={isLoginDataLoaded}
         isDemoMode={isDemoMode}
-        loadingMessage={loadingMessage}
+        loadingMessage={loginLoadingMessage}
         onLoginSuccess={handleLoginSuccess}
         onSeedInit={handleSeedInit}
         onStartDemoMode={handleStartDemoMode}
@@ -302,23 +402,25 @@ export default function App() {
         desktopNavItems={filteredNav}
         firebaseUser={firebaseUser}
         mobileNavItems={mobileNavItems}
-        onLogout={() => setUser(null)}
+        onLogout={handleLogout}
         onNavigate={navigateToView}
         user={user}
       >
-          {currentView === 'dashboard' && <DashboardPage transactions={transactions} products={products} onNavigate={navigateToView} />}
-          {currentView === 'rent' && <RentPage products={products} customers={customers} transactions={transactions} onCheckout={handleCheckoutDB} />}
-          {currentView === 'return' && <ReturnPage transactions={transactions} onReturn={handleReturnDB} />}
-          {currentView === 'products' && user.role === 'admin' && (
+          {!isAppDataLoaded && <AppDataSkeleton message={appLoadingMessage} />}
+
+          {isAppDataLoaded && currentView === 'dashboard' && <DashboardPage transactions={transactions} products={products} onNavigate={navigateToView} />}
+          {isAppDataLoaded && currentView === 'rent' && <RentPage products={products} customers={customers} transactions={transactions} onCheckout={handleCheckoutDB} />}
+          {isAppDataLoaded && currentView === 'return' && <ReturnPage transactions={transactions} onReturn={handleReturnDB} />}
+          {isAppDataLoaded && currentView === 'products' && user.role === 'admin' && (
             <ProductsPage products={products} onSave={handleAddEditProductDB} onDelete={handleDeleteProductDB} />
           )}
-          {currentView === 'customers' && (
+          {isAppDataLoaded && currentView === 'customers' && (
             <CustomersPage customers={customers} transactions={transactions} onUpdateCustomer={handleUpdateCustomerDB} />
           )}
-          {currentView === 'users' && user.role === 'admin' && (
+          {isAppDataLoaded && currentView === 'users' && user.role === 'admin' && (
             <UsersPage usersList={appUsers} onUpdateUser={handleUpdateAppUserDB} />
           )}
-          {currentView === 'reports' && user.role === 'admin' && (
+          {isAppDataLoaded && currentView === 'reports' && user.role === 'admin' && (
             <ReportsPage 
               transactions={transactions} 
               onViewReceipt={setReceiptData} 
