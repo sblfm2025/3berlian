@@ -1,20 +1,7 @@
 import { lazy, Suspense, useMemo, useRef, useState, useEffect } from 'react';
 
-import { signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { normalizeProduct } from './utils/product';
 import { isActiveTransaction } from './utils/transactionStatus';
-import { auth, db } from './services/firebase';
-import {
-  deleteProduct,
-  editTransaction,
-  listenToAppData,
-  listenToAppUsers,
-  saveProduct,
-  seedInitialData,
-  updateAppUser,
-  updateCustomerProfile
-} from './services/firestoreData';
-import { completeReturnTransaction, createRentalTransaction, voidTransaction } from './services/transactionService';
 import AppShell from './components/layout/AppShell';
 import { getMobileNavItems, getRoleNavItems, pageMeta } from './config/navigation';
 import { initialAppUsers, initialProducts } from './constants/seedData';
@@ -25,51 +12,33 @@ import Toast from './components/ui/Toast';
 import DashboardPage from './pages/DashboardPage';
 import RentPage from './pages/RentPage';
 import ReturnPage from './pages/ReturnPage';
+
+// Import hooks
+import { useAppAuth } from './hooks/useAppAuth';
+import { useRealtimeData } from './hooks/useRealtimeData';
+import { usePwaInstall } from './hooks/usePwaInstall';
+
+// Import repositories
+import { saveProduct, deleteProduct, completeLaundry, completeMaintenance, retireCostume } from './repositories/productRepository';
+import { updateCustomerProfile } from './repositories/customerRepository';
+import { createRentalTransaction, completeReturnTransaction, voidTransaction, editTransaction } from './repositories/transactionRepository';
+import { updateAppUser } from './repositories/userRepository';
+import { createBooking, cancelBooking, convertBookingStatus } from './repositories/bookingRepository';
+import { saveCashClosing } from './repositories/financeRepository';
+
+// Import validators
+import { validateProductPayload } from './validators/productValidator';
+import { validateCustomerPayload } from './validators/customerValidator';
+
 const ProductsPage = lazy(() => import('./pages/ProductsPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const MenuPage = lazy(() => import('./pages/MenuPage'));
+const BookingPage = lazy(() => import('./pages/BookingPage'));
+const StockOpnamePage = lazy(() => import('./pages/StockOpnamePage'));
 
 const isKnownAppView = (view) => Object.prototype.hasOwnProperty.call(pageMeta, view);
-const APP_SESSION_KEY = 'pos-3berlian-session';
-const PWA_INSTALLED_KEY = 'pos-3berlian-pwa-installed';
-
-const getStoredUserSession = () => {
-  try {
-    const stored = window.localStorage.getItem(APP_SESSION_KEY);
-    if (!stored) return null;
-
-    const parsed = JSON.parse(stored);
-    if (!parsed?.username || !parsed?.role) return null;
-    return parsed;
-  } catch {
-    window.localStorage.removeItem(APP_SESSION_KEY);
-    return null;
-  }
-};
-
-const saveUserSession = (nextUser) => {
-  const sessionUser = {
-    id: nextUser.id,
-    name: nextUser.name,
-    username: nextUser.username,
-    role: nextUser.role,
-    email: nextUser.email
-  };
-  window.localStorage.setItem(APP_SESSION_KEY, JSON.stringify(sessionUser));
-};
-
-const getDevicePlatform = () => {
-  const userAgent = window.navigator.userAgent.toLowerCase();
-  const isIOS = /iphone|ipad|ipod/.test(userAgent) || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
-  const isAndroid = /android/.test(userAgent);
-  return { isAndroid, isIOS };
-};
-
-const isPwaStandalone = () => {
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-};
 
 function AppDataSkeleton({ message }) {
   return (
@@ -116,133 +85,66 @@ function PageFallback() {
   );
 }
 
-
 // --- KOMPONEN UTAMA (MAIN APP COMPONENT) ---
 export default function App() {
-  const [firebaseUser, setFirebaseUser] = useState(null);
-  const [user, setUser] = useState(() => getStoredUserSession()); 
   const [currentView, setCurrentView] = useState('dashboard');
-  const [receiptData, setReceiptData] = useState(null); 
-  
-  const [products, setProducts] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [appUsers, setAppUsers] = useState([]); 
-  const [isLoginDataLoaded, setIsLoginDataLoaded] = useState(false);
-  const [isAppDataLoaded, setIsAppDataLoaded] = useState(false);
-  const [appDataStatus, setAppDataStatus] = useState({
-    products: false,
-    customers: false,
-    transactions: false,
-    users: false
-  });
-  const [loginLoadingMessage, setLoginLoadingMessage] = useState('Menyiapkan halaman login...');
-  const [appLoadingMessage, setAppLoadingMessage] = useState('Memuat data aplikasi...');
-  const [dataLoadError, setDataLoadError] = useState('');
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [receiptData, setReceiptData] = useState(null);
   const [toast, setToast] = useState(null);
   const [voidTransactionDialog, setVoidTransactionDialog] = useState({ isOpen: false, transaction: null, isLoading: false });
-  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
-  const [isAppInstalled, setIsAppInstalled] = useState(() => isPwaStandalone() || window.localStorage.getItem(PWA_INSTALLED_KEY) === 'true');
-  const [pwaPrompt, setPwaPrompt] = useState(null);
-  const [notificationPermission, setNotificationPermission] = useState(() => (
-    'Notification' in window ? window.Notification.permission : 'unsupported'
-  ));
   const appHistoryReady = useRef(false);
-  const notificationPromptShownRef = useRef(false);
 
   const notify = ({ message, title, type = 'info' }) => {
     setToast({ id: Date.now(), message, title, type });
   };
 
-  // Menyiapkan sesi aplikasi
-  useEffect(() => {
-    if (!auth) {
-      window.setTimeout(() => {
-        setDataLoadError('Sesi masuk belum siap. Muat ulang aplikasi lalu coba lagi.');
-        setIsLoginDataLoaded(true);
-      }, 0);
-      return;
-    }
-    const authTimeout = window.setTimeout(() => {
-      setDataLoadError('Koneksi masuk terlalu lama. Pastikan internet stabil, lalu coba lagi.');
-      setIsLoginDataLoaded(true);
-    }, 12000);
+  const {
+    firebaseUser,
+    user,
+    isLoginDataLoaded,
+    setIsLoginDataLoaded,
+    loginLoadingMessage,
+    dataLoadError,
+    setDataLoadError,
+    isDemoMode,
+    handleLoginSuccess,
+    handleLogout: authLogout,
+    handleStartDemoMode,
+    handleSeedInit
+  } = useAppAuth(notify);
 
-    const initAuth = async () => {
-      try {
-        setLoginLoadingMessage('Menyiapkan sesi kasir...');
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) {
-        console.error("Auth error", err);
-        setDataLoadError('Gagal menyiapkan sesi masuk. Periksa koneksi internet lalu coba lagi.');
-        setIsLoginDataLoaded(true);
-      }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-      if (nextUser) window.clearTimeout(authTimeout);
-      setFirebaseUser(nextUser);
-    });
-    return () => {
-      window.clearTimeout(authTimeout);
-      unsubscribe();
-    };
-  }, []);
+  const {
+    products,
+    setProducts,
+    customers,
+    setCustomers,
+    transactions,
+    setTransactions,
+    bookings,
+    financialRecords,
+    appUsers,
+    setAppUsers,
+    isAppDataLoaded,
+    setIsAppDataLoaded,
+    appLoadingMessage,
+    appDataStatus
+  } = useRealtimeData({
+    firebaseUser,
+    user,
+    isDemoMode,
+    setDataLoadError,
+    setIsLoginDataLoaded
+  });
 
-  // Memuat data login
-  useEffect(() => {
-    if (!db) {
-      window.setTimeout(() => {
-        setDataLoadError('Database aplikasi belum siap. Muat ulang aplikasi lalu coba lagi.');
-        setIsLoginDataLoaded(true);
-      }, 0);
-      return;
-    }
-    if (!firebaseUser || user || isDemoMode) return;
-
-    window.setTimeout(() => {
-      setLoginLoadingMessage('Memuat data pengguna...');
-      setDataLoadError('');
-    }, 0);
-    let loginProfilerActive = true;
-    console.time('load-login-users');
-    const endLoginProfiler = () => {
-      if (!loginProfilerActive) return;
-      console.timeEnd('load-login-users');
-      loginProfilerActive = false;
-    };
-    const loginTimeout = window.setTimeout(() => {
-      setDataLoadError('Data pengguna belum berhasil dimuat. Periksa koneksi lalu coba lagi.');
-      setIsLoginDataLoaded(true);
-    }, 15000);
-
-    const unsubscribeUsers = listenToAppUsers({
-      onUsers: (users) => {
-        setAppUsers(users);
-        setIsLoginDataLoaded(true);
-        endLoginProfiler();
-        window.clearTimeout(loginTimeout);
-      },
-      onError: (collectionName, error) => {
-        console.error(`Error fetching ${collectionName}:`, error);
-        setDataLoadError('Data pengguna belum bisa dibaca. Periksa koneksi lalu coba lagi.');
-        setIsLoginDataLoaded(true);
-        endLoginProfiler();
-        window.clearTimeout(loginTimeout);
-      }
-    });
-
-    return () => {
-      endLoginProfiler();
-      window.clearTimeout(loginTimeout);
-      unsubscribeUsers();
-    };
-  }, [firebaseUser, user, isDemoMode]);
+  const {
+    isAppInstalled,
+    pwaPrompt,
+    setPwaPrompt,
+    notificationPermission,
+    handleNotificationAction,
+    handleInstallApp,
+    handleEnableNotifications,
+    getDevicePlatform
+  } = usePwaInstall(user, notify);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -251,133 +153,23 @@ export default function App() {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setDeferredInstallPrompt(event);
-      setIsAppInstalled(isPwaStandalone());
-    };
-
-    const handleAppInstalled = () => {
-      window.localStorage.setItem(PWA_INSTALLED_KEY, 'true');
-      setDeferredInstallPrompt(null);
-      setIsAppInstalled(true);
-      setPwaPrompt(null);
-      notify({ title: 'Aplikasi terpasang', message: '3 Berlian POS sudah siap dibuka dari layar utama.', type: 'success' });
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    const updateDisplayMode = () => {
-      if (isPwaStandalone()) {
-        window.localStorage.setItem(PWA_INSTALLED_KEY, 'true');
-        setIsAppInstalled(true);
-      }
-    };
-
-    updateDisplayMode();
-    mediaQuery.addEventListener?.('change', updateDisplayMode);
-    return () => mediaQuery.removeEventListener?.('change', updateDisplayMode);
-  }, []);
-
-  // Memuat data operasional setelah login
-  useEffect(() => {
-    if (!db || !firebaseUser || !user || isDemoMode) return;
-
-    const startLoadingNotice = window.setTimeout(() => {
-      setIsAppDataLoaded(false);
-      setAppDataStatus({
-        products: false,
-        customers: false,
-        transactions: false,
-        users: false
-      });
-      setAppLoadingMessage('Memuat data produk, pelanggan, dan transaksi...');
-      setDataLoadError('');
-    }, 0);
-    const slowConnectionNotice = window.setTimeout(() => {
-      setAppLoadingMessage('Data masih dimuat. Koneksi sedang lebih lambat dari biasanya...');
-    }, 12000);
-    const loadingTimeout = window.setTimeout(() => {
-      setDataLoadError('Sebagian data aplikasi belum berhasil dimuat. Anda masih dapat mencoba memuat ulang aplikasi.');
-      setIsAppDataLoaded(true);
-    }, 45000);
-
-    const loaded = {
-      products: false,
-      customers: false,
-      transactions: false,
-      users: false
-    };
-    Object.keys(loaded).forEach(name => console.time(`load-${name}`));
-
-    const markCollectionLoaded = (name) => {
-      if (!loaded[name]) console.timeEnd(`load-${name}`);
-      loaded[name] = true;
-      setAppDataStatus(prev => ({ ...prev, [name]: true }));
-
-      if (Object.values(loaded).every(Boolean)) {
-        window.clearTimeout(slowConnectionNotice);
-        window.clearTimeout(loadingTimeout);
-        setIsAppDataLoaded(true);
-      }
-    };
-
-    const unsubscribeData = listenToAppData({
-      onProducts: (items) => {
-        setProducts(items);
-        markCollectionLoaded('products');
-      },
-      onCustomers: (items) => {
-        setCustomers(items);
-        markCollectionLoaded('customers');
-      },
-      onTransactions: (items) => {
-        setTransactions(items);
-        markCollectionLoaded('transactions');
-      },
-      onUsers: (users) => {
-        setAppUsers(users);
-        markCollectionLoaded('users');
-      },
-      onError: (collectionName, error) => {
-        console.error(`Error fetching ${collectionName}:`, error);
-        setDataLoadError(`Data ${collectionName} belum bisa dibaca. Periksa koneksi lalu coba lagi.`);
-        markCollectionLoaded(collectionName);
-      }
-    });
-
-    return () => {
-      Object.keys(loaded).forEach((name) => {
-        if (!loaded[name]) console.timeEnd(`load-${name}`);
-      });
-      window.clearTimeout(startLoadingNotice);
-      window.clearTimeout(slowConnectionNotice);
-      window.clearTimeout(loadingTimeout);
-      unsubscribeData();
-    };
-  }, [firebaseUser, user, isDemoMode]);
-
   // Menyimpan perubahan data
   const handleCheckoutDB = async (newTransaction, cart) => {
     try {
       const savedTransaction = await createRentalTransaction(newTransaction, cart);
       setReceiptData(savedTransaction);
     } catch (error) {
-      notify({ title: 'Transaksi gagal', message: 'Gagal memproses transaksi. Periksa stok dan koneksi lalu coba lagi.', type: 'error' });
+      notify({ title: 'Transaksi gagal', message: error.message || 'Gagal memproses transaksi. Periksa stok dan koneksi lalu coba lagi.', type: 'error' });
       throw error;
     }
   };
 
   const handleUpdateCustomerDB = async (customer) => {
+    const validation = validateCustomerPayload(customer);
+    if (!validation.isValid) {
+      notify({ title: 'Pelanggan tidak valid', message: validation.errors[0], type: 'error' });
+      return;
+    }
     try {
       await updateCustomerProfile(customer);
     } catch {
@@ -391,12 +183,17 @@ export default function App() {
       notify({ title: 'Pengembalian selesai', message: 'Barang berhasil dikembalikan dan stok sudah diperbarui.', type: 'success' });
     } catch (error) {
       console.error(error);
-      notify({ title: 'Pengembalian gagal', message: 'Gagal memproses pengembalian. Periksa koneksi atau data produk.', type: 'error' });
+      notify({ title: 'Pengembalian gagal', message: error.message || 'Gagal memproses pengembalian. Periksa koneksi atau data produk.', type: 'error' });
       throw error;
     }
   };
 
   const handleAddEditProductDB = async (productData, isEdit) => {
+    const validation = validateProductPayload({ ...productData, isEdit });
+    if (!validation.isValid) {
+      notify({ title: 'Produk tidak valid', message: validation.errors[0], type: 'error' });
+      return;
+    }
     try {
       await saveProduct(productData, isEdit);
       notify({
@@ -404,9 +201,9 @@ export default function App() {
         message: isEdit ? 'Data kostum berhasil diperbarui.' : 'Kostum baru berhasil masuk inventaris.',
         type: 'success'
       });
-    } catch (err) { 
+    } catch (err) {
       console.error(err);
-      notify({ title: 'Produk gagal disimpan', message: 'Proses penyimpanan dibatalkan karena terjadi kesalahan.', type: 'error' });
+      notify({ title: 'Produk gagal disimpan', message: err.message || 'Proses penyimpanan dibatalkan karena terjadi kesalahan.', type: 'error' });
     }
   };
 
@@ -416,6 +213,73 @@ export default function App() {
       notify({ title: 'Produk dihapus', message: 'Data produk berhasil dihapus dari inventaris.', type: 'success' });
     } catch {
       notify({ title: 'Produk gagal dihapus', message: 'Gagal menghapus produk. Periksa koneksi atau izin database.', type: 'error' });
+    }
+  };
+
+  const handleCompleteLaundryDB = async (productId, qty) => {
+    try {
+      await completeLaundry(productId, qty, user?.id || user?.username || 'system');
+      notify({ title: 'Laundry selesai', message: `${qty} kostum telah dipindahkan kembali ke stok tersedia.`, type: 'success' });
+    } catch (err) {
+      notify({ title: 'Gagal memproses laundry', message: err.message || 'Terjadi kesalahan saat memindahkan stok laundry.', type: 'error' });
+    }
+  };
+
+  const handleCompleteMaintenanceDB = async (productId, qty) => {
+    try {
+      await completeMaintenance(productId, qty, user?.id || user?.username || 'system');
+      notify({ title: 'Perbaikan selesai', message: `${qty} kostum telah dipindahkan kembali ke stok tersedia.`, type: 'success' });
+    } catch (err) {
+      notify({ title: 'Gagal memproses perbaikan', message: err.message || 'Terjadi kesalahan saat memindahkan stok perbaikan.', type: 'error' });
+    }
+  };
+
+  const handleRetireCostumeDB = async (productId, qty, fromBucket) => {
+    try {
+      await retireCostume(productId, qty, fromBucket, user?.id || user?.username || 'system');
+      notify({ title: 'Kostum dipensiunkan', message: `${qty} kostum berhasil dipindahkan ke stok pensiun.`, type: 'success' });
+    } catch (err) {
+      notify({ title: 'Gagal mempensiunkan kostum', message: err.message || 'Terjadi kesalahan saat memindahkan stok pensiun.', type: 'error' });
+    }
+  };
+
+  const handleCreateBookingDB = async (bookingData) => {
+    try {
+      const saved = await createBooking(bookingData);
+      notify({ title: 'Booking terkonfirmasi', message: `Pemesanan ${saved.bookingNumber} berhasil disimpan.`, type: 'success' });
+      return saved;
+    } catch (err) {
+      notify({ title: 'Gagal membuat booking', message: err.message || 'Terjadi kesalahan saat menyimpan booking.', type: 'error' });
+      throw err;
+    }
+  };
+
+  const handleCancelBookingDB = async (bookingId, reason) => {
+    try {
+      await cancelBooking(bookingId, reason, user?.id || user?.username || 'system');
+      notify({ title: 'Booking dibatalkan', message: 'Pesanan booking berhasil dibatalkan dari kalender.', type: 'success' });
+    } catch (err) {
+      notify({ title: 'Gagal membatalkan booking', message: err.message || 'Terjadi kesalahan.', type: 'error' });
+      throw err;
+    }
+  };
+
+  const handleConvertBookingDB = async (bookingId) => {
+    try {
+      await convertBookingStatus(bookingId, user?.id || user?.username || 'system');
+    } catch (err) {
+      notify({ title: 'Gagal memproses sewa booking', message: err.message || 'Terjadi kesalahan.', type: 'error' });
+    }
+  };
+
+  const handleSaveCashClosingDB = async (closingData) => {
+    try {
+      const saved = await saveCashClosing(closingData);
+      notify({ title: 'Tutup kas berhasil', message: `Rekap kas ${saved.closingNumber} berhasil disimpan.`, type: 'success' });
+      return saved;
+    } catch (err) {
+      notify({ title: 'Tutup kas gagal', message: err.message || 'Terjadi kesalahan saat menyimpan rekap kas.', type: 'error' });
+      throw err;
     }
   };
 
@@ -463,7 +327,7 @@ export default function App() {
       setVoidTransactionDialog(prev => ({ ...prev, isLoading: false }));
       notify({
         title: 'Gagal membatalkan transaksi',
-        message: 'Firebase menolak pembatalan nota. Periksa koneksi, izin database, atau coba muat ulang aplikasi.',
+        message: err.message || 'Firebase menolak pembatalan nota. Periksa koneksi, izin database, atau coba muat ulang aplikasi.',
         type: 'error'
       });
     }
@@ -479,52 +343,22 @@ export default function App() {
     }
   };
 
-  const handleSeedInit = async () => {
-    try {
-      await seedInitialData({ users: initialAppUsers, products: initialProducts });
-      notify({ title: 'Sistem siap', message: 'Akun awal dan data produk berhasil diinisialisasi.', type: 'success' });
-    } catch {
-      notify({ title: 'Inisialisasi gagal', message: 'Gagal menyiapkan data awal.', type: 'error' });
-    }
-  };
-
-  const handleStartDemoMode = () => {
-    setProducts(initialProducts.map(normalizeProduct));
-    setCustomers([]);
-    setTransactions([]);
-    setAppUsers(initialAppUsers);
-    setDataLoadError('');
-    setIsLoginDataLoaded(true);
-    setIsAppDataLoaded(true);
-    setAppDataStatus({
-      products: true,
-      customers: true,
-      transactions: true,
-      users: true
+  const handleStartDemoModeWrapper = () => {
+    handleStartDemoMode(() => {
+      setProducts(initialProducts.map(normalizeProduct));
+      setCustomers([]);
+      setTransactions([]);
+      setAppUsers(initialAppUsers);
+      setIsAppDataLoaded(true);
     });
-    setIsDemoMode(true);
-  };
-
-  const handleLoginSuccess = (foundUser) => {
-    saveUserSession(foundUser);
-    setUser(foundUser);
-    setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
-    window.localStorage.removeItem(APP_SESSION_KEY);
-    setUser(null);
+    authLogout();
     setProducts([]);
     setCustomers([]);
     setTransactions([]);
     setIsAppDataLoaded(false);
-    setAppDataStatus({
-      products: false,
-      customers: false,
-      transactions: false,
-      users: false
-    });
-    setDataLoadError('');
   };
 
   const navigateToView = (view) => {
@@ -533,81 +367,6 @@ export default function App() {
       window.history.pushState({ appView: view }, '', window.location.pathname);
     }
     setCurrentView(view);
-  };
-
-  const showInstallPrompt = () => {
-    setPwaPrompt('install');
-  };
-
-  const showNotificationPermissionPrompt = () => {
-    setPwaPrompt('notification');
-  };
-
-  const handleNotificationAction = (action) => {
-    if (action === 'install-app') {
-      showInstallPrompt();
-      return;
-    }
-
-    if (action === 'enable-notifications') {
-      showNotificationPermissionPrompt();
-    }
-  };
-
-  const handleInstallApp = async () => {
-    const platform = getDevicePlatform();
-
-    if (isPwaStandalone()) {
-      window.localStorage.setItem(PWA_INSTALLED_KEY, 'true');
-      setIsAppInstalled(true);
-      setPwaPrompt(null);
-      return;
-    }
-
-    if (deferredInstallPrompt) {
-      deferredInstallPrompt.prompt();
-      const choiceResult = await deferredInstallPrompt.userChoice;
-      setDeferredInstallPrompt(null);
-      if (choiceResult?.outcome === 'accepted') {
-        window.localStorage.setItem(PWA_INSTALLED_KEY, 'true');
-        setIsAppInstalled(true);
-        setPwaPrompt(null);
-      }
-      return;
-    }
-
-    if (platform.isIOS) {
-      setPwaPrompt('ios-install');
-      return;
-    }
-
-    setPwaPrompt('manual-install');
-  };
-
-  const handleEnableNotifications = async () => {
-    if (!('Notification' in window)) {
-      setNotificationPermission('unsupported');
-      notify({ title: 'Notifikasi tidak didukung', message: 'Browser ini belum mendukung notifikasi aplikasi.', type: 'warning' });
-      return;
-    }
-
-    const permission = await window.Notification.requestPermission();
-    setNotificationPermission(permission);
-    if (permission !== 'granted') return;
-
-    try {
-      const registration = await window.navigator.serviceWorker?.ready;
-      await registration?.showNotification('Notifikasi 3 Berlian aktif', {
-        body: 'Anda akan melihat pengingat penting dari aplikasi saat browser mengizinkan.',
-        icon: '/app-logo-192.png',
-        badge: '/app-logo-32.png',
-        tag: '3berlian-notification-ready'
-      });
-    } catch {
-      notify({ title: 'Notifikasi aktif', message: 'Izin notifikasi sudah diberikan.', type: 'success' });
-    }
-
-    setPwaPrompt(null);
   };
 
   useEffect(() => {
@@ -645,7 +404,7 @@ export default function App() {
     const notices = [];
     const platform = getDevicePlatform();
 
-    if (!isAppInstalled && (platform.isAndroid || platform.isIOS || deferredInstallPrompt)) {
+    if (!isAppInstalled && (platform.isAndroid || platform.isIOS)) {
       notices.push({
         id: 'install-app',
         title: 'Instal aplikasi 3 Berlian POS',
@@ -728,15 +487,7 @@ export default function App() {
     }
 
     return notices;
-  }, [appLoadingMessage, currentView, dataLoadError, deferredInstallPrompt, isAppDataLoaded, isAppInstalled, notificationPermission, products, transactions, user?.role]);
-
-  useEffect(() => {
-    if (!user || notificationPromptShownRef.current || notificationPermission !== 'default') return;
-
-    notificationPromptShownRef.current = true;
-    const timeout = window.setTimeout(() => setPwaPrompt('notification'), 1800);
-    return () => window.clearTimeout(timeout);
-  }, [notificationPermission, user]);
+  }, [appLoadingMessage, currentView, dataLoadError, isAppDataLoaded, isAppInstalled, notificationPermission, products, transactions, user?.role, getDevicePlatform]);
 
   if (!user) {
     return (
@@ -750,7 +501,7 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
         onNotify={notify}
         onSeedInit={handleSeedInit}
-        onStartDemoMode={handleStartDemoMode}
+        onStartDemoMode={handleStartDemoModeWrapper}
       />
     );
   }
@@ -764,7 +515,9 @@ export default function App() {
     rent: appDataStatus.products,
     return: appDataStatus.transactions,
     products: appDataStatus.products,
+    opname: appDataStatus.products,
     customers: appDataStatus.customers,
+    booking: appDataStatus.products,
     users: appDataStatus.users,
     reports: appDataStatus.transactions,
     menu: true
@@ -795,15 +548,53 @@ export default function App() {
 
           {!isCurrentViewReady && <AppDataSkeleton message={appLoadingMessage} />}
 
-          {isCurrentViewReady && currentView === 'dashboard' && <DashboardPage transactions={transactions} products={products} onNavigate={navigateToView} />}
+          {isCurrentViewReady && currentView === 'dashboard' && <DashboardPage transactions={transactions} products={products} user={user} onNavigate={navigateToView} />}
           {isCurrentViewReady && currentView === 'rent' && <RentPage products={products} customers={customers} transactions={transactions} onCheckout={handleCheckoutDB} onNotify={notify} />}
           {isCurrentViewReady && currentView === 'return' && <ReturnPage transactions={transactions} onReturn={handleReturnDB} />}
+          {isCurrentViewReady && currentView === 'booking' && (
+            <Suspense fallback={<PageFallback />}>
+              <BookingPage
+                products={products}
+                customers={customers}
+                transactions={transactions}
+                bookings={bookings}
+                onCreateBooking={handleCreateBookingDB}
+                onCancelBooking={handleCancelBookingDB}
+                onConvertBookingStatus={handleConvertBookingDB}
+                onNavigate={navigateToView}
+                operatorId={user?.id || user?.username || 'system'}
+                onNotify={notify}
+              />
+            </Suspense>
+          )}
           <Suspense fallback={<PageFallback />}>
             {isCurrentViewReady && currentView === 'products' && user.role === 'admin' && (
-              <ProductsPage products={products} onSave={handleAddEditProductDB} onDelete={handleDeleteProductDB} onNotify={notify} />
+              <ProductsPage
+                products={products}
+                onSave={handleAddEditProductDB}
+                onDelete={handleDeleteProductDB}
+                onCompleteLaundry={handleCompleteLaundryDB}
+                onCompleteMaintenance={handleCompleteMaintenanceDB}
+                onRetireCostume={handleRetireCostumeDB}
+                onNotify={notify}
+                operatorId={user?.id || user?.username || 'system'}
+              />
+            )}
+            {isCurrentViewReady && currentView === 'opname' && user.role === 'admin' && (
+              <StockOpnamePage
+                products={products}
+                transactions={transactions}
+                onNotify={notify}
+                operatorId={user?.id || user?.username || 'system'}
+              />
             )}
             {isCurrentViewReady && currentView === 'customers' && (
-              <CustomersPage customers={customers} transactions={transactions} onUpdateCustomer={handleUpdateCustomerDB} />
+              <CustomersPage
+                customers={customers}
+                transactions={transactions}
+                onUpdateCustomer={handleUpdateCustomerDB}
+                onNotify={notify}
+              />
             )}
             {isCurrentViewReady && currentView === 'users' && user.role === 'admin' && (
               <UsersPage usersList={appUsers} onUpdateUser={handleUpdateAppUserDB} />
@@ -811,10 +602,16 @@ export default function App() {
             {isCurrentViewReady && currentView === 'reports' && user.role === 'admin' && (
               <ReportsPage
                 transactions={transactions}
+                products={products}
+                financialRecords={financialRecords}
+                customers={customers}
+                appUsers={appUsers}
                 onViewReceipt={setReceiptData}
                 onDelete={handleDeleteTransactionDB}
                 onEdit={handleEditTransactionDB}
+                onSaveCashClosing={handleSaveCashClosingDB}
                 onNotify={notify}
+                operatorId={user?.id || user?.username || 'system'}
               />
             )}
             {isCurrentViewReady && currentView === 'menu' && (
@@ -898,12 +695,12 @@ export default function App() {
       )}
 
       {/* MODAL NOTA */}
-      <ReceiptModal 
-        receiptData={receiptData} 
+      <ReceiptModal
+        receiptData={receiptData}
         onClose={() => {
           setReceiptData(null);
           if (currentView === 'rent') navigateToView('dashboard');
-        }} 
+        }}
       />
 
       <ConfirmDialog

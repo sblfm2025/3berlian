@@ -1,73 +1,64 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeftRight, FileText, Package, ShoppingBag, UserCog, Users, X } from 'lucide-react';
+import { ArrowLeftRight, Package, ShoppingBag, X, ShieldAlert, Truck, Sparkles, Info } from 'lucide-react';
 
 import KpiCard from '../components/dashboard/KpiCard';
-import MetricCard from '../components/dashboard/MetricCard';
 import { useDashboardStats } from '../features/dashboard/hooks/useDashboardStats';
 import { formatCurrency, formatDate } from '../utils/format';
-import { getTransactionStatusLabel, isActiveTransaction, isCompletedTransaction } from '../utils/transactionStatus';
+import { getTransactionStatusLabel, isCompletedTransaction } from '../utils/transactionStatus';
 import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
-// ==========================================
-// TAMPILAN BERANDA (DASHBOARD)
-// ==========================================
 const getStatusLabel = (status) => {
   return getTransactionStatusLabel(status);
 };
 
-export default function DashboardPage({ transactions, products, onNavigate }) {
+export default function DashboardPage({ transactions, products, user, onNavigate }) {
   const [dashboardSearch, setDashboardSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('kasir'); // 'kasir', 'owner', 'gudang'
+
   const {
-    activeItemsCount,
     activeRentals,
     averageTicket,
-    bestPaymentMethod,
-    completedToday,
     customerCount,
     lowStockCount,
     lowStockProducts,
     overdueRentals,
-    paymentMix,
     paymentRevenueMix,
-    pendingReturnCount,
-    priorityReturns,
-    recentTransactions,
-    today,
-    todayRevenueShare,
     todayTransactions,
     topProducts,
     totalIncomeToday,
     totalRevenue,
-    trend,
     upcomingReturns
   } = useDashboardStats({ transactions, products });
 
-  const categoryDemand = useMemo(() => {
-    const revenueTransactions = transactions.filter(t => t.status !== 'void');
-    return revenueTransactions.reduce((acc, trx) => {
-      (trx.items || []).forEach(item => {
-        const cat = item.product?.category || 'Lainnya';
-        acc[cat] = (acc[cat] || 0) + (item.qty || 0);
-      });
-      return acc;
-    }, {});
-  }, [transactions]);
 
-  const topCategories = useMemo(() => {
-    return Object.entries(categoryDemand)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4);
-  }, [categoryDemand]);
 
   const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', data: [] });
   const handleOpenModal = (title, data) => setModalConfig({ isOpen: true, title, data });
   const handleCloseModal = () => setModalConfig({ isOpen: false, title: '', data: [] });
+
   const mobileSearchConfig = useMemo(() => ({
     placeholder: 'Cari menu beranda',
     value: dashboardSearch,
     onChange: setDashboardSearch
   }), [dashboardSearch]);
   useMobileSearchRegistration(mobileSearchConfig);
+
+  // Periksa stok laundry dan maintenance makro untuk Dashboard Gudang
+  const warehouseStats = useMemo(() => {
+    let laundryQty = 0;
+    let maintenanceQty = 0;
+    let retiredQty = 0;
+    let lostQty = 0;
+
+    products.forEach(p => {
+      laundryQty += Number(p.laundryStock || p.stockLaundry || 0);
+      maintenanceQty += Number(p.maintenanceStock || p.stockDamaged || 0);
+      retiredQty += Number(p.retiredStock || 0);
+      lostQty += Number(p.lostStock || 0);
+    });
+
+    return { laundryQty, maintenanceQty, retiredQty, lostQty };
+  }, [products]);
 
   const statCards = [
     {
@@ -100,422 +91,317 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
     }
   ];
 
-  const menuGroups = [
-    {
-      title: 'Transaksi',
-      items: [
-        { label: 'Sewa Kostum', target: 'rent', icon: ShoppingBag, color: 'bg-blue-50 text-blue-700 group-hover:bg-blue-700 group-hover:text-white' },
-        { label: 'Pengembalian', target: 'return', icon: ArrowLeftRight, color: 'bg-amber-50 text-amber-700 group-hover:bg-amber-500 group-hover:text-white' }
-      ]
-    },
-    {
-      title: 'Data Master',
-      items: [
-        { label: 'Produk', target: 'products', icon: Package, color: 'bg-sky-50 text-sky-700 group-hover:bg-sky-600 group-hover:text-white' },
-        { label: 'Pelanggan', target: 'customers', icon: Users, color: 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white' },
-        { label: 'Pengguna', target: 'users', icon: UserCog, color: 'bg-indigo-50 text-indigo-700 group-hover:bg-indigo-600 group-hover:text-white' }
-      ]
-    },
-    {
-      title: 'Analitik',
-      items: [
-        { label: 'Laporan', target: 'reports', icon: FileText, color: 'bg-violet-50 text-violet-700 group-hover:bg-violet-600 group-hover:text-white' }
-      ]
-    }
-  ];
-  const operationalMenus = menuGroups.flatMap(group => group.items);
-  const filteredMenus = useMemo(() => {
-    const keyword = dashboardSearch.trim().toLowerCase();
-    if (!keyword) return operationalMenus;
 
-    return operationalMenus.filter(item => `${item.label} ${item.target}`.toLowerCase().includes(keyword));
-  }, [dashboardSearch, operationalMenus]);
+
+  const isAdmin = user?.role === 'admin';
 
   return (
-    <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
-      <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 md:text-sm">3 Berlian POS Penyewaan Kostum</p>
-            <h2 className="mt-3 text-lg font-bold leading-tight sm:text-2xl md:text-3xl">Pusat kerja kasir untuk sewa kostum adat</h2>
-            <p className="mt-3 max-w-xl text-xs text-white/90 sm:text-sm md:text-base">
-              Pantau omzet, stok menipis, transaksi aktif, dan pengembalian jatuh tempo dari satu panel kerja cepat dan profesional.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm">Sewa cepat</span>
-              <span className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm">Pengembalian terstruktur</span>
-              <span className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm">Karyawan kasir siap</span>
-            </div>
-          </div>
-          <div className="grid min-w-[280px] grid-cols-2 gap-2">
-            <div className="rounded-[20px] bg-white/10 backdrop-blur-sm p-3 border border-white/20">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/85">Omzet total</p>
-              <p className="mt-2 text-lg font-black sm:text-2xl">{formatCurrency(totalRevenue)}</p>
-            </div>
-            <div className="rounded-[20px] bg-white/10 backdrop-blur-sm p-3 border border-white/20">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/85">Produk tersedia</p>
-              <p className="mt-2 text-lg font-black sm:text-2xl">{products.length}</p>
-            </div>
-            <div className="rounded-[20px] bg-white/10 backdrop-blur-sm p-3 border border-white/20 col-span-2">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/85">Status hari ini</p>
-              <p className="mt-2 text-sm font-bold sm:text-lg">{completedToday.length} transaksi selesai - {pendingReturnCount} pengembalian perlu perhatian</p>
-            </div>
-          </div>
+    <div className="mx-auto max-w-7xl space-y-4">
+      {/* BANNER UTAMA */}
+      <div className="brand-gradient rounded-[24px] p-4 text-white shadow-soft md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/80">POS & ANALITIK</p>
+          <h2 className="mt-2 text-lg sm:text-2xl font-black">Selamat bekerja, {user?.name || user?.username || 'Kasir'}!</h2>
+          <p className="mt-1 text-xs text-white/90">
+            Semua modul sewa, booking kostum adat, dan operasional sanggar berjalan lancar.
+          </p>
         </div>
+        <span className="rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-bold capitalize">
+          Role: {user?.role || 'kasir'}
+        </span>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-[24px]">
-        <div className="grid grid-cols-3 gap-x-2 gap-y-3 px-3 py-3 sm:grid-cols-4 sm:gap-x-4 sm:gap-y-5 sm:px-5 sm:py-5 md:grid-cols-6 md:px-6">
-          {filteredMenus.map(item => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.target}
-                type="button"
-                onClick={() => onNavigate(item.target)}
-                className="group flex flex-col items-center rounded-2xl px-1.5 py-2 text-center transition hover:bg-blue-50 sm:rounded-[20px] sm:px-2"
-              >
-                <span className={`flex h-11 w-11 items-center justify-center rounded-full shadow-sm transition sm:h-16 sm:w-16 ${item.color}`}>
-                  <Icon size={20} strokeWidth={2.4} className="sm:h-[27px] sm:w-[27px]" />
-                </span>
-                <span className="mt-1.5 min-h-[24px] text-[11px] font-bold leading-tight text-slate-700 sm:mt-2 sm:min-h-[28px] sm:text-xs">{item.label}</span>
-              </button>
-            );
-          })}
-          {filteredMenus.length === 0 && (
-            <div className="col-span-3 rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-semibold text-slate-500 sm:col-span-4 md:col-span-6">
-              Menu tidak ditemukan.
-            </div>
-          )}
+      {/* TABS MULTI-ROLE (Hanya untuk Admin) */}
+      {isAdmin && (
+        <div className="flex border-b border-slate-200 bg-white p-1 rounded-2xl shadow-sm gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('kasir')}
+            className={`flex-1 py-2.5 text-xs font-black rounded-xl transition ${activeTab === 'kasir' ? 'bg-emerald-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'} min-h-[44px]`}
+          >
+            Kasir POS
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('owner')}
+            className={`flex-1 py-2.5 text-xs font-black rounded-xl transition ${activeTab === 'owner' ? 'bg-emerald-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'} min-h-[44px]`}
+          >
+            Analitik Owner
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('gudang')}
+            className={`flex-1 py-2.5 text-xs font-black rounded-xl transition ${activeTab === 'gudang' ? 'bg-emerald-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'} min-h-[44px]`}
+          >
+            Operasional Gudang
+          </button>
         </div>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-        {statCards.map(card => (
-          <KpiCard
-            key={card.title}
-            title={card.title}
-            value={card.value}
-            subtitle={card.subtitle}
-            tone={card.tone}
-            onClick={card.onClick}
-          />
-        ))}
-      </div>
-
-      <div className="hidden grid-cols-1 gap-4 sm:grid-cols-2 md:grid xl:grid-cols-4">
-        <MetricCard
-          title="Kontribusi omzet hari ini"
-          value={`${todayRevenueShare}%`}
-          description={`Dari total omzet saat ini, ${formatCurrency(totalIncomeToday)} berasal dari transaksi hari ini.`}
-        />
-        <MetricCard
-          title="Pengembalian tertunda"
-          value={pendingReturnCount}
-          description="Gabungan transaksi terlambat dan yang akan jatuh dalam 7 hari."
-        />
-        <MetricCard
-          title="Stok menipis"
-          value={lowStockCount}
-          description="Produk yang membutuhkan perhatian restock sebelum shift berikutnya."
-        />
-        <MetricCard
-          title="Metode utama"
-          value={bestPaymentMethod}
-          valueClassName="text-lg"
-          description={`Mendominasi omzet dengan ${formatCurrency(paymentRevenueMix[bestPaymentMethod] || 0)}.`}
-        />
-      </div>
-
-      <div className="hidden grid-cols-1 gap-4 md:grid md:grid-cols-3">
-        <MetricCard
-          title="Pelanggan aktif"
-          value={customerCount}
-          description="Jumlah pelanggan dari riwayat transaksi terakhir."
-        />
-        <MetricCard
-          title="Item sedang disewa"
-          value={activeItemsCount}
-          description="Total item aktif yang sedang berada di tangan pelanggan."
-        />
-        <MetricCard
-          title="Metode paling dominan"
-          value={bestPaymentMethod}
-          valueClassName="text-lg"
-          description={`${formatCurrency(paymentRevenueMix[bestPaymentMethod] || 0)} kontribusi omzet.`}
-        />
-      </div>
-
-      <div className="hidden grid-cols-1 gap-4 md:grid xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="pos-card p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-500">Performa omzet 7 hari</p>
-              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Pergerakan harian</h3>
-            </div>
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Kasir</span>
-          </div>
-
-          <div className="mt-5 grid grid-cols-7 gap-2 items-end min-h-[180px]">
-            {trend.map(item => (
-              <div key={item.label} className="flex flex-col items-center gap-2">
-                <div className="flex h-36 w-full items-end justify-center">
-                  <div className="w-full rounded-t-[18px] bg-gradient-to-t from-blue-700 to-amber-300" style={{ height: `${Math.max(18, (item.total / Math.max(...trend.map(t => t.total), 1)) * 100)}%` }} />
-                </div>
-                <div className="text-[11px] font-bold text-slate-500 text-center">{item.label}</div>
-              </div>
+      {/* ======================================================== */}
+      {/* 1. DASBOR KASIR                                          */}
+      {/* ======================================================== */}
+      {(activeTab === 'kasir' || !isAdmin) && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {statCards.map(card => (
+              <KpiCard key={card.title} {...card} />
             ))}
           </div>
-        </div>
 
-        <div className="grid gap-4">
-          <div className="pos-card p-4 sm:p-5">
-            <div>
-              <p className="text-sm font-semibold text-slate-500">Peringatan operasional</p>
-              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Prioritas segera</h3>
-            </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3 sm:gap-3">
-              <div className="rounded-2xl bg-red-50 border border-red-100 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
-                <p className="text-[10px] uppercase tracking-[0.14em] text-red-700 sm:text-[11px] sm:tracking-[0.2em]">Terlambat</p>
-                <p className="mt-1.5 text-xl font-bold text-red-700 sm:mt-2 sm:text-2xl sm:font-black">{overdueRentals.length}</p>
-              </div>
-              <div className="rounded-2xl bg-amber-50 border border-amber-100 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
-                <p className="text-[10px] uppercase tracking-[0.14em] text-amber-700 sm:text-[11px] sm:tracking-[0.2em]">Mendekati batas</p>
-                <p className="mt-1.5 text-xl font-bold text-amber-700 sm:mt-2 sm:text-2xl sm:font-black">{upcomingReturns.length}</p>
-              </div>
-              <div className="rounded-2xl bg-emerald-50 border border-emerald-100 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
-                <p className="text-[10px] uppercase tracking-[0.14em] text-emerald-700 sm:text-[11px] sm:tracking-[0.2em]">Transaksi hari ini</p>
-                <p className="mt-1.5 text-xl font-bold text-emerald-700 sm:mt-2 sm:text-2xl sm:font-black">{completedToday.length}</p>
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => onNavigate('return')}
-                className="rounded-[16px] bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 transition"
-              >
-                Lihat pengembalian
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigate('reports')}
-                className="rounded-[16px] bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 transition"
-              >
-                Lihat laporan
-              </button>
-            </div>
-
-            <div className="mt-5 rounded-[22px] border border-slate-100 bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-700">Transaksi prioritas</p>
-                  <p className="mt-1 text-sm text-slate-500">Daftar paling relevan untuk dikerjakan sebelum shift berikutnya.</p>
-                </div>
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">{priorityReturns.length} item</span>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {priorityReturns.length === 0 ? (
-                  <div className="rounded-[18px] border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
-                    Tidak ada pengembalian mendesak untuk ditindaklanjuti.
+          <div className="grid gap-4 xl:grid-cols-[1fr_0.90fr]">
+            {/* PINTASAN MODUL */}
+            <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm md:p-6 space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Pusat Pintasan Cepat</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => onNavigate('rent')}
+                  className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-emerald-250 hover:bg-emerald-50/50 transition flex items-center gap-3.5 min-h-[44px]"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
+                    <ShoppingBag size={20} />
+                  </span>
+                  <div>
+                    <p className="text-sm font-black text-slate-900">Sewa Kostum Adat</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Terminal Kasir POS Cepat</p>
                   </div>
-                ) : priorityReturns.map(tx => (
-                  <div key={tx.id} className="rounded-[18px] bg-white px-4 py-3 shadow-sm border border-slate-100">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">{tx.customerName || 'Pelanggan belum tercatat'}</p>
-                        <p className="text-xs text-slate-500">{tx.id} - {formatDate(tx.expectedReturnDate || tx.rentDate)}</p>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] ${tx.expectedReturnDate <= today ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {tx.expectedReturnDate <= today ? 'Terlambat' : 'Mendekati batas'}
-                      </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('booking')}
+                  className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-amber-200 hover:bg-amber-50/50 transition flex items-center gap-3.5 min-h-[44px]"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-800">
+                    <ArrowLeftRight size={20} className="rotate-90" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-black text-slate-900">Jadwal Booking</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Kalender & Deteksi Bentrok</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* UPCOMING & OVERDUE */}
+            <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm md:p-6 space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Jadwal Pengembalian Terdekat</h3>
+              <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                {upcomingReturns.length === 0 ? (
+                  <div className="text-center text-xs font-bold text-slate-400 py-6">
+                    Tidak ada pengembalian kostum terjadwal untuk hari ini.
+                  </div>
+                ) : upcomingReturns.slice(0, 5).map(trx => (
+                  <div key={trx.id} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs font-bold">
+                    <div>
+                      <p className="text-slate-900">{trx.customerName}</p>
+                      <p className="text-slate-400 mt-0.5">Nota: {trx.id}</p>
                     </div>
+                    <span className="text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                      {trx.items?.length || 0} unit
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="pos-card p-4 sm:p-5">
-            <div>
-              <p className="text-sm font-semibold text-slate-500">Metode pembayaran</p>
-              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Komposisi transaksi & omzet</h3>
+      {/* ======================================================== */}
+      {/* 2. DASBOR OWNER (ANALITIK KEUANGAN & TRANSAKSI)          */}
+      {/* ======================================================== */}
+      {activeTab === 'owner' && isAdmin && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Omzet Toko Keseluruhan</p>
+              <p className="mt-2 text-xl font-black text-slate-900">{formatCurrency(totalRevenue)}</p>
+              <p className="mt-1 text-xs text-slate-500">Void nota dikecualikan</p>
             </div>
-            <div className="mt-5 space-y-4">
-              {Object.entries(paymentMix).length === 0 ? (
-                <p className="text-sm text-slate-500">Belum ada transaksi untuk ditampilkan.</p>
-              ) : Object.entries(paymentMix).map(([method, count]) => {
-                const revenue = paymentRevenueMix[method] || 0;
-                const share = Math.max(10, (count / Math.max(...Object.values(paymentMix), 1)) * 100);
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Jumlah Transaksi Terdaftar</p>
+              <p className="mt-2 text-xl font-black text-slate-900">{transactions.length} Nota</p>
+              <p className="mt-1 text-xs text-slate-500">Termasuk draft & return</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Rata-rata Transaksi (AOV)</p>
+              <p className="mt-2 text-xl font-black text-emerald-800">{formatCurrency(averageTicket)}</p>
+              <p className="mt-1 text-xs text-slate-500">Per pemesanan selesai</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Jumlah Pelanggan Unik</p>
+              <p className="mt-2 text-xl font-black text-emerald-600">{customerCount} Orang</p>
+              <p className="mt-1 text-xs text-slate-500">Mempunyai no. telepon aktif</p>
+            </div>
+          </div>
 
-                return (
-                  <div key={method}>
-                    <div className="flex justify-between text-sm font-semibold text-slate-700 gap-3">
-                      <span>{method}</span>
-                      <span>{count} transaksi - {formatCurrency(revenue)}</span>
+          <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+            {/* METODE PEMBAYARAN & PRODUK TERLARIS */}
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Grafik Metode Pembayaran</h3>
+              <div className="space-y-3.5">
+                {Object.entries(paymentRevenueMix).map(([method, revenue]) => {
+                  const pct = totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0;
+                  return (
+                    <div key={method} className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-bold text-slate-700">
+                        <span>{method}</span>
+                        <span>{formatCurrency(revenue)} ({pct.toFixed(1)}%)</span>
+                      </div>
+                      <div className="metric-bar">
+                        <span style={{ width: `${Math.max(8, pct)}%` }} className="bg-emerald-800" />
+                      </div>
                     </div>
-                    <div className="metric-bar mt-2">
-                      <span style={{ width: `${share}%` }} />
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Analitik Produk Terlaris</h3>
+              <div className="space-y-3">
+                {topProducts.slice(0, 4).map(([name, qty]) => (
+                  <div key={name} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs font-bold">
+                    <div>
+                      <p className="text-slate-900">{name}</p>
+                      <p className="text-slate-400 mt-0.5">Kostum Adat Nusantara</p>
                     </div>
+                    <span className="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full text-[10px]">
+                      {qty}x Sewa
+                    </span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-[1.1fr_1fr]">
-        <div className="pos-card p-3 sm:p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-500">Transaksi terakhir</p>
-              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Aktivitas paling baru</h3>
-            </div>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{recentTransactions.length} data</span>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {recentTransactions.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-500 sm:rounded-[22px] sm:p-6">
-                Belum ada transaksi. Mulai penyewaan pertama untuk melihat ringkasan di sini.
-              </div>
-            ) : recentTransactions.map(tx => (
-              <div key={tx.id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
-                <div>
-                  <p className="text-sm font-bold text-slate-900">{tx.customerName || 'Pelanggan belum tercatat'}</p>
-                  <p className="text-xs text-slate-500 sm:text-sm">{tx.id} - {formatDate(tx.rentDate || new Date().toISOString())}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-slate-900 sm:font-black">{formatCurrency((tx.totalAmount || 0) + (tx.lateFee || 0))}</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">{getStatusLabel(tx.status)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="hidden gap-4 md:grid">
-          <div className="pos-card p-5">
-            <p className="text-sm font-semibold text-slate-500">Produk Terlaris</p>
-            <h3 className="mt-1 text-lg font-black text-slate-900">Permintaan tertinggi</h3>
-            <div className="mt-4 space-y-3">
-              {topProducts.length === 0 ? (
-                <p className="text-sm text-slate-500">Belum ada data produk dari transaksi.</p>
-              ) : (() => {
-                const maxCount = Math.max(...topProducts.map(([, count]) => count), 1);
-                return topProducts.map(([name, count]) => {
-                  const share = (count / maxCount) * 100;
-                  return (
-                    <div key={name} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm font-semibold text-slate-700 gap-3">
-                        <span className="truncate max-w-[200px]" title={name}>{name}</span>
-                        <span className="font-bold text-blue-700">{count} disewa</span>
-                      </div>
-                      <div className="metric-bar">
-                        <span style={{ width: `${share}%` }} />
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-          </div>
-
-          <div className="pos-card p-5">
-            <p className="text-sm font-semibold text-slate-500">Kategori Terpopuler</p>
-            <h3 className="mt-1 text-lg font-black text-slate-900">Proporsi permintaan baju adat</h3>
-            <div className="mt-4 space-y-3">
-              {topCategories.length === 0 ? (
-                <p className="text-sm text-slate-500">Belum ada data kategori dari transaksi.</p>
-              ) : (() => {
-                const maxCatCount = Math.max(...topCategories.map(([, count]) => count), 1);
-                return topCategories.map(([cat, count]) => {
-                  const share = (count / maxCatCount) * 100;
-                  return (
-                    <div key={cat} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm font-semibold text-slate-700 gap-3">
-                        <span className="truncate max-w-[200px]">{cat}</span>
-                        <span className="font-bold text-amber-700">{count} item</span>
-                      </div>
-                      <div className="metric-bar">
-                        <span className="!from-amber-600 !to-yellow-400" style={{ width: `${share}%` }} />
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-          </div>
-
-          <div className="pos-card p-5">
-            <div className="flex items-start justify-between gap-3">
+      {/* ======================================================== */}
+      {/* 3. DASBOR GUDANG (LOGISTIK & KONDISI BARANG)             */}
+      {/* ======================================================== */}
+      {activeTab === 'gudang' && isAdmin && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
+                <Truck size={18} />
+              </span>
               <div>
-                <p className="text-sm font-semibold text-slate-500">Stok menipis</p>
-                <h3 className="mt-1 text-lg font-black text-slate-900">Perhatian inventaris</h3>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Antrean Laundry</p>
+                <p className="mt-1 text-lg font-black text-slate-900">{warehouseStats.laundryQty} Unit</p>
               </div>
-              <button
-                type="button"
-                onClick={() => onNavigate('products')}
-                className="rounded-[16px] bg-amber-500 px-4 py-2 text-sm font-bold text-slate-900 hover:bg-amber-400 transition"
-              >
-                Atur stok
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
+                <ShieldAlert size={18} />
+              </span>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Sedang Perbaikan</p>
+                <p className="mt-1 text-lg font-black text-slate-900">{warehouseStats.maintenanceQty} Unit</p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-700">
+                <ShieldAlert size={18} />
+              </span>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Kostum Hilang</p>
+                <p className="mt-1 text-lg font-black text-slate-900">{warehouseStats.lostQty} Unit</p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                <Package size={18} />
+              </span>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pensiun / Afkir</p>
+                <p className="mt-1 text-lg font-black text-slate-900">{warehouseStats.retiredQty} Unit</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[1fr_0.90fr]">
+            {/* KOSTUM STOK KRITIS */}
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Peringatan Stok Kritis (&le; 2)</h3>
+                <span className="bg-red-50 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-full">{lowStockCount} Produk</span>
+              </div>
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {lowStockProducts.length === 0 ? (
+                  <div className="text-center text-xs font-bold text-slate-400 py-8 bg-slate-50 rounded-xl">
+                    Semua stok kostum aman terkendali.
+                  </div>
+                ) : lowStockProducts.map(p => (
+                  <div key={p.id} className="flex justify-between items-center bg-red-50/30 p-2.5 rounded-xl border border-red-100 text-xs font-bold">
+                    <div>
+                      <p className="text-slate-900">{p.name} ({p.size})</p>
+                      <p className="text-red-600 mt-0.5">Sisa stok fisik: {p.availableStock || p.stock || 0} unit</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('products')}
+                      className="rounded-lg bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 text-[10px] font-black"
+                    >
+                      Restock
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SUMMARY GUDANG */}
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Petunjuk Logistik</h3>
+              <div className="rounded-2xl border border-emerald-50 bg-emerald-50/30 p-4 space-y-3">
+                <div className="flex gap-2">
+                  <Sparkles size={16} className="text-emerald-800 mt-0.5 shrink-0" />
+                  <p className="text-xs font-bold text-emerald-950 leading-relaxed">
+                    Pastikan kostum dalam antrean **laundry ({warehouseStats.laundryQty} unit)** dicuci tepat waktu agar siap disewakan kembali pada pesanan booking berikutnya.
+                  </p>
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-emerald-100">
+                  <Info size={16} className="text-slate-600 mt-0.5 shrink-0" />
+                  <p className="text-xs font-bold text-slate-700 leading-relaxed">
+                    Kostum berstatus **perbaikan ({warehouseStats.maintenanceQty} unit)** perlu dikoordinasikan dengan penjahit agar segera masuk kembali ke stok aktif gudang.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DETAIL MODAL OVERLAY */}
+      {modalConfig.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+          <div className="w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-emerald-900 px-5 py-4 text-white">
+              <h3 className="text-sm font-bold uppercase tracking-[0.2em]">{modalConfig.title}</h3>
+              <button type="button" onClick={handleCloseModal} className="rounded-full bg-emerald-800 p-2 hover:bg-emerald-700 min-h-[32px]">
+                <X size={18} />
               </button>
             </div>
-            <div className="mt-4 space-y-3">
-              {lowStockProducts.length === 0 ? (
-                <p className="text-sm text-slate-500">Semua produk memiliki stok yang aman.</p>
-              ) : lowStockProducts.map(product => (
-                <div key={product.id} className="flex items-center justify-between gap-3 rounded-[18px] bg-amber-50 px-4 py-3">
-                  <div>
-                    <p className="font-bold text-slate-900">{product.name}</p>
-                    <p className="text-sm text-slate-500">Kategori {product.category || 'Lainnya'}</p>
+            <div className="max-h-[60vh] overflow-y-auto bg-slate-50 p-5 space-y-3">
+              {modalConfig.data.length === 0 ? (
+                <p className="text-center text-sm font-semibold text-slate-500 py-6">Tidak ada data untuk ditampilkan.</p>
+              ) : modalConfig.data.map((item, idx) => (
+                <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm space-y-1.5 animate-fade-in">
+                  <div className="flex justify-between text-xs font-bold text-slate-700 gap-2">
+                    <span className="truncate text-slate-900">{item.customerName || item.customer?.name || 'Pelanggan'}</span>
+                    <span className="shrink-0">{formatDate(item.rentDate || item.rentedAt)}</span>
                   </div>
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">Sisa {product.stock}</span>
+                  <div className="flex justify-between items-center text-xs gap-3">
+                    <span className="font-bold text-slate-400">Nota: {item.id || item.invoiceNumber}</span>
+                    <span className="font-black text-amber-600">{formatCurrency((item.totalAmount || item.grandTotal || 0) + (item.lateFee || 0))}</span>
+                  </div>
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-black ${isCompletedTransaction(item) ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {getStatusLabel(item.status)}
+                  </span>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {modalConfig.isOpen && (
-        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] shadow-2xl animate-in zoom-in-95">
-            <div className="p-5 bg-blue-900 text-white flex justify-between items-center">
-              <h3 className="font-bold text-lg">{modalConfig.title}</h3>
-              <button onClick={handleCloseModal} className="p-1.5 bg-blue-800 rounded-full hover:bg-blue-700 transition-colors"><X size={20}/></button>
-            </div>
-            <div className="p-5 overflow-y-auto flex-1 bg-gray-50/50">
-              {modalConfig.data.length === 0 ? (
-                <div className="text-center text-gray-400 py-12 flex flex-col items-center">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4"><FileText size={32} className="text-gray-300" /></div>
-                  <p className="font-medium text-gray-500">Tidak ada data untuk kategori ini.</p>
-                </div>
-              ) : (
-                <ul className="space-y-4">
-                  {modalConfig.data.slice().sort((a, b) => (b.rentDate || '').localeCompare(a.rentDate || '')).map(t => (
-                    <li key={t.id} className="border border-gray-200 rounded-2xl p-4 bg-white shadow-sm hover:border-blue-300 transition-colors">
-                      <div className="flex justify-between items-start mb-3 gap-3">
-                        <div>
-                          <p className="font-bold text-gray-900">{t.id}</p>
-                          <p className="text-sm text-gray-600 flex items-center gap-1.5 mt-1"><Users size={14} className="text-gray-400"/> {t.customerName || 'Pelanggan belum tercatat'}</p>
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase ${isCompletedTransaction(t) ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {getStatusLabel(t.status)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-end pt-3 border-t border-gray-100">
-                        <div className="text-[11px] text-gray-500 space-y-1">
-                          <p>Sewa: <span className="font-semibold text-gray-700">{formatDate(t.rentDate || new Date().toISOString())}</span></p>
-                          <p>Batas: <span className={`font-semibold ${t.expectedReturnDate <= today && isActiveTransaction(t) ? 'text-red-500' : 'text-gray-700'}`}>{formatDate(t.expectedReturnDate || t.rentDate || new Date().toISOString())}</span></p>
-                        </div>
-                        <div className="font-black text-amber-600 text-lg">{formatCurrency((t.totalAmount || 0) + (t.lateFee || 0))}</div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
           </div>
         </div>

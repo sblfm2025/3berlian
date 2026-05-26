@@ -1,0 +1,75 @@
+:root {
+  /* ==========================================================================
+     DESIGN SYSTEM TOKENS - 3 BERLIAN (SODARA POS)
+     ========================================================================== */
+
+  /* 1. CURATED COLOR PALETTE (Nuansa Budaya Nusantara Hijau & Emas) */
+  --primary-900: #064e3b;  /* Deep Emerald (Hijau Hutan Mewah) */
+  --primary-800: #065f46;  /* Emerald Gelap */
+  --primary-700: #047857;  /* Emerald Menengah */
+  --primary-600: #059669;  /* Emerald Utama */
+  --primary-100: #d1fae5;  /* Hijau Emerald Sangat Terang */
+  --primary-50:  #ecfdf5;  /* Hijau Emerald Latar Belakang */
+
+  --accent-700:  #b45309;  /* Emas Adat Gelap (Tembaga/Perunggu) */
+  --accent-600:  #d97706;  /* Emas Adat Utama */
+  --accent-500:  #f59e0b;  /* Emas Adat Terang */
+  --accent-400:  #fbbf24;  /* Emas Cerah */
+  --accent-50:   #fefbeb;  /* Emas Latar Belakang */
+
+  --success-600: #10b981;  /* Emerald Success */
+  --success-50:  #ecfdf5;
+  --danger-600:  #ef4444;  /* Red Danger */
+  --danger-50:   #fef2f2;
+  --warning-600: #f59e0b;  /* Amber Warning */
+  --warning-50:  #fefbeb;
+
+  --slate-900:   #0f172a;  /* Teks Utama Slate */
+  --slate-800:   #1e293b;
+  --slate-700:   #334155;
+  --slate-600:   #475569;  /* Teks Sekunder Slate */
+  --slate-400:   #94a3b8;  /* Teks Muted Slate */
+  --slate-200:   #e2e8f0;  /* Border Slate */
+  --slate-100:   #f1f5f9;  /* Latar Belakang Panel */
+  --slate-50:    #f8fafc;  /* Latar Belakang Halaman */
+
+  /* 2. SPACING SCALE (Ergonomis) */
+  --space-xs:    4px;
+  --space-sm:    8px;
+  --space-md:    16px;
+  --space-lg:    24px;
+  --space-xl:    32px;
+  --space-2xl:   48px;
+
+  /* 3. BORDER RADIUS (Sangat Melengkung & Premium) */
+  --radius-xs:   6px;
+  --radius-sm:   12px;
+  --radius-md:   20px;
+  --radius-lg:   28px;
+  --radius-xl:   36px;
+  --radius-full: 9999px;
+
+  /* 4. PREMIUM SHADOWS */
+  --shadow-sm:      0 2px 8px -1px rgba(15, 23, 42, 0.05);
+  --shadow-md:      0 8px 24px -4px rgba(15, 23, 42, 0.08);
+  --shadow-lg:      0 16px 36px -8px rgba(15, 23, 42, 0.12);
+  --shadow-premium: 0 24px 60px -20px rgba(6, 78, 59, 0.15); /* Bayangan hijau mewah */
+  --shadow-gold:    0 12px 32px -6px rgba(217, 119, 6, 0.2);  /* Aksen emas */
+
+  /* 5. TYPOGRAPHY HIERARCHY */
+  --font-sans:     "Outfit", "Inter", "Segoe UI", Roboto, sans-serif;
+  --font-mono:     "Courier New", Courier, monospace;
+
+  /* 6. LAYER OVERLAYS (Z-Index) */
+  --z-dropdown:  1000;
+  --z-sticky:    1020;
+  --z-fixed:     1030;
+  --z-modal:     1040;
+  --z-popover:   1050;
+  --z-toast:     1060;
+
+  /* 7. TRANSITIONS & ANIMATIONS */
+  --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   350ms cubic-bezier(0.4, 0, 0.2, 1);
+}

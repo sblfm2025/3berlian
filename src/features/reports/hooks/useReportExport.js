@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { formatDate, formatNumberDot } from '../../../utils/format';
 import { loadScript } from '../../../utils/browser';
@@ -11,7 +11,24 @@ const getDepositReturned = (transaction) => Number(transaction.depositReturned |
 
 const getDepositDeducted = (transaction) => Number(transaction.depositDeducted || transaction.returnInfo?.depositDeducted || 0);
 
+// Label tipe jurnal keuangan yang lebih mudah dibaca
+const getLedgerTypeLabel = (type) => {
+  const labels = {
+    RENTAL_PAYMENT: 'Uang Sewa',
+    DEPOSIT_IN: 'Deposit Masuk',
+    DEPOSIT_REFUND: 'Deposit Refund',
+    DEPOSIT_DEDUCTION: 'Deposit Dipotong',
+    LATE_FEE: 'Denda Terlambat',
+    DAMAGE_FEE: 'Biaya Kerusakan',
+    LOST_FEE: 'Biaya Kehilangan',
+    DISCOUNT: 'Potongan Diskon',
+    MANUAL_ADJUSTMENT: 'Penyesuaian Manual'
+  };
+  return labels[type] || type;
+};
+
 export const useReportExport = ({
+  filteredLedgerRecords = [],
   getStatusLabel,
   onNotify,
   selectedMonth,
@@ -25,7 +42,10 @@ export const useReportExport = ({
 }) => {
   const [isExporting, setIsExporting] = useState('');
 
-  const handleExportExcel = () => {
+  // ─────────────────────────────────────────────────────
+  // 📊 EXPORT LAPORAN SEWA → EXCEL
+  // ─────────────────────────────────────────────────────
+  const handleExportExcel = useCallback(() => {
     setIsExporting('excel');
     const exportData = () => {
       try {
@@ -65,7 +85,7 @@ export const useReportExport = ({
         const ws = window.XLSX.utils.aoa_to_sheet(wsData);
         ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 16 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 18 }];
         const wb = window.XLSX.utils.book_new();
-        window.XLSX.utils.book_append_sheet(wb, ws, 'Laporan');
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Laporan Sewa');
         window.XLSX.writeFile(wb, `Rekening_Koran_${selectedMonth}.xlsx`);
       } catch (err) {
         console.error(err);
@@ -85,9 +105,12 @@ export const useReportExport = ({
     } else {
       exportData();
     }
-  };
+  }, [getStatusLabel, onNotify, selectedMonth, sortedTransactions, totalDenda, totalDepositDeducted, totalDepositHeld, totalDepositReturned, totalRevenue, totalSewa]);
 
-  const handleExportPDF = async () => {
+  // ─────────────────────────────────────────────────────
+  // 📊 EXPORT LAPORAN SEWA → PDF
+  // ─────────────────────────────────────────────────────
+  const handleExportPDF = useCallback(async () => {
     setIsExporting('pdf');
     try {
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
@@ -167,7 +190,161 @@ export const useReportExport = ({
     } finally {
       setIsExporting('');
     }
-  };
+  }, [getStatusLabel, onNotify, selectedMonth, sortedTransactions, totalDenda, totalDepositDeducted, totalDepositHeld, totalDepositReturned, totalRevenue, totalSewa]);
 
-  return { handleExportExcel, handleExportPDF, isExporting };
+  // ─────────────────────────────────────────────────────
+  // 📒 EXPORT BUKU BESAR (LEDGER) → EXCEL
+  // ─────────────────────────────────────────────────────
+  const handleExportLedgerExcel = useCallback(() => {
+    if (!filteredLedgerRecords.length) {
+      onNotify?.({ title: 'Tidak ada data', message: 'Tidak ada entri buku besar untuk diekspor.', type: 'warning' });
+      return;
+    }
+    setIsExporting('ledger-excel');
+    const exportData = () => {
+      try {
+        const wsData = [
+          ['SANGGAR SENI 3 BERLIAN'],
+          ['Buku Besar Keuangan (Jurnal Kas)'],
+          [`Diekspor pada: ${new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`],
+          [`Total entri ditampilkan: ${filteredLedgerRecords.length}`],
+          [],
+          ['Tanggal', 'ID Jurnal', 'Nota Sewa', 'Tipe Mutasi', 'Metode', 'Arah', 'Kategori', 'Keterangan', 'Nominal (Rp)']
+        ];
+
+        let totalIN = 0;
+        let totalOUT = 0;
+
+        filteredLedgerRecords.forEach(r => {
+          const amount = Number(r.amount || 0);
+          const isIN = r.direction === 'IN';
+          if (isIN) totalIN += amount;
+          else totalOUT += amount;
+
+          wsData.push([
+            r.createdAt ? formatDate(r.createdAt) : '-',
+            r.id || '-',
+            r.transactionId || '-',
+            getLedgerTypeLabel(r.type),
+            r.method || 'Tunai',
+            r.direction || '-',
+            r.category || 'rental',
+            r.notes || '-',
+            isIN ? amount : -amount
+          ]);
+        });
+
+        wsData.push([]);
+        wsData.push(['', '', '', '', '', '', '', 'TOTAL KAS MASUK (IN):', totalIN]);
+        wsData.push(['', '', '', '', '', '', '', 'TOTAL KAS KELUAR (OUT):', totalOUT]);
+        wsData.push(['', '', '', '', '', '', '', 'SALDO BERSIH:', totalIN - totalOUT]);
+
+        const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+        ws['!cols'] = [
+          { wch: 15 }, { wch: 22 }, { wch: 18 }, { wch: 22 },
+          { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 35 }, { wch: 18 }
+        ];
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Buku Besar');
+        const today = new Date().toISOString().split('T')[0];
+        window.XLSX.writeFile(wb, `Buku_Besar_${today}.xlsx`);
+        onNotify?.({ title: 'Export berhasil', message: `Buku besar (${filteredLedgerRecords.length} entri) berhasil diunduh.`, type: 'success' });
+      } catch (err) {
+        console.error(err);
+        onNotify?.({ title: 'Export gagal', message: 'Gagal mengekspor buku besar ke Excel.', type: 'error' });
+      } finally {
+        setIsExporting('');
+      }
+    };
+
+    if (!window.XLSX) {
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')
+        .then(exportData)
+        .catch(() => {
+          setIsExporting('');
+          onNotify?.({ title: 'Export gagal', message: 'Gagal memuat library Excel.', type: 'error' });
+        });
+    } else {
+      exportData();
+    }
+  }, [filteredLedgerRecords, onNotify]);
+
+  // ─────────────────────────────────────────────────────
+  // 📒 EXPORT BUKU BESAR (LEDGER) → PDF
+  // ─────────────────────────────────────────────────────
+  const handleExportLedgerPDF = useCallback(async () => {
+    if (!filteredLedgerRecords.length) {
+      onNotify?.({ title: 'Tidak ada data', message: 'Tidak ada entri buku besar untuk diekspor.', type: 'warning' });
+      return;
+    }
+    setIsExporting('ledger-pdf');
+    try {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('l', 'mm', 'a4');
+
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SANGGAR SENI 3 BERLIAN', 148, 15, { align: 'center' });
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Buku Besar Keuangan (Jurnal Kas)', 148, 22, { align: 'center' });
+      doc.setFontSize(9);
+      const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      doc.text(`Dicetak: ${today} | Total: ${filteredLedgerRecords.length} entri`, 148, 28, { align: 'center' });
+
+      const tableColumn = ['Tanggal', 'ID Jurnal', 'Nota Sewa', 'Tipe Mutasi', 'Metode', 'Arah', 'Keterangan', 'Nominal'];
+      const tableRows = [];
+
+      let totalIN = 0;
+      let totalOUT = 0;
+
+      filteredLedgerRecords.forEach(r => {
+        const amount = Number(r.amount || 0);
+        const isIN = r.direction === 'IN';
+        if (isIN) totalIN += amount;
+        else totalOUT += amount;
+
+        tableRows.push([
+          r.createdAt ? formatDate(r.createdAt) : '-',
+          { content: r.id || '-', styles: { fontSize: 7 } },
+          r.transactionId || '-',
+          getLedgerTypeLabel(r.type),
+          r.method || 'Tunai',
+          { content: r.direction || '-', styles: { textColor: isIN ? [5, 150, 105] : [220, 38, 38], fontStyle: 'bold' } },
+          { content: r.notes || '-', styles: { fontSize: 8 } },
+          { content: (isIN ? '' : '-') + formatNumberDot(amount), styles: { halign: 'right', textColor: isIN ? [5, 150, 105] : [220, 38, 38] } }
+        ]);
+      });
+
+      tableRows.push([
+        { content: `Total IN: ${formatNumberDot(totalIN)}  |  Total OUT: ${formatNumberDot(totalOUT)}  |  Saldo Bersih: ${formatNumberDot(totalIN - totalOUT)}`, colSpan: 8, styles: { halign: 'right', fontStyle: 'bold', fillColor: [241, 245, 249] } }
+      ]);
+
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 35,
+        theme: 'grid',
+        headStyles: { fillColor: [5, 150, 105] },
+        styles: { fontSize: 8.5, cellPadding: 2.5 },
+        columnStyles: {
+          7: { halign: 'right', minCellWidth: 22 }
+        }
+      });
+
+      const todayISO = new Date().toISOString().split('T')[0];
+      doc.save(`Buku_Besar_${todayISO}.pdf`);
+      onNotify?.({ title: 'Export berhasil', message: `Buku besar (${filteredLedgerRecords.length} entri) berhasil diunduh.`, type: 'success' });
+    } catch (error) {
+      console.error('Ledger PDF Error:', error);
+      onNotify?.({ title: 'Export gagal', message: 'Gagal memuat sistem PDF. Pastikan koneksi internet stabil.', type: 'error' });
+    } finally {
+      setIsExporting('');
+    }
+  }, [filteredLedgerRecords, onNotify]);
+
+  return { handleExportExcel, handleExportPDF, handleExportLedgerExcel, handleExportLedgerPDF, isExporting };
 };

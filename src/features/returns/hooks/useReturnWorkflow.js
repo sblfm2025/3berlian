@@ -17,6 +17,10 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
   const [returnPage, setReturnPage] = useState(1);
   const [isReturning, setIsReturning] = useState(false);
 
+  // States untuk denda override
+  const [lateFeeOverride, setLateFeeOverride] = useState(null);
+  const [penaltyOverrideReason, setPenaltyOverrideReason] = useState('');
+
   const activeTransactions = useMemo(() => (
     transactions.filter(isActiveTransaction)
   ), [transactions]);
@@ -89,6 +93,9 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     setUseDepositForFees(Number(trx.depositAmount ?? trx.deposit ?? 0) > 0);
     setPaymentMethod('Tunai');
     setNotes('');
+    setLateFeeOverride(null);
+    setPenaltyOverrideReason('');
+
     setSelectedTrx({
       ...trx,
       items: returnableItems,
@@ -124,7 +131,12 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
 
   const conditionFee = conditionBreakdown.reduce((sum, item) => sum + item.fee, 0);
   const lateFee = selectedTrx?.calculatedFine || 0;
-  const totalAdditionalFee = lateFee + conditionFee;
+
+  // Denda keterlambatan final setelah override
+  const finalLateFee = lateFeeOverride !== null ? Number(lateFeeOverride) : lateFee;
+  const isPenaltyOverridden = lateFeeOverride !== null && Number(lateFeeOverride) !== lateFee;
+
+  const totalAdditionalFee = finalLateFee + conditionFee;
   const depositAmount = Number(selectedTrx?.depositAmount ?? selectedTrx?.deposit ?? 0);
   const depositDeducted = useDepositForFees ? Math.min(depositAmount, totalAdditionalFee) : 0;
   const depositReturned = Math.max(0, depositAmount - depositDeducted);
@@ -149,6 +161,8 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     setUseDepositForFees(true);
     setPaymentMethod('Tunai');
     setNotes('');
+    setLateFeeOverride(null);
+    setPenaltyOverrideReason('');
   };
 
   const updateReturnQty = (productId, nextQty, maxQty) => {
@@ -163,6 +177,10 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     if (!selectedTrx) return;
     if (totalReturnQty <= 0) return;
 
+    if (isPenaltyOverridden && !penaltyOverrideReason.trim()) {
+      throw new Error('Alasan perubahan denda wajib diisi.');
+    }
+
     setIsReturning(true);
     try {
       await onReturn({
@@ -172,13 +190,15 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
         itemConditions,
         returnItems: selectedReturnItems,
         conditionFee,
-        lateFee,
+        lateFee: finalLateFee,
         totalFee: totalAdditionalFee,
         paymentMethodForFees: paymentMethod,
-        useDepositForFees
+        useDepositForFees,
+        // override tracking
+        isPenaltyOverridden,
+        originalLateFee: lateFee,
+        penaltyOverrideReason
       });
-    } catch {
-      return;
     } finally {
       setIsReturning(false);
     }
@@ -186,6 +206,8 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     setSelectedTrx(null);
     setReturnQtyByProduct({});
     setUseDepositForFees(true);
+    setLateFeeOverride(null);
+    setPenaltyOverrideReason('');
   };
 
   const updateFilter = useCallback((nextFilter) => {
@@ -216,6 +238,12 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     itemConditions,
     isReturning,
     lateFee,
+    finalLateFee,
+    isPenaltyOverridden,
+    lateFeeOverride,
+    setLateFeeOverride,
+    penaltyOverrideReason,
+    setPenaltyOverrideReason,
     lateItemCount,
     notes,
     paginatedTransactions,

@@ -13,6 +13,7 @@ export const useRentalCheckout = ({
   customerNameInput,
   customerNoteInput,
   customerPhoneInput,
+  customers,
   depositAmount,
   discountAmount,
   finalCashReceived,
@@ -58,8 +59,18 @@ export const useRentalCheckout = ({
       return undefined;
     }
 
+    // Pengecekan fail-safe status pemblokiran pelanggan di database
+    const matchingCustomer = (customers || []).find(
+      c => c.name.toLowerCase().trim() === customerNameInput.toLowerCase().trim()
+    );
+    if (matchingCustomer && matchingCustomer.isBlocked) {
+      onValidationError?.([`Pelanggan "${matchingCustomer.name}" berstatus DIBLOKIR oleh sanggar dan tidak diizinkan menyewa kostum.`]);
+      return undefined;
+    }
+
     setIsCheckingOut(true);
     try {
+      const bookingId = localStorage.getItem('checkout_active_booking_id') || null;
       await onCheckout({
         customerName: customerNameInput,
         customerPhone: customerPhoneInput,
@@ -78,8 +89,13 @@ export const useRentalCheckout = ({
         cashReceived: paymentMethod === 'Tunai' ? finalCashReceived : 0,
         change: paymentMethod === 'Tunai' ? changeAmount : 0,
         status: 'disewa',
-        lateFee: 0
+        lateFee: 0,
+        bookingId
       }, cart);
+
+      if (bookingId) {
+        localStorage.removeItem('checkout_active_booking_id');
+      }
     } catch {
       return undefined;
     } finally {

@@ -1,0 +1,264 @@
+/* ==========================================================================
+   THEME AND UTILITIES - 3 BERLIAN (SODARA POS)
+   ========================================================================== */
+
+/* 1. Global Reset & Font System */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--slate-50);
+  color: var(--slate-900);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Watermark Motif Kain Adat Nusantara Halus di Latar Belakang */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.025; /* Sangat tipis dan halus agar tidak mengganggu teks */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 0 L80 40 L40 80 L0 40 Z M40 10 L70 40 L40 70 L10 40 Z M40 20 L60 40 L40 60 L20 40 Z M40 30 L50 40 L40 50 L30 40 Z' fill='%23064e3b' fill-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* 2. Premium Components & Utilities */
+
+/* Gradient Khas Budaya Emas Hijau */
+.brand-gradient {
+  background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-700) 60%, var(--accent-600) 100%);
+  color: #ffffff;
+}
+
+/* Kartu Premium POS */
+.premium-card {
+  background-color: var(--color-bg-panel);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.premium-card:hover {
+  box-shadow: var(--shadow-premium);
+  border-color: rgba(6, 78, 59, 0.15);
+}
+
+/* Tombol Premium dengan Ukuran Minimal 44px untuk Mobile */
+.btn-primary {
+  min-height: 44px;
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--primary-900);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-800);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Tombol Aksen Emas Adat */
+.btn-accent {
+  min-height: 44px;
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--accent-600);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-accent:hover:not(:disabled) {
+  background-color: var(--accent-700);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-gold);
+}
+
+/* Tombol Sekunder Outline */
+.btn-secondary {
+  min-height: 44px;
+  padding: var(--space-sm) var(--space-md);
+  background-color: transparent;
+  color: var(--primary-900);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--primary-900);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--primary-50);
+  color: var(--primary-800);
+}
+
+/* Bottom Sheet Animasi untuk POS Mobile */
+.bottom-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ffffff;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.2);
+  z-index: var(--z-modal);
+  transform: translateY(100%);
+  transition: transform var(--transition-slow);
+}
+
+.bottom-sheet.open {
+  transform: translateY(0);
+}
+
+/* Status Pill Budaya */
+.status-pill {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-pill.ready {
+  background-color: var(--success-50);
+  color: var(--success-600);
+  border: 1px solid var(--primary-100);
+}
+
+.status-pill.rented {
+  background-color: var(--warning-50);
+  color: var(--warning-600);
+  border: 1px solid var(--accent-50);
+}
+
+.status-pill.laundry {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* Shimmer Loading Skeleton */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite linear;
+}
+
+/* Stepper Progress Bar */
+.stepper-indicator {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: var(--space-lg);
+}
+
+.stepper-indicator::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--slate-200);
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+.stepper-step {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: #ffffff;
+  border: 2px solid var(--slate-300);
+  color: var(--slate-500);
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  transition: all var(--transition-normal);
+}
+
+.stepper-step.active {
+  border-color: var(--primary-900);
+  background-color: var(--primary-900);
+  color: #ffffff;
+  box-shadow: 0 0 0 4px var(--primary-100);
+}
+
+.stepper-step.completed {
+  border-color: var(--primary-900);
+  background-color: #ffffff;
+  color: var(--primary-900);
+}
+
+/* Kerapihan Scrollbar */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+  border-radius: var(--radius-full);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--slate-400);
+}

@@ -4,6 +4,7 @@ import RentalCart from './RentalCart';
 import PaymentSummary from './PaymentSummary';
 
 export default function CheckoutPanel({
+  activeStep = 1,
   showMobileCheckout,
   setShowMobileCheckout,
   paymentSummaryLabel,
@@ -59,6 +60,13 @@ export default function CheckoutPanel({
   formatDateInput,
   formatNumberDot
 }) {
+  const stepTitles = {
+    1: 'Katalog Produk',
+    2: 'Keranjang Sewa',
+    3: 'Data Pelanggan & Deposit',
+    4: 'Metode Pembayaran'
+  };
+
   return (
     <div
       className={`${showMobileCheckout ? 'fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm md:hidden' : 'hidden'} md:block md:w-[420px] shrink-0 xl:sticky xl:top-4 xl:self-start`}
@@ -68,11 +76,14 @@ export default function CheckoutPanel({
         className={`bg-white h-full flex flex-col md:rounded-[28px] md:border md:border-slate-200 md:shadow-soft overflow-hidden ${showMobileCheckout ? 'absolute inset-x-0 bottom-0 max-h-[92vh] rounded-t-[28px]' : ''}`}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 bg-blue-900 px-4 py-3 text-white md:rounded-t-[28px] md:px-5 md:py-4">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-emerald-900 px-4 py-3 text-white md:rounded-t-[28px] md:px-5 md:py-4">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-blue-100 sm:text-[11px] sm:tracking-[0.25em]">Pembayaran</p>
-            <h3 className="mt-1 text-base font-bold sm:text-lg sm:font-black">Ringkasan tagihan</h3>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-100 sm:text-[11px] sm:tracking-[0.2em]">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-emerald-100 sm:text-[11px] sm:tracking-[0.25em]">POS 3 BERLIAN</p>
+            <h3 className="mt-1 text-base font-bold sm:text-lg sm:font-black">
+              <span className="md:hidden">{stepTitles[activeStep]}</span>
+              <span className="hidden md:inline">Ringkasan tagihan</span>
+            </h3>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-100 sm:text-[11px] sm:tracking-[0.2em] hidden md:block">
               {paymentSummaryLabel}
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold sm:mt-3 sm:gap-2 sm:text-[11px]">
@@ -91,13 +102,14 @@ export default function CheckoutPanel({
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:space-y-4 md:p-5">
-          <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
+          {/* Checklist Pembayaran - Hanya tampil di step 4 pada mobile */}
+          <div className={`rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px] ${activeStep === 4 ? 'block' : 'hidden'} md:block`}>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Checklist pembayaran</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Checklist sewa</p>
                 <p className="mt-2 text-sm font-bold text-slate-900">{checkoutChecklist.every(item => item.ok) ? 'Semua langkah siap' : 'Lengkapi langkah yang masih tertinggal'}</p>
               </div>
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">{checkoutChecklist.filter(item => item.ok).length}/{checkoutChecklist.length}</span>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">{checkoutChecklist.filter(item => item.ok).length}/{checkoutChecklist.length}</span>
             </div>
 
             <div className="mt-3 grid gap-2 sm:mt-4 sm:space-y-3">
@@ -113,63 +125,73 @@ export default function CheckoutPanel({
             </div>
           </div>
 
-          <CustomerQuickForm
-            customerNameInput={customerNameInput}
-            setCustomerNameInput={setCustomerNameInput}
-            setShowSuggestions={setShowSuggestions}
-            showSuggestions={showSuggestions}
-            filteredCustomers={filteredCustomers}
-            applyCustomer={applyCustomer}
-            resetCustomer={resetCustomer}
-            customerMissingFields={customerMissingFields}
-            favoriteCustomers={favoriteCustomers}
-            recentCustomers={recentCustomers}
-            customerPhoneInput={customerPhoneInput}
-            setCustomerPhoneInput={setCustomerPhoneInput}
-            customerIdentityType={customerIdentityType}
-            setCustomerIdentityType={setCustomerIdentityType}
-            customerIdentityNumber={customerIdentityNumber}
-            setCustomerIdentityNumber={setCustomerIdentityNumber}
-            returnDateInput={returnDateInput}
-            setReturnDateInput={setReturnDateInput}
-            customerAddressInput={customerAddressInput}
-            setCustomerAddressInput={setCustomerAddressInput}
-            customerNoteInput={customerNoteInput}
-            setCustomerNoteInput={setCustomerNoteInput}
-            depositAmountInput={depositAmountInput}
-            setDepositAmountInput={setDepositAmountInput}
-            totalItems={totalItems}
-            formatDate={formatDate}
-            formatDateInput={formatDateInput}
-            formatNumberDot={formatNumberDot}
-          />
+          {/* Form Pelanggan - Tampil di step 3 pada mobile */}
+          <div className={`${activeStep === 3 ? 'block' : 'hidden'} md:block`}>
+            <CustomerQuickForm
+              customerNameInput={customerNameInput}
+              setCustomerNameInput={setCustomerNameInput}
+              setShowSuggestions={setShowSuggestions}
+              showSuggestions={showSuggestions}
+              filteredCustomers={filteredCustomers}
+              applyCustomer={applyCustomer}
+              resetCustomer={resetCustomer}
+              customerMissingFields={customerMissingFields}
+              favoriteCustomers={favoriteCustomers}
+              recentCustomers={recentCustomers}
+              customerPhoneInput={customerPhoneInput}
+              setCustomerPhoneInput={setCustomerPhoneInput}
+              customerIdentityType={customerIdentityType}
+              setCustomerIdentityType={setCustomerIdentityType}
+              customerIdentityNumber={customerIdentityNumber}
+              setCustomerIdentityNumber={setCustomerIdentityNumber}
+              returnDateInput={returnDateInput}
+              setReturnDateInput={setReturnDateInput}
+              customerAddressInput={customerAddressInput}
+              setCustomerAddressInput={setCustomerAddressInput}
+              customerNoteInput={customerNoteInput}
+              setCustomerNoteInput={setCustomerNoteInput}
+              depositAmountInput={depositAmountInput}
+              setDepositAmountInput={setDepositAmountInput}
+              totalItems={totalItems}
+              formatDate={formatDate}
+              formatDateInput={formatDateInput}
+              formatNumberDot={formatNumberDot}
+            />
+          </div>
 
-          <RentalCart
-            cart={cart}
-            removeCartItem={removeCartItem}
-            updateCartQty={updateCartQty}
-            formatCurrency={formatCurrency}
-          />
+          {/* Keranjang Sewa - Tampil di step 2 pada mobile */}
+          <div className={`${activeStep === 2 ? 'block' : 'hidden'} md:block`}>
+            <RentalCart
+              cart={cart}
+              removeCartItem={removeCartItem}
+              updateCartQty={updateCartQty}
+              formatCurrency={formatCurrency}
+            />
+          </div>
 
-          <PaymentSummary
-            discountType={discountType}
-            setDiscountType={setDiscountType}
-            setDiscountValue={setDiscountValue}
-            discountValue={discountValue}
-            paymentMethod={paymentMethod}
-            setPaymentMethod={setPaymentMethod}
-            cashReceived={cashReceived}
-            setCashReceived={setCashReceived}
-            grandTotal={grandTotal}
-            cashPresets={cashPresets}
-            finalCashReceived={finalCashReceived}
-            changeAmount={changeAmount}
-            formatCurrency={formatCurrency}
-            formatNumberDot={formatNumberDot}
-          />
+          {/* Ringkasan Pembayaran - Tampil di step 4 pada mobile */}
+          <div className={`${activeStep === 4 ? 'block' : 'hidden'} md:block`}>
+            <PaymentSummary
+              discountType={discountType}
+              setDiscountType={setDiscountType}
+              setDiscountValue={setDiscountValue}
+              discountValue={discountValue}
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              cashReceived={cashReceived}
+              setCashReceived={setCashReceived}
+              grandTotal={grandTotal}
+              cashPresets={cashPresets}
+              finalCashReceived={finalCashReceived}
+              changeAmount={changeAmount}
+              formatCurrency={formatCurrency}
+              formatNumberDot={formatNumberDot}
+            />
+          </div>
         </div>
 
-        <div className="border-t border-slate-100 bg-white px-4 py-4 md:px-5 md:py-5">
+        {/* Footer Pembayaran & Aksi - Tampil di step 4 pada mobile */}
+        <div className={`border-t border-slate-100 bg-white px-4 py-4 md:px-5 md:py-5 ${activeStep === 4 ? 'block' : 'hidden'} md:block`}>
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-slate-600">
               <span>Subtotal</span>
@@ -189,7 +211,7 @@ export default function CheckoutPanel({
             )}
             <div className="flex justify-between pt-3 border-t border-slate-100">
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Total tagihan</span>
-              <span className="text-3xl font-black text-blue-700">{formatCurrency(grandTotal)}</span>
+              <span className="text-3xl font-black text-emerald-900">{formatCurrency(grandTotal)}</span>
             </div>
           </div>
 
@@ -197,7 +219,7 @@ export default function CheckoutPanel({
             type="button"
             onClick={handleCheckoutClick}
             disabled={isCheckingOut || cart.length === 0 || getStockIssue().length > 0 || (paymentMethod === 'Tunai' && finalCashReceived < grandTotal)}
-            className="mt-4 w-full rounded-[20px] bg-blue-800 px-4 py-4 text-lg font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-4 w-full rounded-[20px] bg-emerald-900 hover:bg-emerald-950 px-4 py-4 text-lg font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
           >
             {isCheckingOut ? 'Memproses pembayaran...' : getStockIssue().length > 0 ? 'Periksa ulang stok' : 'Bayar & Cetak Nota'}
           </button>

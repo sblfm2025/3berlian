@@ -1,48 +1,54 @@
 @import "tailwindcss";
+@import "./styles/tokens.css";
+@import "./styles/theme.css";
 
 :root {
   color-scheme: light;
-  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --primary: #0d47a1;
-  --primary-2: #1976d2;
-  --accent: #ffc107;
-  --accent-orange: #ff6d00;
-  --success: #22c55e;
-  --danger: #ef4444;
-  --bg: #f5f7fa;
+
+  /* Backward Compatibility Mapping to Premium Nusantara Tokens */
+  --primary: var(--primary-900);
+  --primary-2: var(--primary-700);
+  --accent: var(--accent-600);
+  --accent-orange: var(--accent-700);
+  --success: var(--success-600);
+  --danger: var(--danger-600);
+  --bg: var(--slate-50);
   --panel: #ffffff;
-  --text: #111827;
-  --muted: #6b7280;
-  --border: #e5e7eb;
+  --text: var(--slate-900);
+  --muted: var(--slate-600);
+  --border: var(--slate-200);
 }
 
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(13, 71, 161, 0.12), transparent 30%),
-    linear-gradient(180deg, #f8fafc 0%, #f5f7fa 55%, #eef2f7 100%);
+  background-color: var(--slate-50);
   color: var(--text);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--slate-300) transparent;
 }
 
 ::selection {
-  background: rgba(25, 118, 210, 0.2);
+  background: rgba(6, 78, 59, 0.2);
 }
 
 @utility shadow-soft {
-  box-shadow: 0 24px 60px -26px rgba(15, 23, 42, 0.35);
+  box-shadow: var(--shadow-premium);
 }
 
 @utility brand-gradient {
-  background: linear-gradient(150deg, #0d47a1 0%, #1565c0 62%, #f6c431 100%);
+  background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-700) 60%, var(--accent-600) 100%);
 }
 
 @utility pos-card {
-  @apply border border-slate-200 bg-white rounded-[20px] shadow-soft;
+  @apply border border-slate-200 bg-white rounded-[20px] shadow-sm transition-all duration-200;
+}
+
+.pos-card:hover {
+  box-shadow: var(--shadow-premium);
+  border-color: rgba(6, 78, 59, 0.12);
 }
 
 @utility metric-bar {
@@ -50,7 +56,7 @@ body {
 }
 
 .metric-bar > span {
-  @apply block h-full rounded-full bg-gradient-to-r from-blue-600 to-amber-400;
+  @apply block h-full rounded-full bg-gradient-to-r from-emerald-800 to-amber-500;
 }
 
 @keyframes shimmer {

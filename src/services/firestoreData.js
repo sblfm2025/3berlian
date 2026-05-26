@@ -30,12 +30,44 @@ const auditPayload = ({ action, after = null, before = null, entityId, entityTyp
   operatorId
 });
 
-export const listenToAppData = ({ onProducts, onCustomers, onTransactions, onUsers, onError }) => {
+export const listenToAppData = ({ onProducts, onCustomers, onTransactions, onBookings, onUsers, onFinancialRecords, onError }) => {
   const unsubscribers = [];
   const started = {
     products: false,
     customers: false,
-    transactions: false
+    transactions: false,
+    bookings: false,
+    financialRecords: false
+  };
+
+  const startFinancialRecords = () => {
+    if (started.financialRecords) return;
+    started.financialRecords = true;
+
+    const unsubscribe = onSnapshot(
+      query(dataCollection('financialRecords'), orderBy('createdAt', 'desc'), limit(300)),
+      (snap) => onFinancialRecords?.(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
+      (error) => onError?.('financialRecords', error)
+    );
+    unsubscribers.push(unsubscribe);
+  };
+
+  const startBookings = () => {
+    if (started.bookings) return;
+    started.bookings = true;
+
+    const unsubscribe = onSnapshot(
+      query(dataCollection('bookings'), orderBy('createdAt', 'desc'), limit(150)),
+      (snap) => {
+        onBookings(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+        startFinancialRecords();
+      },
+      (error) => {
+        onError?.('bookings', error);
+        startFinancialRecords();
+      }
+    );
+    unsubscribers.push(unsubscribe);
   };
 
   const startTransactions = () => {
@@ -44,8 +76,14 @@ export const listenToAppData = ({ onProducts, onCustomers, onTransactions, onUse
 
     const unsubscribe = onSnapshot(
       query(dataCollection('transactions'), orderBy('rentDate', 'desc'), limit(100)),
-      (snap) => onTransactions(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
-      (error) => onError?.('transactions', error)
+      (snap) => {
+        onTransactions(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+        startBookings();
+      },
+      (error) => {
+        onError?.('transactions', error);
+        startBookings();
+      }
     );
     unsubscribers.push(unsubscribe);
   };

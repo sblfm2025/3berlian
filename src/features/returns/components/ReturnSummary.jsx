@@ -13,7 +13,12 @@ export default function ReturnSummary({
   feePaidSeparately,
   totalReturnQty,
   totalReturnableQty,
-  formatCurrency
+  formatCurrency,
+  lateFeeOverride,
+  setLateFeeOverride,
+  penaltyOverrideReason,
+  setPenaltyOverrideReason,
+  isPenaltyOverridden
 }) {
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
@@ -42,6 +47,40 @@ export default function ReturnSummary({
             </button>
           ))}
         </div>
+
+        {/* Input Override Denda */}
+        <div className="mt-5 border-t border-slate-200 pt-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Override Denda Keterlambatan</p>
+          <div className="mt-3 space-y-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500">Nominal Denda (Rp)</label>
+              <input
+                type="number"
+                min="0"
+                placeholder={lateFee}
+                value={lateFeeOverride === null ? '' : lateFeeOverride}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setLateFeeOverride(val === '' ? null : Number(val));
+                }}
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            {isPenaltyOverridden && (
+              <div>
+                <label className="block text-[11px] font-semibold text-red-500">Alasan Perubahan Denda (Wajib)</label>
+                <textarea
+                  required
+                  rows={2}
+                  placeholder="Contoh: Diskon keterlambatan disetujui owner karena kendala teknis kurir..."
+                  value={penaltyOverrideReason}
+                  onChange={(e) => setPenaltyOverrideReason(e.target.value)}
+                  className="mt-1 block w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
@@ -53,7 +92,16 @@ export default function ReturnSummary({
           </div>
           <div className="flex justify-between text-slate-600">
             <span>Denda keterlambatan</span>
-            <span>{formatCurrency(lateFee)}</span>
+            <span>
+              {isPenaltyOverridden ? (
+                <span className="flex items-center gap-1.5">
+                  <span className="line-through text-slate-400 font-semibold">{formatCurrency(lateFee)}</span>
+                  <span className="text-red-600 font-black">{formatCurrency(lateFeeOverride)}</span>
+                </span>
+              ) : (
+                formatCurrency(lateFee)
+              )}
+            </span>
           </div>
           <div className="flex justify-between text-slate-600">
             <span>Biaya kondisi</span>

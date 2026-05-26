@@ -40,12 +40,12 @@ export const useCustomerSelection = ({
   }, [transactions]);
 
   const filteredCustomers = customers
-    .filter(c => c.name.toLowerCase().includes(customerNameInput.toLowerCase()) && customerNameInput.length > 0)
+    .filter(c => c.deleted !== true && c.name.toLowerCase().includes(customerNameInput.toLowerCase()) && customerNameInput.length > 0)
     .slice(0, 6);
 
   const recentCustomers = useMemo(() => {
     return [...customers]
-      .filter(customer => customer?.name)
+      .filter(customer => customer?.name && customer.deleted !== true)
       .sort((a, b) => new Date(b.lastRentDate || 0) - new Date(a.lastRentDate || 0))
       .slice(0, 4);
   }, [customers]);
@@ -64,6 +64,7 @@ export const useCustomerSelection = ({
         count,
         customer: customers.find(customer => customer.name === name)
       }))
+      .filter(item => item.customer && item.customer.deleted !== true)
       .sort((a, b) => b.count - a.count)
       .slice(0, 4);
   }, [customers, transactions]);
@@ -80,6 +81,10 @@ export const useCustomerSelection = ({
   }, [customerActivity]);
 
   const applyCustomer = (customer) => {
+    if (customer.isBlocked) {
+      onCustomerWarning?.(`Pelanggan "${customer.name}" berstatus DIBLOKIR karena alasan keamanan sanggar. Tidak diperbolehkan menyewa kostum.`, 'Pelanggan Diblokir');
+      return;
+    }
     setCustomerNameInput(customer.name || '');
     setCustomerPhoneInput(customer.phone || '');
     setCustomerAddressInput(customer.address || '');

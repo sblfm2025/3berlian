@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { QrCode } from 'lucide-react';
 import { formatCurrency, formatDate, formatDateInput, formatNumberDot } from '../utils/format';
 import { useCustomerSelection } from '../features/rental/hooks/useCustomerSelection';
 import { usePaymentCalculation } from '../features/rental/hooks/usePaymentCalculation';
@@ -16,6 +17,60 @@ import RentalMobileBar from '../features/rental/components/RentalMobileBar';
 export default function RentPage({ products, customers, transactions = [], onCheckout, onNotify }) {
   const [showMobileCheckout, setShowMobileCheckout] = useState(false);
   const [depositAmountInput, setDepositAmountInput] = useState('');
+  const [qrScanInput, setQrScanInput] = useState('');
+  const [activeStep, setActiveStep] = useState(1); // 1: Katalog, 2: Keranjang, 3: Pelanggan, 4: Pembayaran
+
+  const handleQrScanSubmit = (e) => {
+    e.preventDefault();
+    if (!qrScanInput.trim()) return;
+
+    const scannedCode = qrScanInput.trim().toUpperCase();
+    setQrScanInput('');
+
+    const parts = scannedCode.split('-');
+    if (parts.length >= 3) {
+      const codePart = parts[0];
+      const sizePart = parts[1];
+
+      // Cari produk yang cocok di katalog
+      const foundProduct = products.find(p => {
+        const pCode = (p.sku || p.id || '').toUpperCase();
+        const nameClean = (p.name || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        return (pCode.includes(codePart) || nameClean.includes(codePart)) && String(p.size || '').toUpperCase() === sizePart;
+      });
+
+      if (foundProduct) {
+        if (Number(foundProduct.availableStock || 0) <= 0) {
+          onNotify?.({
+            title: 'Stok Habis',
+            message: `Kostum ${foundProduct.name} sedang tidak tersedia untuk disewa.`,
+            type: 'warning'
+          });
+          return;
+        }
+
+        // Tambah ke keranjang sewa
+        updateCartQty(foundProduct, 1);
+        onNotify?.({
+          title: 'Scan Unit Berhasil',
+          message: `Unit ${scannedCode} (${foundProduct.name}) ditambahkan ke keranjang.`,
+          type: 'success'
+        });
+      } else {
+        onNotify?.({
+          title: 'Kostum Tidak Ditemukan',
+          message: `Kostum adat dengan kode "${codePart}" ukuran "${sizePart}" tidak terdaftar di katalog.`,
+          type: 'error'
+        });
+      }
+    } else {
+      onNotify?.({
+        title: 'Kode QR Tidak Valid',
+        message: 'Gunakan format kode unit inventaris yang benar (e.g. BUGIS-L-001).',
+        type: 'warning'
+      });
+    }
+  };
 
   const {
     cart,
@@ -106,7 +161,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
     products,
     cart,
     depositAmountInput,
-    onCustomerWarning: (message) => onNotify?.({ title: 'Transaksi cepat belum tersedia', message, type: 'warning' }),
+    onCustomerWarning: (message, title = 'Transaksi cepat belum tersedia') => onNotify?.({ title, message, type: 'warning' }),
     setCart,
     setPaymentMethod,
     setDiscountType,
@@ -155,6 +210,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
     customerNameInput,
     customerNoteInput,
     customerPhoneInput,
+    customers,
     depositAmount,
     discountAmount,
     finalCashReceived,
@@ -174,6 +230,48 @@ export default function RentPage({ products, customers, transactions = [], onChe
     setPaymentMethod,
     subTotal
   });
+
+  // Mengambil data booking otomatis untuk di-checkout jika ada di localStorage
+  useEffect(() => {
+    const bookingJson = localStorage.getItem('checkout_booking_data');
+    if (bookingJson) {
+      try {
+        const booking = JSON.parse(bookingJson);
+        window.setTimeout(() => {
+          if (booking.items && booking.items.length > 0) {
+            setCart(booking.items);
+          }
+          if (booking.customerName) {
+            setCustomerNameInput(booking.customerName);
+          }
+          if (booking.customerPhone) {
+            setCustomerPhoneInput(booking.customerPhone);
+          }
+          if (booking.customerAddress) {
+            setCustomerAddressInput(booking.customerAddress);
+          }
+          if (booking.deposit) {
+            setDepositAmountInput(String(booking.deposit));
+          }
+
+          // Simpan referensi bookingId di localStorage agar dibaca saat checkout sukses
+          if (booking.bookingId) {
+            localStorage.setItem('checkout_active_booking_id', booking.bookingId);
+          }
+
+          onNotify?.({
+            title: 'Booking kostum dimuat',
+            message: `Data booking milik ${booking.customerName} telah terisi otomatis di form kasir.`,
+            type: 'success'
+          });
+        }, 0);
+      } catch (err) {
+        console.error('Gagal memuat data booking dari localStorage:', err);
+      } finally {
+        localStorage.removeItem('checkout_booking_data');
+      }
+    }
+  }, [setCart, setCustomerNameInput, setCustomerPhoneInput, setCustomerAddressInput, setDepositAmountInput, onNotify]);
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-3">
@@ -206,6 +304,31 @@ export default function RentPage({ products, customers, transactions = [], onChe
       </div>
 
       {/* POS Quick Metrics */}
+      {/* PANEL SCANNER BARCODE/QR SECARA OFFLINE */}
+      <div className="rounded-[24px] border border-slate-200 bg-white p-4.5 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-black text-blue-900 flex items-center gap-1.5"><QrCode size={18} className="text-amber-500 animate-pulse" /> Pemindaian QR/Barcode Kostum</h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">Tembak scanner QR hardware Anda atau ketik manual kode unit fisik untuk checkout cepat.</p>
+          </div>
+          <form onSubmit={handleQrScanSubmit} className="flex gap-2 max-w-md w-full shrink-0">
+            <input
+              type="text"
+              value={qrScanInput}
+              onChange={(e) => setQrScanInput(e.target.value)}
+              placeholder="Fokus kursor & scan QR (e.g. BUGIS-L-001)..."
+              className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-800 placeholder-slate-400 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 transition"
+            />
+            <button
+              type="submit"
+              className="rounded-2xl bg-blue-800 hover:bg-blue-900 text-white px-4 py-2.5 text-xs font-black shadow-sm flex items-center gap-1 transition"
+            >
+              Proses
+            </button>
+          </form>
+        </div>
+      </div>
+
       <div className="hidden gap-3 sm:grid-cols-2 md:grid xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Pelanggan</p>
@@ -307,40 +430,98 @@ export default function RentPage({ products, customers, transactions = [], onChe
         </div>
       </div>
 
+      {/* Stepper Indicator - Hanya Tampil di Mobile */}
+      <div className="md:hidden bg-white border border-slate-200 p-4 rounded-2xl mb-1 shadow-sm">
+        <div className="flex justify-between w-full relative">
+          <div className="absolute top-4 left-4 right-4 h-[2px] bg-slate-100 z-0" />
+          <div
+            className="absolute top-4 left-4 h-[2px] bg-emerald-900 z-0 transition-all duration-300"
+            style={{ width: `calc(${((activeStep - 1) / 3) * 100}% - 8px)` }}
+          />
+
+          {[
+            { step: 1, label: 'Katalog' },
+            { step: 2, label: 'Keranjang' },
+            { step: 3, label: 'Pelanggan' },
+            { step: 4, label: 'Bayar' }
+          ].map(s => (
+            <button
+              key={s.step}
+              type="button"
+              onClick={() => {
+                if (s.step === 2 && cart.length === 0) {
+                  onNotify?.({ title: 'Keranjang Kosong', message: 'Silakan pilih kostum terlebih dahulu.', type: 'warning' });
+                  return;
+                }
+                if (s.step === 3 && cart.length === 0) {
+                  onNotify?.({ title: 'Keranjang Kosong', message: 'Silakan pilih kostum terlebih dahulu.', type: 'warning' });
+                  return;
+                }
+                if (s.step === 4 && !customerNameInput?.trim()) {
+                  onNotify?.({ title: 'Pelanggan Kosong', message: 'Isi nama pelanggan terlebih dahulu.', type: 'warning' });
+                  return;
+                }
+                setActiveStep(s.step);
+                if (s.step > 1) {
+                  setShowMobileCheckout(true);
+                } else {
+                  setShowMobileCheckout(false);
+                }
+              }}
+              className="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none"
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all duration-300 ${
+                activeStep === s.step
+                  ? 'bg-emerald-950 border-emerald-950 text-white shadow-md scale-110'
+                  : activeStep > s.step
+                    ? 'bg-white border-emerald-900 text-emerald-900 font-extrabold'
+                    : 'bg-white border-slate-200 text-slate-400'
+              }`}>
+                {s.step}
+              </div>
+              <span className={`text-[9px] font-bold tracking-tight uppercase ${activeStep === s.step ? 'text-emerald-950 font-extrabold' : 'text-slate-400'}`}>{s.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main POS Interface (Catalog Left, Checkout Panel Right) */}
       <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
-        <ProductCatalog
-          search={search}
-          updateSearch={updateSearch}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          selectCategory={selectCategory}
-          favoriteProducts={favoriteProducts}
-          updateCartQty={updateCartQty}
-          cart={cart}
-          lastCompletedTransaction={lastCompletedTransaction}
-          applyLastTransaction={applyLastTransaction}
-          totalItems={totalItems}
-          subTotal={subTotal}
-          discountAmount={discountAmount}
-          grandTotal={grandTotal}
-          paymentMethod={paymentMethod}
-          clearCart={clearCart}
-          categoryCounts={categoryCounts}
-          availableProducts={availableProducts}
-          paginatedProducts={paginatedProducts}
-          safeProductPage={safeProductPage}
-          productPageCount={productPageCount}
-          productStartNumber={productStartNumber}
-          productEndNumber={productEndNumber}
-          sortedProducts={sortedProducts}
-          setProductPage={setProductPage}
-          PRODUCTS_PER_PAGE={PRODUCTS_PER_PAGE}
-          formatCurrency={formatCurrency}
-          formatDate={formatDate}
-        />
+        <div className={`${activeStep === 1 ? 'block' : 'hidden'} md:block flex-1`}>
+          <ProductCatalog
+            search={search}
+            updateSearch={updateSearch}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            selectCategory={selectCategory}
+            favoriteProducts={favoriteProducts}
+            updateCartQty={updateCartQty}
+            cart={cart}
+            lastCompletedTransaction={lastCompletedTransaction}
+            applyLastTransaction={applyLastTransaction}
+            totalItems={totalItems}
+            subTotal={subTotal}
+            discountAmount={discountAmount}
+            grandTotal={grandTotal}
+            paymentMethod={paymentMethod}
+            clearCart={clearCart}
+            categoryCounts={categoryCounts}
+            availableProducts={availableProducts}
+            paginatedProducts={paginatedProducts}
+            safeProductPage={safeProductPage}
+            productPageCount={productPageCount}
+            productStartNumber={productStartNumber}
+            productEndNumber={productEndNumber}
+            sortedProducts={sortedProducts}
+            setProductPage={setProductPage}
+            PRODUCTS_PER_PAGE={PRODUCTS_PER_PAGE}
+            formatCurrency={formatCurrency}
+            formatDate={formatDate}
+          />
+        </div>
 
         <CheckoutPanel
+          activeStep={activeStep}
           showMobileCheckout={showMobileCheckout}
           setShowMobileCheckout={setShowMobileCheckout}
           paymentSummaryLabel={paymentSummaryLabel}
@@ -400,12 +581,20 @@ export default function RentPage({ products, customers, transactions = [], onChe
 
       {/* Mobile Nav Sticky Checkout Info */}
       <RentalMobileBar
+        activeStep={activeStep}
+        setActiveStep={setActiveStep}
         totalItems={totalItems}
         grandTotal={grandTotal}
         customerNameInput={customerNameInput}
+        customerProfileReady={customerProfileReady}
         paymentMethod={paymentMethod}
         setShowMobileCheckout={setShowMobileCheckout}
         formatCurrency={formatCurrency}
+        handleCheckoutClick={handleCheckoutClick}
+        isCheckingOut={isCheckingOut}
+        getStockIssue={getStockIssue}
+        finalCashReceived={finalCashReceived}
+        onNotify={onNotify}
       />
     </div>
   );

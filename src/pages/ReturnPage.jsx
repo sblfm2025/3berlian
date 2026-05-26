@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Package, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package, Search, QrCode } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useReturnWorkflow } from '../features/returns/hooks/useReturnWorkflow';
 import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
@@ -12,6 +12,7 @@ import ReturnConfirmModal from '../features/returns/components/ReturnConfirmModa
 
 export default function ReturnPage({ transactions, onReturn }) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [qrScanInput, setQrScanInput] = useState('');
   const {
     RETURNS_PER_PAGE,
     activeTransactions,
@@ -32,6 +33,12 @@ export default function ReturnPage({ transactions, onReturn }) {
     itemConditions,
     isReturning,
     lateFee,
+    finalLateFee,
+    isPenaltyOverridden,
+    lateFeeOverride,
+    setLateFeeOverride,
+    penaltyOverrideReason,
+    setPenaltyOverrideReason,
     lateItemCount,
     notes,
     overdueCount,
@@ -68,6 +75,81 @@ export default function ReturnPage({ transactions, onReturn }) {
   }), [searchTerm, updateSearchTerm]);
   useMobileSearchRegistration(mobileSearchConfig);
 
+  const handleQrScanSubmit = (e) => {
+    e.preventDefault();
+    if (!qrScanInput.trim()) return;
+
+    const scannedCode = qrScanInput.trim().toUpperCase();
+    setQrScanInput('');
+
+    // Skenario A: Deteksi jika yang dipindai adalah nomor nota (invoiceNumber) secara langsung
+    const foundTrxDirect = transactions.find(t =>
+      t.status !== 'void' && t.status !== 'CANCELLED' &&
+      (t.id === scannedCode || t.invoiceNumber === scannedCode)
+    );
+
+    if (foundTrxDirect) {
+      handleSelect(foundTrxDirect);
+      onReturnNotify({
+        title: 'Nota Ditemukan',
+        message: `Nota ${foundTrxDirect.id} milik ${foundTrxDirect.customerName || 'Pelanggan'} berhasil dibuka.`,
+        type: 'success'
+      });
+      return;
+    }
+
+    // Skenario B: Deteksi jika yang dipindai adalah kode QR unit kostum (e.g. BUGIS-L-001)
+    const parts = scannedCode.split('-');
+    if (parts.length >= 3) {
+      const codePart = parts[0];
+      const sizePart = parts[1];
+
+      // Cari nota aktif yang menyewa kostum ini
+      const activeRentals = transactions.filter(t =>
+        t.status !== 'void' && t.status !== 'CANCELLED' && t.status !== 'completed' && t.status !== 'returned'
+      );
+
+      const foundTrx = activeRentals.find(t => {
+        const itemsList = t.remainingItems?.length ? t.remainingItems : t.items || [];
+        return itemsList.some(item => {
+          const p = item.product || {};
+          const pCode = (p.sku || p.id || '').toUpperCase();
+          const nameClean = (p.name || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+          return (pCode.includes(codePart) || nameClean.includes(codePart)) && String(p.size || '').toUpperCase() === sizePart;
+        });
+      });
+
+      if (foundTrx) {
+        handleSelect(foundTrx);
+        onReturnNotify({
+          title: 'Kostum Terdeteksi',
+          message: `Ditemukan penyewaan aktif pada nota ${foundTrx.id} oleh ${foundTrx.customerName || 'Pelanggan'}.`,
+          type: 'success'
+        });
+      } else {
+        onReturnNotify({
+          title: 'Kostum Tidak Ditemukan',
+          message: `Tidak ditemukan penyewaan aktif untuk unit "${scannedCode}" saat ini.`,
+          type: 'error'
+        });
+      }
+    } else {
+      onReturnNotify({
+        title: 'Input Tidak Valid',
+        message: 'Masukkan nomor nota aktif atau scan QR unit kostum (e.g. BUGIS-L-001).',
+        type: 'warning'
+      });
+    }
+  };
+
+  // Helper lokal untuk trigger notifikasi jika window.onNotify tidak dipassing
+  const onReturnNotify = (notice) => {
+    if (window.dispatchEvent) {
+      const event = new CustomEvent('app-toast-notify', { detail: notice });
+      window.dispatchEvent(event);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-3">
       {/* Return Header Banner */}
@@ -100,6 +182,31 @@ export default function ReturnPage({ transactions, onReturn }) {
         </div>
       </div>
 
+      {/* PANEL SCANNER BARCODE/QR SECARA OFFLINE */}
+      <div className="rounded-[24px] border border-slate-200 bg-white p-4.5 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-black text-emerald-950 flex items-center gap-1.5"><QrCode size={18} className="text-amber-500 animate-pulse" /> Pemindaian QR/Barcode Pengembalian</h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">Scan kode barcode di invoice cetak ATAU scan QR baju adat langsung untuk pengembalian kilat.</p>
+          </div>
+          <form onSubmit={handleQrScanSubmit} className="flex gap-2 max-w-md w-full shrink-0">
+            <input
+              type="text"
+              value={qrScanInput}
+              onChange={(e) => setQrScanInput(e.target.value)}
+              placeholder="Scan barcode nota atau QR unit (e.g. BUGIS-L-001)..."
+              className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-800 placeholder-slate-400 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-50 transition"
+            />
+            <button
+              type="submit"
+              className="rounded-2xl bg-emerald-900 hover:bg-emerald-950 text-white px-5 py-2.5 text-xs font-black shadow-sm flex items-center gap-1 transition min-h-[44px]"
+            >
+              Cari
+            </button>
+          </form>
+        </div>
+      </div>
+
       {/* Return Quick Metrics */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
         <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3">
@@ -110,7 +217,7 @@ export default function ReturnPage({ transactions, onReturn }) {
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Biaya tambahan</p>
           <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-black">{formatCurrency(totalAdditionalFee)}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm col-span-2 sm:col-span-1 sm:px-4 sm:py-3">
+        <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm col-span-2 sm:col-span-1 sm:px-4 sm:py-3 flex flex-col justify-between">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Aksi</p>
           <button
             type="button"
@@ -118,7 +225,7 @@ export default function ReturnPage({ transactions, onReturn }) {
               resetSelection();
             }}
             disabled={!selectedTrx}
-            className="mt-1.5 rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 sm:mt-2 sm:rounded-[16px]"
+            className="mt-1 w-full rounded-xl bg-emerald-900 hover:bg-emerald-950 px-3 py-2.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 transition min-h-[44px] flex items-center justify-center"
           >
             Ganti Nota
           </button>
@@ -128,7 +235,7 @@ export default function ReturnPage({ transactions, onReturn }) {
       {/* Main Interface (Left list, Right check form) */}
       <div className="grid items-start gap-3 xl:grid-cols-[1.02fr_1.38fr] xl:gap-4">
         {/* Left List of Transactions */}
-        <div className="pos-card p-3 md:p-5">
+        <div className={`pos-card p-3 md:p-5 ${selectedTrx ? 'hidden md:block' : ''}`}>
           <div className="hidden md:block">
             <p className="text-sm font-semibold text-slate-500">Daftar transaksi aktif</p>
             <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Cari nota atau pelanggan</h3>
@@ -155,7 +262,7 @@ export default function ReturnPage({ transactions, onReturn }) {
                 onClick={() => {
                   updateFilter(option);
                 }}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-all sm:px-4 sm:py-2 sm:text-sm ${filter === option ? 'bg-blue-700 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-all sm:px-4 sm:py-2 sm:text-sm ${filter === option ? 'bg-emerald-900 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-900'} min-h-[36px]`}
               >
                 {option}
               </button>
@@ -187,7 +294,7 @@ export default function ReturnPage({ transactions, onReturn }) {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold md:mt-4">
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
               {returnStartNumber}-{returnEndNumber} dari {filteredTransactions.length} nota
             </span>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
@@ -244,7 +351,7 @@ export default function ReturnPage({ transactions, onReturn }) {
         </div>
 
         {/* Right Costumes Check Form */}
-        <div className={`pos-card p-3 md:p-5 ${selectedTrx ? '' : 'hidden md:block'} md:min-h-[620px]`}>
+        <div className={`pos-card p-3 md:p-5 ${selectedTrx ? 'block' : 'hidden md:block'} md:min-h-[620px]`}>
           {selectedTrx ? (
             <div className="space-y-3 md:space-y-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -263,8 +370,8 @@ export default function ReturnPage({ transactions, onReturn }) {
 
               {/* Rental Dates Summary */}
               <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
-                <div className="rounded-2xl bg-blue-50 p-3 border border-blue-100 sm:rounded-[22px] sm:p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-700 sm:text-[11px] sm:tracking-[0.2em]">Tanggal sewa</p>
+                <div className="rounded-2xl bg-emerald-50 p-3 border border-emerald-100 sm:rounded-[22px] sm:p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-800 sm:text-[11px] sm:tracking-[0.2em]">Tanggal sewa</p>
                   <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-black">{formatDate(selectedTrx.rentDate)}</p>
                 </div>
                 <div className="rounded-2xl bg-amber-50 p-3 border border-amber-100 sm:rounded-[22px] sm:p-4">
@@ -318,6 +425,11 @@ export default function ReturnPage({ transactions, onReturn }) {
                 totalReturnQty={totalReturnQty}
                 totalReturnableQty={totalReturnableQty}
                 formatCurrency={formatCurrency}
+                lateFeeOverride={lateFeeOverride}
+                setLateFeeOverride={setLateFeeOverride}
+                penaltyOverrideReason={penaltyOverrideReason}
+                setPenaltyOverrideReason={setPenaltyOverrideReason}
+                isPenaltyOverridden={isPenaltyOverridden}
               />
 
               {/* Notes Input */}
@@ -328,7 +440,7 @@ export default function ReturnPage({ transactions, onReturn }) {
                   onChange={(e) => setNotes(e.target.value)}
                   rows="3"
                   placeholder="Contoh: barang dikembalikan dalam keadaan kotor, ada set yang terpisah, pelanggan datang sendiri."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 resize-none sm:rounded-[18px] sm:px-4 sm:py-3"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-50 resize-none sm:rounded-[18px] sm:px-4 sm:py-3"
                 />
               </div>
 
@@ -342,7 +454,7 @@ export default function ReturnPage({ transactions, onReturn }) {
                 type="button"
                 onClick={() => setShowConfirmModal(true)}
                 disabled={isReturning || totalReturnQty <= 0}
-                className="w-full rounded-2xl bg-blue-800 px-4 py-3 text-sm font-semibold text-white shadow-md sm:rounded-[20px] sm:py-4 sm:text-base sm:font-black"
+                className="w-full rounded-[20px] bg-emerald-900 hover:bg-emerald-950 px-4 py-4 text-base font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] flex items-center justify-center transition"
               >
                 {isReturning ? 'Memproses pengembalian...' : totalReturnQty <= 0 ? 'Pilih item kembali' : 'Konfirmasi Pengembalian'}
               </button>
@@ -367,7 +479,7 @@ export default function ReturnPage({ transactions, onReturn }) {
         conditionBreakdown={conditionBreakdown}
         returnQtyByProduct={returnQtyByProduct}
         itemConditions={itemConditions}
-        lateFee={lateFee}
+        lateFee={finalLateFee}
         conditionFee={conditionFee}
         totalAdditionalFee={totalAdditionalFee}
         depositAmount={depositAmount}

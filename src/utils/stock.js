@@ -1,17 +1,29 @@
 export const normalizeStock = (product = {}) => {
-  const stockTotal = Number(product.stockTotal ?? product.stock ?? 0);
-  const stockAvailable = Number(product.stockAvailable ?? product.stock ?? stockTotal);
-  const stockRented = Number(product.stockRented || 0);
-  const stockLaundry = Number(product.stockLaundry || 0);
-  const stockDamaged = Number(product.stockDamaged || 0);
+  const rentedStock = Number(product.rentedStock ?? product.stockRented ?? 0);
+  const laundryStock = Number(product.laundryStock ?? product.stockLaundry ?? 0);
+  const maintenanceStock = Number(product.maintenanceStock ?? product.stockDamaged ?? product.stockMaintenance ?? 0);
+  const lostStock = Number(product.lostStock ?? 0);
+  const retiredStock = Number(product.retiredStock ?? 0);
+
+  // Jika ada totalStock atau stockTotal, gunakan itu, jika tidak hitung dari available + status lainnya
+  const availableStock = Number(product.availableStock ?? product.stockAvailable ?? product.stock ?? 0);
+  const totalStock = Number(product.totalStock ?? product.stockTotal ?? (availableStock + rentedStock + laundryStock + maintenanceStock + lostStock + retiredStock));
 
   return {
-    stockTotal,
-    stockAvailable,
-    stockRented,
-    stockLaundry,
-    stockDamaged,
-    stock: stockAvailable
+    totalStock,
+    availableStock,
+    rentedStock,
+    laundryStock,
+    maintenanceStock,
+    lostStock,
+    retiredStock,
+    // Fallbacks untuk backward-compatibility:
+    stockTotal: totalStock,
+    stockAvailable: availableStock,
+    stockRented: rentedStock,
+    stockLaundry: laundryStock,
+    stockDamaged: maintenanceStock,
+    stock: availableStock
   };
 };
 
@@ -19,7 +31,7 @@ export const canRentProduct = (product, qty = 1) => {
   const requestedQty = Number(qty || 0);
   const stock = normalizeStock(product);
 
-  return requestedQty > 0 && stock.stockAvailable >= requestedQty;
+  return requestedQty > 0 && stock.availableStock >= requestedQty;
 };
 
 export const calculateStockAfterRent = (product, qty = 1) => {
@@ -30,15 +42,21 @@ export const calculateStockAfterRent = (product, qty = 1) => {
     throw new Error('Jumlah sewa harus lebih dari 0.');
   }
 
-  if (stock.stockAvailable < requestedQty) {
-    throw new Error(`Stok tersisa ${stock.stockAvailable} unit.`);
+  if (stock.availableStock < requestedQty) {
+    throw new Error(`Stok tersisa ${stock.availableStock} unit.`);
   }
+
+  const nextAvailable = stock.availableStock - requestedQty;
+  const nextRented = stock.rentedStock + requestedQty;
 
   return {
     ...stock,
-    stockAvailable: stock.stockAvailable - requestedQty,
-    stockRented: stock.stockRented + requestedQty,
-    stock: stock.stockAvailable - requestedQty
+    availableStock: nextAvailable,
+    rentedStock: nextRented,
+    // Keep backward compatibility fields
+    stockAvailable: nextAvailable,
+    stockRented: nextRented,
+    stock: nextAvailable
   };
 };
 
@@ -47,6 +65,7 @@ export const calculateStockAfterReturn = (product, qty = 1, condition = 'good') 
   const stock = normalizeStock(product);
   const nextStock = {
     ...stock,
+    rentedStock: Math.max(0, stock.rentedStock - returnedQty),
     stockRented: Math.max(0, stock.stockRented - returnedQty)
   };
 
@@ -55,15 +74,20 @@ export const calculateStockAfterReturn = (product, qty = 1, condition = 'good') 
   }
 
   if (condition === 'laundry') {
-    nextStock.stockLaundry += returnedQty;
-  } else if (condition === 'damaged' || condition === 'lost') {
-    nextStock.stockDamaged += returnedQty;
+    nextStock.laundryStock += returnedQty;
+    nextStock.stockLaundry = nextStock.laundryStock;
+  } else if (condition === 'damaged') {
+    nextStock.maintenanceStock += returnedQty;
+    nextStock.stockDamaged = nextStock.maintenanceStock;
+  } else if (condition === 'lost') {
+    nextStock.lostStock += returnedQty;
   } else {
-    nextStock.stockAvailable += returnedQty;
+    nextStock.availableStock += returnedQty;
+    nextStock.stockAvailable = nextStock.availableStock;
   }
 
-  nextStock.stock = nextStock.stockAvailable;
+  nextStock.stock = nextStock.availableStock;
   return nextStock;
 };
 
-export const getRentableStock = (product) => normalizeStock(product).stockAvailable;
+export const getRentableStock = (product) => normalizeStock(product).availableStock;

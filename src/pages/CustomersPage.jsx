@@ -1,14 +1,28 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Clock } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+  AlertTriangle,
+  Clock,
+  User,
+  Scissors,
+  Lock,
+  Unlock,
+  ShieldAlert,
+  Trash2,
+  Sparkles,
+  Info
+} from 'lucide-react';
 import { formatCurrency, formatDate, formatNumberDot } from '../utils/format';
 import { isActiveTransaction } from '../utils/transactionStatus';
 import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 const CUSTOMERS_PER_PAGE = 20;
+
 const isRevenueTransaction = (transaction) => transaction.status !== 'void';
-
 const getDepositAmount = (transaction) => Number(transaction.depositAmount ?? transaction.deposit ?? 0);
-
 const getDepositDeducted = (transaction) => Number(transaction.depositDeducted || transaction.returnInfo?.depositDeducted || 0);
 
 const getLateDays = (transaction) => {
@@ -20,22 +34,46 @@ const getLateDays = (transaction) => {
   return today > expected ? Math.ceil((today - expected) / (1000 * 60 * 60 * 24)) : 0;
 };
 
-// ==========================================
-export default function CustomersPage({ customers, transactions, onUpdateCustomer }) {
+// Fungsi pembantu untuk masking nomor identitas (UU PDP)
+const maskIdentityNumber = (number) => {
+  if (!number) return '-';
+  const clean = String(number).trim();
+  if (clean.length <= 6) return '******';
+  return `${clean.substring(0, 4)}**********${clean.substring(clean.length - 2)}`;
+};
+
+export default function CustomersPage({ customers, transactions, onUpdateCustomer, onNotify }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('terbaru');
   const [customerPage, setCustomerPage] = useState(1);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [activeDetailTab, setActiveDetailTab] = useState('profile'); // profile, fitting, risk
+  const [deleteConfirmCustomer, setDeleteConfirmCustomer] = useState(null); // untuk modal konfirmasi soft delete
   const [draftRiskNote, setDraftRiskNote] = useState('');
+
   const [draftCustomer, setDraftCustomer] = useState({
     address: '',
     note: '',
     riskNote: '',
     identityType: 'KTP',
     identityNumber: '',
-    depositAmount: ''
+    depositAmount: '',
+    isBlocked: false,
+    measurement: {
+      heightCm: '',
+      weightKg: '',
+      chestCm: '',
+      waistCm: '',
+      hipCm: '',
+      shoulderCm: '',
+      headCm: '',
+      shoeSize: '',
+      preferredSize: '',
+      notes: ''
+    }
   });
+
   const mobileSearchConfig = useMemo(() => ({
     placeholder: 'Cari pelanggan atau nomor HP',
     value: searchTerm,
@@ -44,10 +82,53 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
       setCustomerPage(1);
     }
   }), [searchTerm]);
+
   useMobileSearchRegistration(mobileSearchConfig);
 
+  // Menghitung statistik dan status risiko secara dinamis
   const enrichedCustomers = useMemo(() => {
-    return customers.map(customer => {
+    // Saring pelanggan yang dihapus secara lembut (soft delete)
+    const activeCustomers = [...customers.filter(c => c.deleted !== true)];
+
+    // Ekstrak nama pelanggan unik dari transaksi yang belum ada di activeCustomers
+    transactions.forEach(tx => {
+      if (!tx.customerName) return;
+      const normalizedTxName = tx.customerName.trim().toLowerCase();
+
+      const exists = activeCustomers.some(c => c.name.trim().toLowerCase() === normalizedTxName);
+      if (!exists) {
+        // Buat ID yang seragam sesuai getCustomerId transaksi
+        const fallbackId = `CUST-${String(tx.customerPhone || tx.customerName)
+          .trim()
+          .replace(/[/.#[\]]/g, '-')
+          .replace(/\s+/g, '-')
+          .toLowerCase()}`;
+
+        activeCustomers.push({
+          id: fallbackId,
+          name: tx.customerName.trim(),
+          phone: tx.customerPhone || tx.customer?.phone || '',
+          address: tx.customerAddress || tx.customer?.address || '',
+          depositAmount: 0,
+          isBlocked: false,
+          isFallback: true,
+          measurement: {
+            heightCm: 0,
+            weightKg: 0,
+            chestCm: 0,
+            waistCm: 0,
+            hipCm: 0,
+            shoulderCm: 0,
+            headCm: 0,
+            shoeSize: '',
+            preferredSize: '',
+            notes: ''
+          }
+        });
+      }
+    });
+
+    return activeCustomers.map(customer => {
       const customerTransactions = transactions.filter(tx => tx.customerName === customer.name);
       const revenueTransactions = customerTransactions.filter(isRevenueTransaction);
       const recentTransactions = [...customerTransactions].sort((a, b) => new Date(b.rentDate || 0) - new Date(a.rentDate || 0));
@@ -56,20 +137,44 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
       const lastRentDate = customer.lastRentDate || recentTransactions[0]?.rentDate || '';
       const activeTransactions = customerTransactions.filter(isActiveTransaction);
       const pendingReturns = activeTransactions.length;
+
+      // Hitung akumulasi statistik historis pengembalian terlambat dan denda
       const overdueReturns = activeTransactions.filter(tx => getLateDays(tx) > 0).length;
+      const totalLateReturns = revenueTransactions.filter(tx => (tx.lateFee || 0) > 0).length;
       const activeDeposit = activeTransactions.reduce((sum, tx) => sum + getDepositAmount(tx), 0);
       const depositDeducted = revenueTransactions.reduce((sum, tx) => sum + getDepositDeducted(tx), 0);
+
+      // Hitung risk level secara dinamis sesuai aturan bisnis Phase 8
+      let riskLevel = 'NORMAL';
+      let riskReason = '';
+
+      if (customer.isBlocked) {
+        riskLevel = 'BLOCKED';
+        riskReason = 'Diblokir manual oleh Owner/Staf Sanggar.';
+      } else if (overdueReturns > 3 || depositDeducted > 150000) {
+        riskLevel = 'HIGH_RISK';
+        riskReason = 'Sering terlambat parah atau deposit sering terpotong denda besar.';
+      } else if (overdueReturns > 0 || totalLateReturns > 2 || depositDeducted > 0) {
+        riskLevel = 'ATTENTION';
+        riskReason = 'Pernah terlambat sewa atau deposit terpotong denda.';
+      } else if (visitCount > 3 && overdueReturns === 0 && depositDeducted === 0) {
+        riskLevel = 'LOW';
+        riskReason = 'Pelanggan loyal dan selalu tepat waktu.';
+      }
 
       return {
         ...customer,
         activeDeposit,
         depositDeducted,
         overdueReturns,
+        totalLateReturns,
         recentTransactions,
         totalSpend,
         visitCount,
         lastRentDate,
         pendingReturns,
+        riskLevel,
+        riskReason,
         depositAmount: Number(customer.depositAmount || 0) + activeDeposit
       };
     });
@@ -103,14 +208,18 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
     (safeCustomerPage - 1) * CUSTOMERS_PER_PAGE,
     safeCustomerPage * CUSTOMERS_PER_PAGE
   );
+
   const customerStartNumber = filteredCustomers.length === 0 ? 0 : ((safeCustomerPage - 1) * CUSTOMERS_PER_PAGE) + 1;
   const customerEndNumber = Math.min(safeCustomerPage * CUSTOMERS_PER_PAGE, filteredCustomers.length);
 
-  const repeatCustomers = enrichedCustomers.filter(customer => customer.visitCount > 1).length;
-  const activeCustomerCount = enrichedCustomers.filter(customer => customer.pendingReturns > 0).length;
-  const riskCustomerCount = enrichedCustomers.filter(customer => customer.overdueReturns > 0 || customer.depositDeducted > 0).length;
+  // Statistik dasbor pelanggan
+  const totalCustomerCount = enrichedCustomers.length;
+  const loyalCustomers = enrichedCustomers.filter(c => c.riskLevel === 'LOW').length;
+  const attentionCustomers = enrichedCustomers.filter(c => c.riskLevel === 'ATTENTION' || c.riskLevel === 'HIGH_RISK').length;
+  const blockedCustomers = enrichedCustomers.filter(c => c.riskLevel === 'BLOCKED').length;
 
   const openEditCustomer = (customer) => {
+    const m = customer.measurement || {};
     setEditingCustomer(customer);
     setDraftCustomer({
       address: customer.address || '',
@@ -118,7 +227,20 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
       riskNote: customer.riskNote || '',
       identityType: customer.identityType || 'KTP',
       identityNumber: customer.identityNumber || '',
-      depositAmount: customer.depositAmount ? String(customer.depositAmount) : ''
+      depositAmount: customer.depositAmount ? String(customer.depositAmount) : '',
+      isBlocked: Boolean(customer.isBlocked),
+      measurement: {
+        heightCm: m.heightCm ? String(m.heightCm) : '',
+        weightKg: m.weightKg ? String(m.weightKg) : '',
+        chestCm: m.chestCm ? String(m.chestCm) : '',
+        waistCm: m.waistCm ? String(m.waistCm) : '',
+        hipCm: m.hipCm ? String(m.hipCm) : '',
+        shoulderCm: m.shoulderCm ? String(m.shoulderCm) : '',
+        headCm: m.headCm ? String(m.headCm) : '',
+        shoeSize: m.shoeSize || '',
+        preferredSize: m.preferredSize || '',
+        notes: m.notes || ''
+      }
     });
   };
 
@@ -130,7 +252,20 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
       riskNote: '',
       identityType: 'KTP',
       identityNumber: '',
-      depositAmount: ''
+      depositAmount: '',
+      isBlocked: false,
+      measurement: {
+        heightCm: '',
+        weightKg: '',
+        chestCm: '',
+        waistCm: '',
+        hipCm: '',
+        shoulderCm: '',
+        headCm: '',
+        shoeSize: '',
+        preferredSize: '',
+        notes: ''
+      }
     });
   };
 
@@ -138,520 +273,1038 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
     event.preventDefault();
     if (!editingCustomer) return;
 
-    await onUpdateCustomer({
-      ...editingCustomer,
-      address: draftCustomer.address,
-      note: draftCustomer.note,
-      riskNote: draftCustomer.riskNote,
-      identityType: draftCustomer.identityType,
-      identityNumber: draftCustomer.identityNumber,
-      depositAmount: draftCustomer.depositAmount ? Number(draftCustomer.depositAmount) : 0
-    });
+    const m = draftCustomer.measurement;
 
-    closeEditCustomer();
+    // Validasi data angka negatif secara lokal sebelum kirim
+    const hasNegative = [
+      m.heightCm, m.weightKg, m.chestCm, m.waistCm, m.hipCm, m.shoulderCm, m.headCm
+    ].some(val => val !== '' && Number(val) < 0);
+
+    if (hasNegative) {
+      onNotify?.({
+        title: 'Input tidak valid',
+        message: 'Ukuran jahit tubuh tidak boleh bernilai negatif.',
+        type: 'error'
+      });
+      return;
+    }
+
+    try {
+      await onUpdateCustomer({
+        ...editingCustomer,
+        address: draftCustomer.address,
+        note: draftCustomer.note,
+        riskNote: draftCustomer.riskNote,
+        identityType: draftCustomer.identityType,
+        identityNumber: draftCustomer.identityNumber,
+        depositAmount: draftCustomer.depositAmount ? Number(draftCustomer.depositAmount) : 0,
+        isBlocked: Boolean(draftCustomer.isBlocked),
+        measurement: {
+          heightCm: m.heightCm ? Number(m.heightCm) : 0,
+          weightKg: m.weightKg ? Number(m.weightKg) : 0,
+          chestCm: m.chestCm ? Number(m.chestCm) : 0,
+          waistCm: m.waistCm ? Number(m.waistCm) : 0,
+          hipCm: m.hipCm ? Number(m.hipCm) : 0,
+          shoulderCm: m.shoulderCm ? Number(m.shoulderCm) : 0,
+          headCm: m.headCm ? Number(m.headCm) : 0,
+          shoeSize: String(m.shoeSize || '').trim(),
+          preferredSize: String(m.preferredSize || '').trim(),
+          notes: String(m.notes || '').trim()
+        }
+      });
+
+      onNotify?.({
+        title: 'Profil Diperbarui',
+        message: `Data pelanggan ${editingCustomer.name} berhasil disimpan.`,
+        type: 'success'
+      });
+
+      closeEditCustomer();
+    } catch (err) {
+      console.error(err);
+      onNotify?.({
+        title: 'Gagal Menyimpan',
+        message: 'Terdapat kesalahan koneksi atau otorisasi Firebase.',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleSoftDeleteCustomer = async () => {
+    if (!deleteConfirmCustomer) return;
+    try {
+      await onUpdateCustomer({
+        ...deleteConfirmCustomer,
+        deleted: true,
+        deletedAt: new Date().toISOString()
+      });
+
+      onNotify?.({
+        title: 'Pelanggan Dihapus',
+        message: `Pelanggan ${deleteConfirmCustomer.name} telah dinonaktifkan secara aman.`,
+        type: 'success'
+      });
+
+      setDeleteConfirmCustomer(null);
+      closeEditCustomer();
+    } catch (err) {
+      console.error(err);
+      onNotify?.({
+        title: 'Gagal Menghapus',
+        message: 'Gagal menonaktifkan pelanggan.',
+        type: 'error'
+      });
+    }
+  };
+
+  // Renderer badge tingkat risiko premium
+  const renderRiskBadge = (level) => {
+    const config = {
+      LOW: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', text: 'Sangat Baik (LOW)', icon: Sparkles },
+      NORMAL: { bg: 'bg-blue-50 text-blue-700 border-blue-200', text: 'Normal', icon: Info },
+      ATTENTION: { bg: 'bg-amber-50 text-amber-700 border-amber-200', text: 'Perhatian', icon: AlertTriangle },
+      HIGH_RISK: { bg: 'bg-red-50 text-red-700 border-red-200 animate-pulse', text: 'RISIKO TINGGI', icon: ShieldAlert },
+      BLOCKED: { bg: 'bg-slate-900 text-white border-slate-950', text: 'DIBLOKIR', icon: Lock }
+    };
+
+    const item = config[level] || config.NORMAL;
+    const IconComponent = item.icon;
+
+    return (
+      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${item.bg}`}>
+        <IconComponent size={10} />
+        {item.text}
+      </span>
+    );
   };
 
   return (
     <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
-      <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
-        <div className="max-w-2xl">
-          <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-white/80">Pelanggan</p>
-          <h2 className="mt-3 text-lg font-bold leading-tight sm:text-2xl md:text-3xl">Data pelanggan dan pola kunjungan tersusun rapi</h2>
-          <p className="mt-3 text-xs text-white/90 sm:text-sm md:text-base">
-            Pantau pelanggan aktif, nilai transaksi, deposit, dan riwayat terakhir tanpa perlu membuka nota satu per satu.
+      {/* Header Dashboard Pelanggan Adat */}
+      <div className="brand-gradient rounded-[24px] p-4 text-white shadow-soft md:p-5 relative overflow-hidden">
+        {/* Tenun Watermark */}
+        <div className="absolute inset-0 bg-tenun opacity-[0.035] pointer-events-none" />
+
+        <div className="relative max-w-2xl">
+          <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-gold-400">Sanggar 3 Berlian</p>
+          <h2 className="mt-2 text-lg font-bold leading-tight sm:text-2xl md:text-3xl text-gold-100">Profil Pelanggan &amp; Pengukuran Fitting</h2>
+          <p className="mt-2 text-xs text-white/90 sm:text-sm">
+            Pantau loyalitas penyewa, skor risiko kelancaran, rekap deposit, serta simpan ukuran jahit tubuh untuk fitting kostum yang presisi.
           </p>
         </div>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 relative grid gap-2 grid-cols-2 sm:grid-cols-4">
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Pelanggan unik</p>
-            <p className="mt-2 text-lg font-black sm:text-2xl">{enrichedCustomers.length}</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-300 font-bold">Total Pelanggan</p>
+            <p className="mt-1 text-lg font-black sm:text-2xl text-white">{totalCustomerCount}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Pelanggan kembali</p>
-            <p className="mt-2 text-lg font-black sm:text-2xl">{repeatCustomers}</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-300 font-bold">Loyal (Low Risk)</p>
+            <p className="mt-1 text-lg font-black sm:text-2xl text-white">{loyalCustomers}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Pelanggan aktif</p>
-            <p className="mt-2 text-lg font-black sm:text-2xl">{activeCustomerCount}</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-300 font-bold">Perlu Perhatian</p>
+            <p className="mt-1 text-lg font-black sm:text-2xl text-white">{attentionCustomers}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Perlu perhatian</p>
-            <p className="mt-2 text-lg font-black sm:text-2xl">{riskCustomerCount}</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gold-300 font-bold">Diblokir (Blocked)</p>
+            <p className="mt-1 text-lg font-black sm:text-2xl text-white">{blockedCustomers}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[1.05fr_0.95fr] xl:gap-4">
-        <div className="pos-card sticky top-0 z-20 p-3 md:static md:p-5">
+      {/* Konten Utama */}
+      <div className="grid gap-3 xl:grid-cols-[1.1fr_0.9fr] xl:gap-4">
+        {/* Panel Kiri: Tabel Pelanggan */}
+        <div className="pos-card p-3 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="hidden md:block">
-              <p className="text-sm font-semibold text-slate-500">Daftar pelanggan</p>
-              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Cari nama, telepon, atau alamat</h3>
+            <div>
+              <p className="text-xs font-bold text-emerald-800 uppercase tracking-widest">Database Pelanggan</p>
+              <h3 className="mt-1 text-sm font-bold text-slate-800 sm:text-base">Kelola ukuran jahit dan riwayat sewa</h3>
             </div>
-            <div className={`flex flex-wrap gap-2 ${searchTerm ? 'hidden md:flex' : ''}`}>
+
+            <div className="flex gap-2">
               <select
                 value={sortBy}
                 onChange={(e) => {
                   setSortBy(e.target.value);
                   setCustomerPage(1);
                 }}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 sm:rounded-[18px] sm:px-4 sm:py-3 sm:text-sm"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               >
-                <option value="terbaru">Terbaru</option>
-                <option value="terbanyak">Terbanyak transaksi</option>
-                <option value="nilai">Nilai terbesar</option>
-                <option value="alphabet">A-Z</option>
+                <option value="terbaru">Terakhir Aktif</option>
+                <option value="terbanyak">Sewa Terbanyak</option>
+                <option value="nilai">Total Belanja</option>
+                <option value="alphabet">Nama A-Z</option>
               </select>
             </div>
           </div>
 
-          <div className="mt-4 hidden md:block relative">
-            <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          {/* Form Pencarian */}
+          <div className="mt-3 relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari pelanggan"
+              placeholder="Cari nama, telepon, atau alamat..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCustomerPage(1);
               }}
-              className="w-full rounded-[18px] border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm font-medium text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 py-2.5 text-xs font-semibold text-slate-700 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
             />
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-bold">
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
-              {customerStartNumber}-{customerEndNumber} dari {filteredCustomers.length} pelanggan
+          {/* Navigasi Halaman */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold">
+            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-800 border border-emerald-100">
+              Menampilkan {customerStartNumber}-{customerEndNumber} dari {filteredCustomers.length} pelanggan
             </span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-              Halaman {safeCustomerPage}/{customerPageCount}
-            </span>
+            {customerPageCount > 1 && (
+              <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setCustomerPage(page => Math.max(1, page - 1))}
+                  disabled={safeCustomerPage === 1}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-[8px] bg-white text-slate-700 disabled:opacity-40 border border-slate-200 shadow-sm"
+                >
+                  <ChevronLeft size={14} strokeWidth={3} />
+                </button>
+                <span className="px-2 font-black text-slate-800">{safeCustomerPage} / {customerPageCount}</span>
+                <button
+                  type="button"
+                  onClick={() => setCustomerPage(page => Math.min(customerPageCount, page + 1))}
+                  disabled={safeCustomerPage === customerPageCount}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-[8px] bg-white text-slate-700 disabled:opacity-40 border border-slate-200 shadow-sm"
+                >
+                  <ChevronRight size={14} strokeWidth={3} />
+                </button>
+              </div>
+            )}
           </div>
 
-          {filteredCustomers.length > CUSTOMERS_PER_PAGE && (
-            <div className="mt-3 flex items-center justify-between gap-3 rounded-[18px] border border-slate-200 bg-slate-50 p-2">
-              <button
-                type="button"
-                onClick={() => setCustomerPage(page => Math.max(1, page - 1))}
-                disabled={safeCustomerPage === 1}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-[14px] bg-white text-slate-700 disabled:opacity-40"
-                aria-label="Halaman pelanggan sebelumnya"
-              >
-                <ChevronLeft size={18} strokeWidth={3} />
-              </button>
-              <p className="text-sm font-black text-slate-900">{safeCustomerPage}/{customerPageCount}</p>
-              <button
-                type="button"
-                onClick={() => setCustomerPage(page => Math.min(customerPageCount, page + 1))}
-                disabled={safeCustomerPage === customerPageCount}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-[14px] bg-white text-slate-700 disabled:opacity-40"
-                aria-label="Halaman pelanggan berikutnya"
-              >
-                <ChevronRight size={18} strokeWidth={3} />
-              </button>
-            </div>
-          )}
-
-          <div className="mt-3 space-y-2.5 sm:mt-4 sm:space-y-3">
+          {/* Daftar Pelanggan */}
+          <div className="mt-4 space-y-3">
             {filteredCustomers.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 sm:rounded-[22px] sm:p-8">
-                Tidak ada pelanggan sesuai pencarian.
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center text-xs text-slate-500 font-semibold">
+                Tidak ada pelanggan yang sesuai dengan pencarian Anda.
               </div>
-            ) : paginatedCustomers.map(customer => (
-              <div key={customer.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[22px] sm:p-4">
-                <div className="flex flex-wrap justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="break-words text-sm font-semibold text-slate-900 sm:font-black">{customer.name}</p>
-                    <p className="mt-1 break-words text-xs text-slate-500 sm:text-sm">{customer.phone || 'Nomor telepon tidak tersedia'}</p>
-                    <p className="mt-1 break-words text-xs text-slate-500">{customer.address || 'Alamat belum dicatat'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700 sm:px-3 sm:text-[11px]">{customer.visitCount} kunjungan</p>
-                    <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-black">{formatCurrency(customer.totalSpend)}</p>
-                  </div>
-                </div>
+            ) : (
+              paginatedCustomers.map(customer => {
+                const hasFittingData = customer.measurement && Object.values(customer.measurement).some(v => v !== 0 && v !== '');
 
-                <div className="mt-3 grid gap-2 sm:mt-4 sm:grid-cols-3 sm:gap-3">
-                  <div className="rounded-xl bg-slate-50 px-3 py-2 sm:rounded-[18px]">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.2em]">Terakhir</p>
-                    <p className="mt-1 text-xs font-bold text-slate-900 sm:text-sm">{customer.lastRentDate ? formatDate(customer.lastRentDate) : 'Belum ada'}</p>
-                  </div>
-                  <div className="rounded-xl bg-slate-50 px-3 py-2 sm:rounded-[18px]">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.2em]">Deposit</p>
-                    <p className="mt-1 text-xs font-bold text-slate-900 sm:text-sm">{formatCurrency(customer.depositAmount)}</p>
-                    {customer.depositDeducted > 0 && (
-                      <p className="mt-1 text-[10px] font-bold text-red-600">Dipotong {formatCurrency(customer.depositDeducted)}</p>
-                    )}
-                  </div>
-                  <div className="rounded-xl bg-slate-50 px-3 py-2 sm:rounded-[18px]">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.2em]">Status</p>
-                    <p className={`mt-1 text-xs font-bold sm:text-sm ${customer.overdueReturns > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
-                      {customer.overdueReturns > 0 ? `${customer.overdueReturns} terlambat` : customer.pendingReturns > 0 ? 'Aktif' : 'Rutin'}
-                    </p>
-                  </div>
-                </div>
+                return (
+                  <div key={customer.id} className={`rounded-2xl border bg-white p-3 shadow-sm transition-all hover:shadow-md ${customer.riskLevel === 'BLOCKED' ? 'border-slate-300 opacity-80' : 'border-slate-200'}`}>
+                    <div className="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-xs font-bold text-slate-900 break-words">{customer.name}</p>
+                          {renderRiskBadge(customer.riskLevel)}
+                          {hasFittingData && (
+                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              <Scissors size={8} /> Ada Ukuran
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-[11px] font-semibold text-slate-500">{customer.phone || 'Nomor HP -'}</p>
+                        <p className="mt-0.5 text-[10px] text-slate-400 break-words">{customer.address || 'Alamat belum diisi.'}</p>
+                      </div>
 
-                {customer.note && (
-                  <p className="mt-3 break-words text-sm text-slate-600">Catatan: {customer.note}</p>
-                )}
+                      <div className="text-right shrink-0">
+                        <span className="rounded-full bg-emerald-50 border border-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-800">{customer.visitCount}x Sewa</span>
+                        <p className="mt-1 text-xs font-black text-slate-800">{formatCurrency(customer.totalSpend)}</p>
+                      </div>
+                    </div>
 
-                <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
-                  <button
-                    type="button"
-                    onClick={() => openEditCustomer(customer)}
-                    className="rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 sm:rounded-[16px] sm:px-4 sm:text-sm"
-                  >
-                    Ubah data pelanggan
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCustomerId(customer.id);
-                      setDraftRiskNote(customer.riskNote || '');
-                    }}
-                    className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800 sm:rounded-[16px] sm:px-4 sm:text-sm"
-                  >
-                    Riwayat &amp; Detail
-                  </button>
-                  <span className="rounded-[16px] bg-slate-100 px-3 py-2 text-[11px] font-bold text-slate-600">
-                    {customer.recentTransactions.length} transaksi terdokumentasi
-                  </span>
-                  {customer.activeDeposit > 0 && (
-                    <span className="rounded-[16px] bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-700">
-                      Deposit aktif {formatCurrency(customer.activeDeposit)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+                    {/* Informasi Cepat Deposit & Keterlambatan */}
+                    <div className="mt-3 grid gap-2 grid-cols-3 text-[10px] font-bold">
+                      <div className="rounded-lg bg-slate-50 border border-slate-100 p-1.5 text-center">
+                        <span className="text-slate-400 block text-[8px] uppercase tracking-wider">Deposit Jaminan</span>
+                        <span className="text-slate-800">{formatCurrency(customer.depositAmount)}</span>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 border border-slate-100 p-1.5 text-center">
+                        <span className="text-slate-400 block text-[8px] uppercase tracking-wider">Deposit Dipotong</span>
+                        <span className={`block ${customer.depositDeducted > 0 ? 'text-red-600' : 'text-slate-800'}`}>
+                          {customer.depositDeducted > 0 ? formatCurrency(customer.depositDeducted) : 'Rp 0'}
+                        </span>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 border border-slate-100 p-1.5 text-center">
+                        <span className="text-slate-400 block text-[8px] uppercase tracking-wider">Status Sewa</span>
+                        <span className={`block ${customer.overdueReturns > 0 ? 'text-red-700' : customer.pendingReturns > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                          {customer.overdueReturns > 0 ? `${customer.overdueReturns} Terlambat` : customer.pendingReturns > 0 ? 'Ada Sewa Aktif' : 'Selesai'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Tombol Aksi */}
+                    <div className="mt-3 flex gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => openEditCustomer(customer)}
+                        className="flex-1 py-2 text-center rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-100 text-[11px] font-bold hover:bg-emerald-100 transition-colors"
+                      >
+                        Ubah Profil &amp; Fitting
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCustomerId(customer.id);
+                          setDraftRiskNote(customer.riskNote || '');
+                          setActiveDetailTab('profile');
+                        }}
+                        className="py-2 px-4 rounded-xl bg-slate-800 text-white text-[11px] font-bold hover:bg-slate-900 transition-colors"
+                      >
+                        Detail &amp; Riwayat
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        <div className="hidden gap-4 md:grid">
-          <div className="pos-card p-3 sm:p-5">
-            <p className="text-sm font-semibold text-slate-500">Pelanggan utama</p>
-            <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Pelanggan prioritas</h3>
-            <div className="mt-4 space-y-3">
-              {filteredCustomers.slice(0, 5).map(customer => (
-                <div key={customer.id} className="rounded-2xl bg-slate-50 px-3 py-2.5 sm:rounded-[18px] sm:px-4 sm:py-3">
-                  <p className="font-bold text-slate-900">{customer.name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{customer.visitCount} kunjungan - {formatCurrency(customer.totalSpend)}</p>
-                  <p className="mt-1 text-xs font-bold text-slate-500">Deposit aktif {formatCurrency(customer.activeDeposit)}</p>
-                </div>
-              ))}
-              {filteredCustomers.length === 0 && (
-                <p className="text-sm text-slate-500">Pilih filter atau cari pelanggan untuk melihat profil.</p>
+        {/* Panel Kanan: Ringkasan & Pelanggan Utama */}
+        <div className="hidden gap-4 xl:grid xl:content-start">
+          {/* Pelanggan Top Spender */}
+          <div className="pos-card p-4">
+            <p className="text-xs font-bold text-emerald-800 uppercase tracking-widest">Pelanggan Loyal</p>
+            <h3 className="mt-1 text-sm font-bold text-slate-800">Top 5 Pelanggan Tertinggi</h3>
+
+            <div className="mt-3 space-y-2.5">
+              {[...enrichedCustomers]
+                .sort((a, b) => b.totalSpend - a.totalSpend)
+                .slice(0, 5)
+                .map((customer, index) => (
+                  <div key={customer.id} className="flex justify-between items-center rounded-xl bg-slate-50 border border-slate-100 p-2.5">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">
+                        {index + 1}. {customer.name}
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{customer.visitCount} kunjungan</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-black text-emerald-800 block">{formatCurrency(customer.totalSpend)}</span>
+                    </div>
+                  </div>
+                ))}
+              {enrichedCustomers.length === 0 && (
+                <p className="text-xs text-slate-500 italic text-center py-4">Belum ada data pelanggan.</p>
               )}
             </div>
           </div>
 
-          <div className="pos-card p-3 sm:p-5">
-            <p className="text-sm font-semibold text-slate-500">Informasi identitas</p>
-            <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Data penting pelanggan</h3>
-            <div className="mt-4 space-y-3">
-              {filteredCustomers.slice(0, 5).map(customer => (
-                <div key={customer.id} className="rounded-2xl border border-slate-100 bg-white p-3 sm:rounded-[18px] sm:p-4">
-                  <p className="font-bold text-slate-900">{customer.name}</p>
-                  <p className="mt-2 text-sm text-slate-500">{customer.identityType || 'KTP'}: {customer.identityNumber || '-'}</p>
-                  <p className="mt-1 text-sm text-slate-500">Telepon: {customer.phone || '-'}</p>
+          {/* Riwayat KTP Ter-masking */}
+          <div className="pos-card p-4">
+            <p className="text-xs font-bold text-emerald-800 uppercase tracking-widest">Keamanan Data (PDP)</p>
+            <h3 className="mt-1 text-sm font-bold text-slate-800">Nomor Identitas Masking</h3>
+
+            <div className="mt-3 space-y-2.5">
+              {enrichedCustomers.slice(0, 5).map(customer => (
+                <div key={customer.id} className="flex justify-between items-center rounded-xl border border-slate-100 p-2 text-xs">
+                  <span className="font-bold text-slate-700">{customer.name}</span>
+                  <span className="font-mono text-slate-500 font-bold bg-slate-50 px-2 py-0.5 rounded border">
+                    {customer.identityType || 'KTP'}: {maskIdentityNumber(customer.identityNumber)}
+                  </span>
                 </div>
               ))}
-              {filteredCustomers.length === 0 && (
-                <p className="text-sm text-slate-500">Belum ada pelanggan yang bisa ditampilkan dalam panel ini.</p>
+              {enrichedCustomers.length === 0 && (
+                <p className="text-xs text-slate-500 italic text-center py-4">Belum ada data pelanggan.</p>
               )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* ---------------------------------------------------- */}
+      {/* 🛠️ MODAL EDIT PELANGGAN & INPUT FITTING */}
+      {/* ---------------------------------------------------- */}
       {editingCustomer && (
-        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-[28px] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95">
-            <div className="p-5 bg-blue-900 text-white flex justify-between items-center border-b border-blue-800">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">Perbarui data pelanggan</p>
-                <h3 className="mt-2 text-lg font-black">{editingCustomer.name}</h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-[28px] w-full max-w-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[92vh]">
+            {/* Header Modal */}
+            <div className="p-4 bg-emerald-900 text-white flex justify-between items-center border-b border-emerald-800 relative">
+              <div className="absolute inset-0 bg-tenun opacity-[0.045] pointer-events-none" />
+              <div className="relative">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-400">Formulir Profil &amp; Fitting</p>
+                <h3 className="mt-1 text-sm font-black text-gold-100">Ubah Data: {editingCustomer.name}</h3>
               </div>
-              <button type="button" onClick={closeEditCustomer} className="p-2 bg-blue-800 rounded-full hover:bg-blue-700 transition-colors">
-                <X size={20} />
+              <button type="button" onClick={closeEditCustomer} className="p-1.5 bg-emerald-800 rounded-full hover:bg-emerald-700 transition-colors text-white relative">
+                <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleSaveCustomer} className="p-5 md:p-6 bg-slate-50 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[20px] bg-white border border-slate-100 p-4">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Jenis identitas</label>
-                  <select
-                    value={draftCustomer.identityType}
-                    onChange={(event) => setDraftCustomer(prev => ({ ...prev, identityType: event.target.value }))}
-                    className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800"
-                  >
-                    <option value="KTP">KTP</option>
-                    <option value="SIM">SIM</option>
-                    <option value="Kartu Pelajar">Kartu Pelajar</option>
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
+
+            {/* Form Konten */}
+            <form onSubmit={handleSaveCustomer} className="p-4 md:p-6 bg-slate-50 overflow-y-auto flex-1 space-y-4 text-xs">
+
+              {/* Seksi 1: Data Identitas Dasar */}
+              <div className="rounded-[20px] bg-white border border-slate-100 p-4 space-y-3 shadow-sm">
+                <h4 className="font-bold text-slate-800 flex items-center gap-1">
+                  <User size={14} className="text-emerald-700" /> Informasi Identitas &amp; Kontak
+                </h4>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Jenis Identitas</label>
+                    <select
+                      value={draftCustomer.identityType}
+                      onChange={(event) => setDraftCustomer(prev => ({ ...prev, identityType: event.target.value }))}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-bold text-slate-800"
+                    >
+                      <option value="KTP">KTP</option>
+                      <option value="SIM">SIM</option>
+                      <option value="Kartu Pelajar">Kartu Pelajar</option>
+                      <option value="Lainnya">Lainnya</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Nomor Identitas (Asli)</label>
+                    <input
+                      type="text"
+                      value={draftCustomer.identityNumber}
+                      onChange={(event) => setDraftCustomer(prev => ({ ...prev, identityNumber: event.target.value }))}
+                      placeholder="Masukkan nomor identitas..."
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
                 </div>
-                <div className="rounded-[20px] bg-white border border-slate-100 p-4">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Nomor identitas</label>
-                  <input
-                    value={draftCustomer.identityNumber}
-                    onChange={(event) => setDraftCustomer(prev => ({ ...prev, identityNumber: event.target.value }))}
-                    className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800"
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Alamat Pelanggan</label>
+                  <textarea
+                    rows="2"
+                    value={draftCustomer.address}
+                    onChange={(event) => setDraftCustomer(prev => ({ ...prev, address: event.target.value }))}
+                    placeholder="Masukkan alamat domisili pelanggan..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-bold text-slate-800 focus:bg-white resize-none"
                   />
                 </div>
               </div>
 
-              <div className="rounded-[20px] bg-white border border-slate-100 p-4">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Alamat</label>
-                <textarea
-                  rows="3"
-                  value={draftCustomer.address}
-                  onChange={(event) => setDraftCustomer(prev => ({ ...prev, address: event.target.value }))}
-                  className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 resize-none"
-                />
+              {/* Seksi 2: Ukuran Fitting Tubuh (Measurement Profile) */}
+              <div className="rounded-[20px] bg-white border border-slate-100 p-4 space-y-3 shadow-sm">
+                <h4 className="font-bold text-slate-800 flex items-center gap-1">
+                  <Scissors size={14} className="text-emerald-700" /> Ukuran Fitting Tubuh Pelanggan (Meteran)
+                </h4>
+
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Tinggi Badan (cm)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={draftCustomer.measurement.heightCm}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, heightCm: e.target.value }
+                      }))}
+                      placeholder="0"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Berat Badan (kg)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={draftCustomer.measurement.weightKg}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, weightKg: e.target.value }
+                      }))}
+                      placeholder="0"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Lingkar Dada (cm)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={draftCustomer.measurement.chestCm}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, chestCm: e.target.value }
+                      }))}
+                      placeholder="0"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Lingkar Pinggang (cm)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={draftCustomer.measurement.waistCm}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, waistCm: e.target.value }
+                      }))}
+                      placeholder="0"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Lingkar Pinggul (cm)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={draftCustomer.measurement.hipCm}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, hipCm: e.target.value }
+                      }))}
+                      placeholder="0"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Lebar Bahu (cm)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={draftCustomer.measurement.shoulderCm}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, shoulderCm: e.target.value }
+                      }))}
+                      placeholder="0"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Lingkar Kepala (cm)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={draftCustomer.measurement.headCm}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, headCm: e.target.value }
+                      }))}
+                      placeholder="0"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Ukuran Sepatu</label>
+                    <input
+                      type="text"
+                      value={draftCustomer.measurement.shoeSize}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, shoeSize: e.target.value }
+                      }))}
+                      placeholder="misal: 40"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Preferensi Ukuran Kostum</label>
+                    <select
+                      value={draftCustomer.measurement.preferredSize}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, preferredSize: e.target.value }
+                      }))}
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800"
+                    >
+                      <option value="">Belum Memilih</option>
+                      <option value="S">S (Small)</option>
+                      <option value="M">M (Medium)</option>
+                      <option value="L">L (Large)</option>
+                      <option value="XL">XL (Extra Large)</option>
+                      <option value="XXL">XXL (Double Extra Large)</option>
+                      <option value="Custom">Custom (Lihat catatan)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Catatan Tambahan Fitting</label>
+                    <input
+                      type="text"
+                      value={draftCustomer.measurement.notes}
+                      onChange={(e) => setDraftCustomer(prev => ({
+                        ...prev,
+                        measurement: { ...prev.measurement, notes: e.target.value }
+                      }))}
+                      placeholder="misal: Lengan baju minta lebih panjang..."
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="rounded-[20px] bg-white border border-slate-100 p-4">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Catatan pelanggan</label>
-                <textarea
-                  rows="3"
-                  value={draftCustomer.note}
-                  onChange={(event) => setDraftCustomer(prev => ({ ...prev, note: event.target.value }))}
-                  className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 resize-none"
-                />
+              {/* Seksi 3: Catatan & Deposit Keamanan */}
+              <div className="rounded-[20px] bg-white border border-slate-100 p-4 space-y-3 shadow-sm">
+                <h4 className="font-bold text-slate-800 flex items-center gap-1">
+                  <Info size={14} className="text-emerald-700" /> Deposit Keuangan &amp; Catatan Khusus
+                </h4>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Sisa Limit Deposit Pribadi (Jaminan)</label>
+                    <input
+                      type="text"
+                      value={formatNumberDot(draftCustomer.depositAmount)}
+                      onChange={(event) => setDraftCustomer(prev => ({ ...prev, depositAmount: event.target.value.replace(/[^0-9]/g, '') }))}
+                      placeholder="Rp 0"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Catatan Umum Pelanggan</label>
+                    <input
+                      type="text"
+                      value={draftCustomer.note}
+                      onChange={(event) => setDraftCustomer(prev => ({ ...prev, note: event.target.value }))}
+                      placeholder="Catatan pelengkap..."
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-bold text-slate-800 focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 pt-3">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Catatan Risiko Staf (Internal)</label>
+                  <textarea
+                    rows="2"
+                    value={draftCustomer.riskNote}
+                    onChange={(event) => setDraftCustomer(prev => ({ ...prev, riskNote: event.target.value }))}
+                    placeholder="misal: Pernah terlambat 5 hari, harap dimintai jaminan KTP asli..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-bold text-slate-800 focus:bg-white resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3 border border-slate-150">
+                  <div>
+                    <p className="font-bold text-slate-800">Status Pemblokiran Pelanggan</p>
+                    <p className="text-[10px] text-slate-500 font-semibold">Tandai jika pelanggan bermasalah parah agar dilarang melakukan sewa.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDraftCustomer(prev => ({ ...prev, isBlocked: !prev.isBlocked }))}
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${draftCustomer.isBlocked ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-slate-200 text-slate-700 hover:bg-slate-350'}`}
+                  >
+                    {draftCustomer.isBlocked ? <Lock size={12} /> : <Unlock size={12} />}
+                    {draftCustomer.isBlocked ? 'BLOCKED (Diblokir)' : 'UNLOCKED (Aktif)'}
+                  </button>
+                </div>
               </div>
 
-              <div className="rounded-[20px] bg-white border border-slate-100 p-4">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Catatan Risiko Khusus</label>
-                <textarea
-                  rows="2"
-                  value={draftCustomer.riskNote}
-                  onChange={(event) => setDraftCustomer(prev => ({ ...prev, riskNote: event.target.value }))}
-                  placeholder="Tulis tingkat/catatan risiko pelanggan (misal: Sering terlambat)..."
-                  className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 resize-none"
-                />
-              </div>
-
-              <div className="rounded-[20px] bg-white border border-slate-100 p-4">
-                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Deposit / Jaminan</label>
-                <input
-                  type="text"
-                  value={formatNumberDot(draftCustomer.depositAmount)}
-                  onChange={(event) => setDraftCustomer(prev => ({ ...prev, depositAmount: event.target.value.replace(/[^0-9]/g, '') }))}
-                  placeholder="Rp 0"
-                  className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800"
-                />
-              </div>
-
-              <div className="flex flex-wrap justify-end gap-3 pt-2">
+              {/* Tombol Aksi di Bawah Form */}
+              <div className="flex flex-wrap justify-between items-center gap-3 pt-2 border-t border-slate-200">
                 <button
                   type="button"
-                  onClick={closeEditCustomer}
-                  className="rounded-[16px] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700"
+                  onClick={() => setDeleteConfirmCustomer(editingCustomer)}
+                  className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-2.5 font-bold hover:bg-red-100 transition-colors flex items-center gap-1.5 shadow-sm"
                 >
-                  Batal
+                  <Trash2 size={14} /> Hapus Pelanggan
                 </button>
-                <button
-                  type="submit"
-                  className="rounded-[16px] bg-blue-800 px-5 py-3 text-sm font-bold text-white hover:bg-blue-900"
-                >
-                  Simpan perubahan
-                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={closeEditCustomer}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-bold text-slate-700"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-emerald-800 px-5 py-2.5 font-bold text-white hover:bg-emerald-950 shadow-sm"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
       )}
 
+      {/* ---------------------------------------------------- */}
+      {/* 📖 MODAL DETAIL & RIWAYAT TRANSAKSI (TAB PREMIUM)    */}
+      {/* ---------------------------------------------------- */}
       {selectedCustomer && (
-        <div className="fixed inset-0 bg-slate-950/55 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
           <div className="bg-white rounded-[28px] w-full max-w-4xl overflow-hidden shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh]">
-            {/* Header */}
-            <div className="p-5 bg-blue-900 text-white flex justify-between items-center border-b border-blue-800">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">Profil &amp; Riwayat Pelanggan</p>
-                <h3 className="mt-2 text-lg font-black">{selectedCustomer.name}</h3>
+
+            {/* Header Detail */}
+            <div className="p-4 bg-emerald-900 text-white flex justify-between items-center border-b border-emerald-800 relative">
+              <div className="absolute inset-0 bg-tenun opacity-[0.045] pointer-events-none" />
+              <div className="relative">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-400">Profil Lengkap Pelanggan</p>
+                <h3 className="mt-1 text-sm font-black text-gold-100">{selectedCustomer.name}</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedCustomerId(null)}
-                className="p-2 bg-blue-800 rounded-full hover:bg-blue-700 transition-colors"
-                aria-label="Tutup riwayat"
+                className="p-1.5 bg-emerald-800 rounded-full hover:bg-emerald-700 transition-colors text-white relative"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            {/* Content (Scrollable) */}
-            <div className="p-5 md:p-6 bg-slate-50 overflow-y-auto flex-1 space-y-5">
-              {/* Profil Singkat & Deposit */}
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-[20px] bg-white border border-slate-100 p-4 shadow-sm">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Kontak &amp; Identitas</p>
-                  <p className="mt-2 text-sm font-bold text-slate-900">{selectedCustomer.phone || '-'}</p>
-                  <p className="text-xs text-slate-500 mt-1">{selectedCustomer.identityType || 'KTP'}: {selectedCustomer.identityNumber || '-'}</p>
-                  <p className="text-xs text-slate-600 mt-2 font-medium break-words">{selectedCustomer.address || 'Alamat tidak tercatat'}</p>
-                </div>
-                <div className="rounded-[20px] bg-white border border-slate-100 p-4 shadow-sm">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Statistik Belanja</p>
-                  <p className="mt-2 text-lg font-black text-slate-900">{formatCurrency(selectedCustomer.totalSpend)}</p>
-                  <p className="text-xs text-slate-500 font-semibold mt-1">{selectedCustomer.visitCount} Kunjungan terdokumentasi</p>
-                  <p className="text-xs text-slate-500 mt-1 font-medium font-semibold">Terakhir: {selectedCustomer.lastRentDate ? formatDate(selectedCustomer.lastRentDate) : 'Belum'}</p>
-                </div>
-                <div className="rounded-[20px] bg-white border border-slate-100 p-4 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Deposit Aktif saat ini</p>
-                    <p className="mt-2 text-lg font-black text-amber-700">{formatCurrency(selectedCustomer.activeDeposit)}</p>
-                  </div>
-                  {selectedCustomer.depositDeducted > 0 && (
-                    <p className="text-[11px] font-bold text-red-600">Total Pernah Dipotong: {formatCurrency(selectedCustomer.depositDeducted)}</p>
-                  )}
-                </div>
-              </div>
+            {/* Panel Tab Navigasi */}
+            <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex gap-2 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setActiveDetailTab('profile')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${activeDetailTab === 'profile' ? 'bg-emerald-800 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}
+              >
+                Profil &amp; Nota Sewa
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveDetailTab('fitting')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${activeDetailTab === 'fitting' ? 'bg-emerald-800 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}
+              >
+                Ukuran Fitting Badan
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveDetailTab('risk')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${activeDetailTab === 'risk' ? 'bg-emerald-800 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}
+              >
+                Analisis Risiko &amp; Keamanan
+              </button>
+            </div>
 
-              {/* Catatan Risiko Khusus */}
-              <div className="rounded-[20px] bg-amber-50 border border-amber-200 p-4 space-y-3 shadow-sm">
-                <div className="flex items-center gap-2 text-amber-800">
-                  <AlertTriangle size={18} />
-                  <p className="text-xs font-bold uppercase tracking-[0.1em]">Catatan Risiko Khusus Pelanggan</p>
-                </div>
-                <p className="text-xs text-slate-600 font-semibold font-medium">
-                  Catatan ini hanya terlihat oleh staf kasir &amp; admin untuk menganalisis tingkat risiko keterlambatan atau kerusakan barang dari pelanggan ini.
-                </p>
-                <div className="flex gap-2">
-                  <textarea
-                    rows="2"
-                    value={draftRiskNote}
-                    onChange={(e) => setDraftRiskNote(e.target.value)}
-                    placeholder="Tulis catatan risiko khusus di sini (misal: Sering terlambat mengembalikan kostum, pernah merusak payet kostum, dll)..."
-                    className="w-full rounded-[14px] border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 focus:border-amber-400 focus:outline-none resize-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await onUpdateCustomer({
-                        ...selectedCustomer,
-                        riskNote: draftRiskNote
-                      });
-                    }}
-                    className="self-end rounded-[14px] bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-3 shrink-0 shadow-sm transition-colors"
-                  >
-                    Simpan
-                  </button>
-                </div>
-              </div>
+            {/* Konten Tab Aktif */}
+            <div className="p-4 md:p-6 bg-slate-50 overflow-y-auto flex-1 text-xs">
 
-              {/* Riwayat Transaksi */}
-              <div className="space-y-3">
-                <p className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400 flex items-center gap-1.5">
-                  <Clock size={14} /> Riwayat Nota Transaksi
-                </p>
-                <div className="space-y-3 max-h-[30vh] overflow-y-auto pr-1">
-                  {selectedCustomer.recentTransactions.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-xs sm:text-sm text-slate-400">
-                      Belum ada nota transaksi tercatat untuk pelanggan ini.
+              {/* TAB 1: PROFIL & RIWAYAT NOTA */}
+              {activeDetailTab === 'profile' && (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-[20px] bg-white border border-slate-100 p-4 shadow-sm">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Kontak Utama</p>
+                      <p className="mt-1 text-xs font-bold text-slate-800">{selectedCustomer.phone || '-'}</p>
+                      <p className="text-[10px] text-slate-500 mt-1 font-semibold">Identitas: {selectedCustomer.identityType || 'KTP'} ({maskIdentityNumber(selectedCustomer.identityNumber)})</p>
+                      <p className="text-[10px] text-slate-600 mt-2 font-medium break-words leading-relaxed">{selectedCustomer.address || 'Alamat tidak tercatat.'}</p>
                     </div>
-                  ) : (
-                    selectedCustomer.recentTransactions.map((tx) => {
-                      const isOverdue = tx.status === 'overdue' || (isActiveTransaction(tx) && getLateDays(tx) > 0);
-                      const statusLabel = tx.status === 'void'
-                        ? 'Void'
-                        : tx.status === 'returned'
-                          ? 'Selesai'
-                          : tx.status === 'partially_returned'
-                            ? 'Sebagian Kembali'
-                            : isOverdue
-                              ? 'Terlambat'
-                              : 'Disewa';
 
-                      const statusClass = tx.status === 'void'
-                        ? 'bg-slate-100 text-slate-600'
-                        : tx.status === 'returned'
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : tx.status === 'partially_returned'
-                            ? 'bg-blue-100 text-blue-700'
-                            : isOverdue
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-amber-100 text-amber-800';
+                    <div className="rounded-[20px] bg-white border border-slate-100 p-4 shadow-sm">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Statistik Belanja</p>
+                      <p className="mt-1 text-sm font-black text-slate-900">{formatCurrency(selectedCustomer.totalSpend)}</p>
+                      <p className="text-[10px] text-slate-500 font-semibold mt-1">{selectedCustomer.visitCount} Transaksi Selesai</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5 font-semibold">Terakhir Sewa: {selectedCustomer.lastRentDate ? formatDate(selectedCustomer.lastRentDate) : 'Belum Pernah'}</p>
+                    </div>
 
-                      return (
-                        <div key={tx.id} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm">
-                          <div className="flex flex-wrap justify-between items-start gap-2">
-                            <div>
-                              <p className="text-xs sm:text-sm font-bold text-slate-900">{tx.id}</p>
-                              <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Sewa: {formatDate(tx.rentDate)} | Batas: {formatDate(tx.expectedReturnDate)}</p>
-                            </div>
-                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${statusClass}`}>
-                              {statusLabel}
-                            </span>
-                          </div>
+                    <div className="rounded-[20px] bg-white border border-slate-100 p-4 shadow-sm flex flex-col justify-between">
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Deposit Aktif Saat Ini</p>
+                        <p className="mt-1 text-sm font-black text-emerald-800">{formatCurrency(selectedCustomer.activeDeposit)}</p>
+                      </div>
+                      {selectedCustomer.depositDeducted > 0 && (
+                        <p className="text-[9px] font-bold text-red-600 border-t border-dashed border-red-100 pt-1.5 mt-2">
+                          Total Denda Dipotong: {formatCurrency(selectedCustomer.depositDeducted)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-                          {/* Item yang disewa */}
-                          <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1">
-                            <p className="font-bold text-slate-400 uppercase tracking-wider text-[9px] mb-1">Daftar Kostum</p>
-                            {(tx.items || []).map((item, idx) => (
-                              <div key={idx} className="flex justify-between items-center text-slate-800 font-semibold">
-                                <span>{item.qty}x {item.product?.name || item.productName || 'Kostum'}</span>
-                                <span>{formatCurrency((item.product?.rentPrice || item.rentPrice || 0) * item.qty)}</span>
+                  {/* Daftar Transaksi */}
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <Clock size={12} /> Riwayat Dokumen Transaksi Sewa
+                    </p>
+
+                    <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1">
+                      {selectedCustomer.recentTransactions.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-slate-400 font-semibold">
+                          Belum ada nota transaksi sewa yang tercatat untuk pelanggan ini.
+                        </div>
+                      ) : (
+                        selectedCustomer.recentTransactions.map((tx) => {
+                          const isOverdue = tx.status === 'overdue' || (isActiveTransaction(tx) && getLateDays(tx) > 0);
+                          const statusColors = tx.status === 'void'
+                            ? 'bg-slate-100 text-slate-600'
+                            : tx.status === 'returned'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : tx.status === 'partially_returned'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : isOverdue
+                                  ? 'bg-red-50 text-red-700 border border-red-200 animate-pulse'
+                                  : 'bg-amber-50 text-amber-800 border border-amber-200';
+
+                          return (
+                            <div key={tx.id} className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2.5 shadow-sm">
+                              <div className="flex justify-between items-center gap-2">
+                                <div>
+                                  <p className="font-bold text-slate-800">{tx.id}</p>
+                                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Sewa: {formatDate(tx.rentDate)} | Batas: {formatDate(tx.expectedReturnDate)}</p>
+                                </div>
+                                <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${statusColors}`}>
+                                  {tx.status === 'void' ? 'Batal (Void)' : tx.status === 'returned' ? 'Selesai' : tx.status === 'partially_returned' ? 'Sebagian Kembali' : isOverdue ? 'Terlambat' : 'Disewa'}
+                                </span>
                               </div>
-                            ))}
-                          </div>
 
-                          {/* Detail returnHistory jika ada */}
-                          {tx.returnHistory && tx.returnHistory.length > 0 && (
-                            <div className="border-t border-slate-100 pt-3 space-y-2">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Riwayat Pengembalian</p>
-                              <div className="space-y-3">
-                                {tx.returnHistory.map((ret, rIdx) => (
-                                  <div key={rIdx} className="bg-emerald-50/40 border border-emerald-100 rounded-xl p-3 text-[11px] sm:text-xs space-y-2">
-                                    <div className="flex justify-between font-bold text-slate-800">
-                                      <span>Pengembalian #{rIdx + 1}</span>
-                                      <span className="text-slate-500 font-medium font-semibold">{formatDate(ret.returnedAt)}</span>
-                                    </div>
-                                    <div className="space-y-1 font-semibold text-slate-700">
-                                      {ret.items?.map((retItem, riIdx) => (
-                                        <div key={riIdx} className="flex justify-between">
-                                          <span>{retItem.qty}x {retItem.productName}</span>
-                                          <span className="text-slate-500 font-medium font-semibold">Kondisi: {retItem.condition}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <div className="border-t border-emerald-100/60 pt-2 grid grid-cols-2 gap-1.5 text-[11px] text-slate-600 font-semibold">
-                                      <div>Denda Lambat: <span className="font-bold text-slate-900">{formatCurrency(ret.lateFee || 0)}</span></div>
-                                      <div>Biaya Kondisi: <span className="font-bold text-slate-900">{formatCurrency(ret.conditionFee || 0)}</span></div>
-                                      <div>Deposit Dipotong: <span className="font-bold text-red-600">{formatCurrency(ret.depositDeducted || 0)}</span></div>
-                                      <div>Deposit Kembali: <span className="font-bold text-emerald-700">{formatCurrency(ret.depositReturned || 0)}</span></div>
-                                    </div>
-                                    {ret.notes && (
-                                      <p className="text-[10px] text-slate-500 italic mt-1 font-medium font-semibold">Catatan: "{ret.notes}"</p>
-                                    )}
+                              {/* Item */}
+                              <div className="bg-slate-50 rounded-xl p-2.5 space-y-1">
+                                {(tx.items || []).map((item, idx) => (
+                                  <div key={idx} className="flex justify-between items-center text-slate-700 font-semibold">
+                                    <span>{item.qty}x {item.product?.name || item.productName || 'Kostum'}</span>
+                                    <span>{formatCurrency((item.product?.rentPrice || item.rentPrice || 0) * item.qty)}</span>
                                   </div>
                                 ))}
                               </div>
-                            </div>
-                          )}
 
-                          <div className="flex flex-wrap justify-between items-center text-xs pt-2 border-t border-slate-100 text-slate-600 font-semibold">
-                            <div>Total Belanja: <span className="font-bold text-slate-900">{formatCurrency(tx.totalAmount)}</span></div>
-                            <div>Deposit: <span className="font-bold text-slate-900">{formatCurrency(tx.depositAmount ?? tx.deposit ?? 0)}</span></div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
+                              {/* Mutasi Denda */}
+                              {tx.returnHistory && tx.returnHistory.length > 0 && (
+                                <div className="border-t border-slate-100 pt-2 space-y-1.5">
+                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Log Riwayat Kembali</p>
+                                  {tx.returnHistory.map((ret, rIdx) => (
+                                    <div key={rIdx} className="bg-emerald-50/50 rounded-lg p-2 border border-emerald-100 text-[10px] text-slate-600">
+                                      <div className="flex justify-between font-bold text-slate-700 mb-1">
+                                        <span>Kembali #{rIdx + 1}</span>
+                                        <span>{formatDate(ret.returnedAt)}</span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-1 font-semibold">
+                                        <div>Denda Lambat: {formatCurrency(ret.lateFee || 0)}</div>
+                                        <div>Biaya Kondisi: {formatCurrency(ret.conditionFee || 0)}</div>
+                                        <div>Dipotong Deposit: {formatCurrency(ret.depositDeducted || 0)}</div>
+                                        <div>Dikembalikan: {formatCurrency(ret.depositReturned || 0)}</div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* TAB 2: UKURAN FITTING BADAN */}
+              {activeDetailTab === 'fitting' && (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div className="rounded-[20px] bg-white border border-slate-200 p-4 space-y-4 shadow-sm relative overflow-hidden">
+                    {/* Hiasan background meteran tipis */}
+                    <div className="absolute -right-10 -bottom-10 opacity-[0.05] text-slate-900 pointer-events-none">
+                      <Scissors size={200} />
+                    </div>
+
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+                      <Scissors size={18} className="text-emerald-700" />
+                      <div>
+                        <h4 className="font-bold text-slate-800">Spesifikasi Ukuran Jahit (Fitting)</h4>
+                        <p className="text-[10px] text-slate-400 font-semibold">Gunakan data ini untuk mempermudah pengecekan kecocokan ukuran kostum di gudang.</p>
+                      </div>
+                    </div>
+
+                    {/* Parameter Grid */}
+                    <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 font-bold">
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                        <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Tinggi Badan</span>
+                        <span className="text-sm font-black text-slate-800">
+                          {selectedCustomer.measurement?.heightCm ? `${selectedCustomer.measurement.heightCm} cm` : '-'}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                        <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Berat Badan</span>
+                        <span className="text-sm font-black text-slate-800">
+                          {selectedCustomer.measurement?.weightKg ? `${selectedCustomer.measurement.weightKg} kg` : '-'}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                        <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Lingkar Dada</span>
+                        <span className="text-sm font-black text-slate-800">
+                          {selectedCustomer.measurement?.chestCm ? `${selectedCustomer.measurement.chestCm} cm` : '-'}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                        <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Lingkar Pinggang</span>
+                        <span className="text-sm font-black text-slate-800">
+                          {selectedCustomer.measurement?.waistCm ? `${selectedCustomer.measurement.waistCm} cm` : '-'}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                        <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Lingkar Pinggul</span>
+                        <span className="text-sm font-black text-slate-800">
+                          {selectedCustomer.measurement?.hipCm ? `${selectedCustomer.measurement.hipCm} cm` : '-'}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                        <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Lebar Bahu</span>
+                        <span className="text-sm font-black text-slate-800">
+                          {selectedCustomer.measurement?.shoulderCm ? `${selectedCustomer.measurement.shoulderCm} cm` : '-'}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                        <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Lingkar Kepala</span>
+                        <span className="text-sm font-black text-slate-800">
+                          {selectedCustomer.measurement?.headCm ? `${selectedCustomer.measurement.headCm} cm` : '-'}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                        <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Ukuran Sepatu</span>
+                        <span className="text-sm font-black text-slate-800">
+                          {selectedCustomer.measurement?.shoeSize || '-'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 pt-2 border-t border-slate-100 font-bold">
+                      <div className="rounded-xl bg-emerald-50/50 border border-emerald-100 p-3">
+                        <span className="text-emerald-800 block text-[9px] uppercase tracking-wider">Preferensi Ukuran Sandang</span>
+                        <span className="text-sm font-black text-emerald-950">
+                          {selectedCustomer.measurement?.preferredSize || 'Belum diisi'}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-amber-50/50 border border-amber-100 p-3">
+                        <span className="text-amber-800 block text-[9px] uppercase tracking-wider">Catatan Jahit Khusus</span>
+                        <span className="text-xs text-slate-700 block mt-1 leading-normal font-semibold">
+                          {selectedCustomer.measurement?.notes || 'Tidak ada catatan tambahan.'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: ANALISIS RISIKO & KEAMANAN */}
+              {activeDetailTab === 'risk' && (
+                <div className="space-y-4 animate-in fade-in duration-200">
+
+                  {/* Status Risiko Dinamis */}
+                  <div className="rounded-[20px] bg-white border border-slate-200 p-4 space-y-3.5 shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+                      <ShieldAlert size={18} className="text-emerald-700" />
+                      <div>
+                        <h4 className="font-bold text-slate-800">Analisis Kepatuhan &amp; Risiko</h4>
+                        <p className="text-[10px] text-slate-400 font-semibold">Perhitungan kepatuhan otomatis berdasarkan rekam jejak sewa di sanggar.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-slate-50 rounded-xl p-3 border">
+                      <div>
+                        <p className="font-bold text-slate-800">Tingkat Risiko Pelanggan</p>
+                        <p className="text-[10px] text-slate-500 font-semibold leading-relaxed mt-0.5">
+                          {selectedCustomer.riskReason || 'Pelanggan memiliki riwayat yang stabil dan bersih.'}
+                        </p>
+                      </div>
+                      <div>
+                        {renderRiskBadge(selectedCustomer.riskLevel)}
+                      </div>
+                    </div>
+
+                    {/* Metrik Kepatuhan */}
+                    <div className="grid gap-3 grid-cols-2 font-bold">
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                        <span className="text-slate-400 block text-[8px] uppercase tracking-wider">Total Terlambat Kembali</span>
+                        <span className="text-sm font-black text-slate-800 block mt-0.5">{selectedCustomer.totalLateReturns || 0} Kali</span>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                        <span className="text-slate-400 block text-[8px] uppercase tracking-wider">Jaminan Dipotong Denda</span>
+                        <span className="text-sm font-black text-red-700 block mt-0.5">{formatCurrency(selectedCustomer.depositDeducted || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Form Catatan Risiko Staf */}
+                  <div className="rounded-[20px] bg-amber-50 border border-amber-200 p-4 space-y-3 shadow-sm">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <AlertTriangle size={16} />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em]">Catatan Risiko Khusus Pelanggan (Staf Kasir)</p>
+                    </div>
+                    <p className="text-[10px] text-slate-600 font-semibold">
+                      Catatan ini hanya terlihat oleh internal kasir dan admin untuk menganalisis risiko saat fitting maupun penagihan kostum.
+                    </p>
+                    <div className="flex gap-2">
+                      <textarea
+                        rows="2"
+                        value={draftRiskNote}
+                        onChange={(e) => setDraftRiskNote(e.target.value)}
+                        placeholder="Tulis catatan risiko khusus (misal: Suka menunggak denda, payet payung rusak)..."
+                        className="w-full rounded-[12px] border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 focus:border-amber-400 focus:outline-none resize-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await onUpdateCustomer({
+                              ...selectedCustomer,
+                              riskNote: draftRiskNote
+                            });
+                            onNotify?.({
+                              title: 'Catatan Diperbarui',
+                              message: 'Catatan risiko staf berhasil disimpan.',
+                              type: 'success'
+                            });
+                          } catch {
+                            onNotify?.({
+                              title: 'Gagal Menyimpan',
+                              message: 'Gagal memperbarui catatan risiko.',
+                              type: 'error'
+                            });
+                          }
+                        }}
+                        className="self-end rounded-[12px] bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 shrink-0 shadow-sm transition-colors"
+                      >
+                        Simpan
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Footer */}
-            <div className="p-5 bg-slate-100 border-t border-slate-200 flex justify-end">
+            {/* Footer Detail */}
+            <div className="p-4 bg-slate-100 border-t border-slate-200 flex justify-end">
               <button
                 type="button"
                 onClick={() => setSelectedCustomerId(null)}
-                className="rounded-[16px] bg-slate-950 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
+                className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
               >
-                Tutup
+                Tutup Profil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 🚨 MODAL KONFIRMASI SOFT DELETE INTERNAL (NO ALERT)   */}
+      {/* ---------------------------------------------------- */}
+      {deleteConfirmCustomer && (
+        <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 z-55 animate-in fade-in">
+          <div className="bg-white rounded-[24px] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 p-5 text-xs font-semibold text-slate-700 space-y-4">
+            <div className="flex items-center gap-3 text-red-700 border-b border-slate-100 pb-3">
+              <AlertTriangle size={24} />
+              <div>
+                <h4 className="text-sm font-black">Hapus Pelanggan (Soft Delete)?</h4>
+                <p className="text-[10px] text-slate-400 font-semibold">Tindakan ini tidak dapat dibatalkan.</p>
+              </div>
+            </div>
+
+            <p className="leading-relaxed">
+              Apakah Anda yakin ingin menonaktifkan pelanggan <strong className="text-slate-900 font-bold">{deleteConfirmCustomer.name}</strong>?
+            </p>
+            <p className="bg-slate-50 border rounded-xl p-3 text-[10px] text-slate-500 font-semibold leading-normal">
+              Informasi pelanggan akan disembunyikan dari daftar pelanggan aktif dan form sewa checkout POS baru. Namun, seluruh riwayat nota sewa masa lalu pelanggan tetap utuh di database demi keakuratan laporan keuangan Anda.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmCustomer(null)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-bold text-slate-700"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSoftDeleteCustomer}
+                className="rounded-xl bg-red-600 text-white px-5 py-2 font-bold hover:bg-red-700 shadow-sm"
+              >
+                Ya, Nonaktifkan Pelanggan
               </button>
             </div>
           </div>
