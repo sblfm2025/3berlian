@@ -86,16 +86,16 @@ function AppDataSkeleton({ message }) {
       <div className="grid gap-4 md:grid-cols-3">
         {[0, 1, 2].map((item) => (
           <div key={item} className="h-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="h-3 w-24 rounded-full bg-slate-200 animate-pulse" />
-            <div className="mt-5 h-7 w-32 rounded-full bg-slate-200 animate-pulse" />
+            <div className="h-3 w-24 rounded-full shimmer" />
+            <div className="mt-5 h-7 w-32 rounded-full shimmer" />
           </div>
         ))}
       </div>
       <div className="h-80 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="h-4 w-40 rounded-full bg-slate-200 animate-pulse" />
+        <div className="h-4 w-40 rounded-full shimmer" />
         <div className="mt-6 grid gap-3">
           {[0, 1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-10 rounded-xl bg-slate-100 animate-pulse" />
+            <div key={item} className="h-10 rounded-xl shimmer" />
           ))}
         </div>
       </div>
@@ -106,15 +106,16 @@ function AppDataSkeleton({ message }) {
 function PageFallback() {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="h-4 w-40 rounded-full bg-slate-200 animate-pulse" />
+      <div className="h-4 w-40 rounded-full shimmer" />
       <div className="mt-5 grid gap-3">
         {[0, 1, 2, 3].map((item) => (
-          <div key={item} className="h-12 rounded-xl bg-slate-100 animate-pulse" />
+          <div key={item} className="h-12 rounded-xl shimmer" />
         ))}
       </div>
     </div>
   );
 }
+
 
 // --- KOMPONEN UTAMA (MAIN APP COMPONENT) ---
 export default function App() {
