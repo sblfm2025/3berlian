@@ -123,7 +123,7 @@ export default function ReturnPage({ transactions, onReturn }) {
             />
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className={`mt-4 flex flex-wrap gap-2 ${searchTerm ? 'hidden md:flex' : ''}`}>
             {['Semua', 'Tepat Waktu', 'Terlambat'].map(option => (
               <button
                 key={option}
@@ -138,7 +138,7 @@ export default function ReturnPage({ transactions, onReturn }) {
             ))}
           </div>
 
-          <div className="mt-4 rounded-[22px] border border-amber-200 bg-amber-50 p-4">
+          <div className={`mt-4 rounded-[22px] border border-amber-200 bg-amber-50 p-4 ${searchTerm ? 'hidden md:block' : ''}`}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-800">Prioritas nota</p>

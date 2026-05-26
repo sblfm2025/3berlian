@@ -206,7 +206,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
         </div>
       </div>
 
-      <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+      <div className={`rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3 ${searchTerm ? 'hidden md:flex' : ''}`}>
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Ringkasan filter aktif</p>
           <p className="mt-2 text-sm font-black text-slate-900">{selectedMonth} - {statusFilter} - {paymentMethodFilter}</p>
@@ -217,7 +217,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className={`grid gap-3 md:grid-cols-2 xl:grid-cols-5 ${searchTerm ? 'hidden md:grid' : ''}`}>
         {summaryCards.map((card, index) => (
           <div key={card.title} className={`rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm ${index > 2 ? 'hidden md:block' : ''}`}>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">{card.title}</p>
@@ -235,7 +235,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
       )}
 
       {hasTransactions && (
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className={`grid gap-4 xl:grid-cols-[1.1fr_0.9fr] ${searchTerm ? 'hidden md:grid' : ''}`}>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -306,7 +306,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
       )}
 
       {hasTransactions && (
-      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+      <div className={`rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm ${searchTerm ? 'hidden md:block' : ''}`}>
         <div>
           <p className="text-sm font-semibold text-slate-500">Produk paling laris</p>
           <h3 className="mt-1 text-lg font-black text-slate-900">Kostum terlaris per periode</h3>
@@ -328,7 +328,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
       </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
+      <div className={`flex flex-wrap gap-3 ${searchTerm ? 'hidden md:flex' : ''}`}>
         <button onClick={handleExportExcel} disabled={isExporting !== ''} className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-sm">
           {isExporting === 'excel' ? <><Cloud size={18} className="animate-pulse" /> Proses...</> : <><FileSpreadsheet size={18} /> Unduh Excel</>}
         </button>

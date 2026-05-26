@@ -155,7 +155,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
               <p className="text-sm font-semibold text-slate-500">Daftar pelanggan</p>
               <h3 className="mt-1 text-lg font-black text-slate-900">Cari nama, telepon, atau alamat</h3>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className={`flex flex-wrap gap-2 ${searchTerm ? 'hidden md:flex' : ''}`}>
               <select
                 value={sortBy}
                 onChange={(e) => {

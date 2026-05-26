@@ -191,7 +191,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="sticky top-0 z-20 mb-5 grid gap-4 rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm md:static md:mb-6 md:border-0 md:bg-transparent md:p-0 md:shadow-none xl:grid-cols-[1.2fr_1fr] xl:items-end">
+      <div className={`sticky top-0 z-20 mb-5 grid gap-4 rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm md:static md:mb-6 md:border-0 md:bg-transparent md:p-0 md:shadow-none xl:grid-cols-[1.2fr_1fr] xl:items-end ${searchTerm ? 'hidden md:grid' : ''}`}>
         <div className="hidden md:block">
           <p className="text-sm font-semibold text-slate-500">Inventaris</p>
           <h2 className="mt-2 text-2xl font-black text-slate-900">Manajemen produk penyewaan</h2>
@@ -246,7 +246,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
         </div>
       </div>
 
-      <div className="mb-5 rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm">
+      <div className={`mb-5 rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm ${searchTerm ? 'hidden md:block' : ''}`}>
         <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
           {categories.map(category => (
             <button

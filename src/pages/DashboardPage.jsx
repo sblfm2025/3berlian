@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowLeftRight, FileText, Package, ShoppingBag, UserCog, Users, X } from 'lucide-react';
 
 import KpiCard from '../components/dashboard/KpiCard';
 import MetricCard from '../components/dashboard/MetricCard';
 import { useDashboardStats } from '../features/dashboard/hooks/useDashboardStats';
 import { formatCurrency, formatDate } from '../utils/format';
+import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 // ==========================================
 // TAMPILAN BERANDA (DASHBOARD)
@@ -16,6 +17,7 @@ const getStatusLabel = (status) => {
 };
 
 export default function DashboardPage({ transactions, products, onNavigate }) {
+  const [dashboardSearch, setDashboardSearch] = useState('');
   const {
     activeItemsCount,
     activeRentals,
@@ -44,6 +46,12 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
   const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', data: [] });
   const handleOpenModal = (title, data) => setModalConfig({ isOpen: true, title, data });
   const handleCloseModal = () => setModalConfig({ isOpen: false, title: '', data: [] });
+  const mobileSearchConfig = useMemo(() => ({
+    placeholder: 'Cari menu beranda',
+    value: dashboardSearch,
+    onChange: setDashboardSearch
+  }), [dashboardSearch]);
+  useMobileSearchRegistration(mobileSearchConfig);
 
   const statCards = [
     {
@@ -100,6 +108,12 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
     }
   ];
   const operationalMenus = menuGroups.flatMap(group => group.items);
+  const filteredMenus = useMemo(() => {
+    const keyword = dashboardSearch.trim().toLowerCase();
+    if (!keyword) return operationalMenus;
+
+    return operationalMenus.filter(item => `${item.label} ${item.target}`.toLowerCase().includes(keyword));
+  }, [dashboardSearch, operationalMenus]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -136,7 +150,7 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
 
       <div className="rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="grid grid-cols-3 gap-x-4 gap-y-5 px-5 py-5 sm:grid-cols-4 md:grid-cols-6 md:px-6">
-          {operationalMenus.map(item => {
+          {filteredMenus.map(item => {
             const Icon = item.icon;
             return (
               <button
@@ -152,6 +166,11 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
               </button>
             );
           })}
+          {filteredMenus.length === 0 && (
+            <div className="col-span-3 rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-semibold text-slate-500 sm:col-span-4 md:col-span-6">
+              Menu tidak ditemukan.
+            </div>
+          )}
         </div>
       </div>
 
