@@ -136,7 +136,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
     { label: 'Pembayaran cukup', ok: paymentMethod !== 'Tunai' || grandTotal === 0 || finalCashReceived >= grandTotal }
   ];
 
-  const { handleCheckoutClick } = useRentalCheckout({
+  const { handleCheckoutClick, isCheckingOut } = useRentalCheckout({
     cart,
     changeAmount,
     clearCart,
@@ -162,29 +162,29 @@ export default function RentPage({ products, customers, transactions = [], onChe
   });
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col gap-4">
-      <div className="brand-gradient hidden rounded-[24px] p-5 text-white shadow-soft md:block md:p-6">
+    <div className="max-w-7xl mx-auto flex flex-col gap-3">
+      <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
           <div className="max-w-2xl">
             <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-white/80">POS kasir</p>
-            <h2 className="mt-3 text-2xl md:text-3xl font-black leading-tight">Terminal sewa kostum yang cepat, rapi, dan siap transaksi</h2>
-            <p className="mt-3 text-sm md:text-base text-white/90">
+            <h2 className="mt-3 text-lg sm:text-2xl md:text-3xl font-bold leading-tight">Terminal sewa kostum yang cepat, rapi, dan siap transaksi</h2>
+            <p className="mt-3 text-xs sm:text-sm md:text-base text-white/90">
               Cari produk, tambahkan ke keranjang, pilih pelanggan, dan selesaikan pembayaran dengan tata letak kasir modern untuk desktop maupun tablet.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 lg:min-w-[320px]">
-            <div className="rounded-[22px] bg-white/10 border border-white/20 p-4 backdrop-blur-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 lg:min-w-[320px]">
+            <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Item keranjang</p>
-              <p className="mt-2 text-2xl font-black">{totalItems}</p>
+              <p className="mt-2 text-lg sm:text-2xl font-black">{totalItems}</p>
             </div>
-            <div className="rounded-[22px] bg-white/10 border border-white/20 p-4 backdrop-blur-sm">
+            <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Produk ready</p>
-              <p className="mt-2 text-2xl font-black">{products.filter(product => product.stock > 0).length}</p>
+              <p className="mt-2 text-lg sm:text-2xl font-black">{products.filter(product => product.stock > 0).length}</p>
             </div>
-            <div className="rounded-[22px] bg-white/10 border border-white/20 p-4 backdrop-blur-sm sm:col-span-1 col-span-2">
+            <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm sm:col-span-1 col-span-2">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Stok menipis</p>
-              <p className="mt-2 text-2xl font-black">{lowStockCount}</p>
+              <p className="mt-2 text-lg sm:text-2xl font-black">{lowStockCount}</p>
             </div>
           </div>
         </div>
@@ -310,7 +310,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
               </div>
             </div>
 
-            <div className="mt-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
+            <div className="mt-3 flex flex-nowrap gap-2 overflow-x-auto pb-1 md:mt-4 md:flex-wrap md:overflow-visible">
               {categories.map(category => (
                 <button
                   key={category}
@@ -318,7 +318,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                   onClick={() => {
                     selectCategory(category);
                   }}
-                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all ${selectedCategory === category ? 'bg-blue-700 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-all sm:px-4 sm:py-2 sm:text-sm ${selectedCategory === category ? 'bg-blue-700 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}
                 >
                   {category}
                 </button>
@@ -442,7 +442,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 pb-28 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4 md:gap-5 xl:pb-6">
+          <div className="grid gap-2.5 pb-28 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4 md:gap-5 xl:pb-6">
             {availableProducts.length === 0 ? (
               <div className="col-span-full rounded-[24px] border border-dashed border-slate-200 bg-white p-10 text-center text-slate-500">
                 <Package size={32} className="mx-auto text-slate-300" />
@@ -472,62 +472,64 @@ export default function RentPage({ products, customers, transactions = [], onChe
               return (
                 <article
                   key={product.id}
-                  className={`rounded-[24px] border bg-white shadow-sm overflow-hidden transition-all ${isSelected ? 'border-blue-500 shadow-[0_22px_50px_-30px_rgba(30,64,175,0.45)]' : stockStatus === 'habis' ? 'border-red-200' : stockStatus === 'menipis' ? 'border-amber-200' : 'border-transparent hover:border-slate-200'}`}
+                  className={`flex min-h-[82px] items-center gap-3 rounded-2xl border bg-white p-3 shadow-sm transition-all sm:block sm:min-h-0 sm:overflow-hidden sm:p-0 sm:rounded-[24px] ${isSelected ? 'border-blue-500 shadow-[0_18px_42px_-30px_rgba(30,64,175,0.55)]' : stockStatus === 'habis' ? 'border-red-200' : stockStatus === 'menipis' ? 'border-amber-200' : 'border-slate-100 hover:border-slate-200'}`}
                 >
-                  <div className="relative h-32 bg-slate-100 sm:h-36" onClick={() => !isSelected && updateCartQty(product, 1)}>
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-36 sm:w-full sm:rounded-none" onClick={() => !isSelected && updateCartQty(product, 1)}>
                     {product.photo ? (
                       <img src={product.photo} alt={product.name} className="h-full w-full object-cover" onError={(event) => { event.target.onerror = null; event.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Y2EzYWYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48bGluZSB4MT0iMyIgeTE9IjMiIHgyPSIyMSIgeTI9IjIxIj48L2xpbmU+PHBhdGggZD0iTTEwLjUgMTAuNVYxMGg0djMuNW0tMiAyaC00djRMNSA4bDEuNS0xLjUiPjwvcGF0aD48L3N2Zz4='; }} />
                     ) : (
                       <div className="flex h-full items-center justify-center text-slate-300">
-                        <Package size={36} />
+                        <Package size={24} className="sm:h-9 sm:w-9" />
                       </div>
                     )}
 
-                    <div className={`absolute left-3 bottom-3 rounded-full px-3 py-1 text-[11px] font-bold ${stockBadgeClass}`}>
+                    <div className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold sm:bottom-3 sm:left-3 sm:px-3 sm:py-1 sm:text-[11px] ${stockBadgeClass}`}>
                       {stockLabel}
                     </div>
                     {isSelected && (
-                      <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-700 text-sm font-black text-white shadow-lg">
+                      <div className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-700 text-[10px] font-bold text-white shadow-lg sm:right-3 sm:top-3 sm:h-8 sm:w-8 sm:text-sm sm:font-black">
                         {cartItem.qty}
                       </div>
                     )}
                   </div>
 
-                  <div className="p-3 sm:p-4">
-                    <div className="flex flex-wrap gap-2">
-                      <span className="max-w-full break-words rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">
+                  <div className="min-w-0 flex-1 sm:p-4">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                      <span className="max-w-full break-words rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 sm:px-2.5 sm:py-1">
                         {product.category || 'Lainnya'}
                       </span>
-                      <span className="max-w-full break-words rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">
+                      <span className="max-w-full break-words rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 sm:px-2.5 sm:py-1">
                         {product.size || 'All Size'}
                       </span>
                     </div>
-                    <h4 className="mt-3 break-words text-sm font-black leading-snug text-slate-900">{product.name}</h4>
-                    <p className={`mt-2 text-[11px] font-bold uppercase tracking-[0.2em] ${stockStatus === 'habis' ? 'text-red-600' : stockStatus === 'menipis' ? 'text-amber-700' : 'text-emerald-700'}`}>
+                    <h4 className="mt-1.5 line-clamp-2 break-words text-sm font-semibold leading-snug text-slate-900 sm:mt-3 sm:font-black">{product.name}</h4>
+                    <p className={`mt-1 text-[10px] font-bold uppercase tracking-[0.12em] sm:mt-2 sm:text-[11px] sm:tracking-[0.2em] ${stockStatus === 'habis' ? 'text-red-600' : stockStatus === 'menipis' ? 'text-amber-700' : 'text-emerald-700'}`}>
                       {statusText}
                     </p>
-                    <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="mt-2 flex items-end justify-between gap-2 sm:mt-3 sm:flex-row sm:gap-3">
                       <div className="min-w-0">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Harga sewa</p>
-                        <p className="mt-1 break-words text-base font-black text-amber-600 sm:text-lg">{formatCurrency(product.rentPrice)}</p>
+                        <p className="hidden text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:block">Harga sewa</p>
+                        <p className="break-words text-sm font-bold text-amber-600 sm:mt-1 sm:text-lg sm:font-black">{formatCurrency(product.rentPrice)}</p>
                       </div>
                       {isSelected ? (
-                        <div className="flex w-full items-center justify-between gap-2 rounded-[18px] border border-blue-100 bg-blue-50 px-2 py-1.5 sm:w-auto">
-                          <button type="button" onClick={() => updateCartQty(product, -1)} className="rounded-xl bg-white p-2 text-blue-700 shadow-sm hover:bg-blue-100">
-                            <Minus size={16} strokeWidth={3} />
+                        <div className="flex shrink-0 items-center gap-1.5 rounded-[14px] border border-blue-100 bg-blue-50 px-1.5 py-1 sm:gap-2 sm:rounded-[18px] sm:px-2 sm:py-1.5">
+                          <button type="button" onClick={() => updateCartQty(product, -1)} className="rounded-lg bg-white p-1.5 text-blue-700 shadow-sm hover:bg-blue-100 sm:rounded-xl sm:p-2">
+                            <Minus size={14} strokeWidth={3} />
                           </button>
-                          <span className="w-6 text-center text-base font-black text-blue-900">{cartItem.qty}</span>
-                          <button type="button" onClick={() => updateCartQty(product, 1)} className="rounded-xl bg-blue-700 p-2 text-white shadow-sm hover:bg-blue-800">
-                            <Plus size={16} strokeWidth={3} />
+                          <span className="w-5 text-center text-sm font-bold text-blue-900 sm:w-6 sm:text-base sm:font-black">{cartItem.qty}</span>
+                          <button type="button" onClick={() => updateCartQty(product, 1)} className="rounded-lg bg-blue-700 p-1.5 text-white shadow-sm hover:bg-blue-800 sm:rounded-xl sm:p-2">
+                            <Plus size={14} strokeWidth={3} />
                           </button>
                         </div>
                       ) : (
                         <button
                           type="button"
                           onClick={() => updateCartQty(product, 1)}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-[16px] bg-slate-900 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-blue-800 sm:w-auto"
+                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white transition-all hover:bg-blue-800 sm:w-auto sm:gap-2 sm:rounded-[16px] sm:px-4 sm:py-2 sm:text-sm sm:font-bold"
+                          aria-label={`Tambah ${product.name}`}
                         >
-                          <Plus size={16} strokeWidth={3} /> Tambah
+                          <Plus size={16} strokeWidth={3} />
+                          <span className="hidden sm:inline">Tambah</span>
                         </button>
                       )}
                     </div>
@@ -568,14 +570,14 @@ export default function RentPage({ products, customers, transactions = [], onChe
             className={`bg-white h-full flex flex-col md:rounded-[28px] md:border md:border-slate-200 md:shadow-soft overflow-hidden ${showMobileCheckout ? 'absolute inset-x-0 bottom-0 max-h-[92vh] rounded-t-[28px]' : ''}`}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-100 bg-blue-900 px-5 py-4 text-white md:rounded-t-[28px]">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-blue-900 px-4 py-3 text-white md:rounded-t-[28px] md:px-5 md:py-4">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.25em] text-blue-100">Pembayaran</p>
-                <h3 className="mt-1 text-lg font-black">Ringkasan tagihan</h3>
-                <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-100">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-blue-100 sm:text-[11px] sm:tracking-[0.25em]">Pembayaran</p>
+                <h3 className="mt-1 text-base font-bold sm:text-lg sm:font-black">Ringkasan tagihan</h3>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-100 sm:text-[11px] sm:tracking-[0.2em]">
                   {paymentSummaryLabel}
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
+                <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold sm:mt-3 sm:gap-2 sm:text-[11px]">
                   <span className="rounded-full bg-white/10 px-3 py-1">{totalItems} item</span>
                   <span className="rounded-full bg-white/10 px-3 py-1">{formatCurrency(grandTotal)}</span>
                   <span className="rounded-full bg-white/10 px-3 py-1">{paymentMethod}</span>
@@ -590,33 +592,33 @@ export default function RentPage({ products, customers, transactions = [], onChe
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-5 space-y-4">
-              <div className="rounded-[24px] bg-white p-5 border border-slate-100 shadow-sm">
+            <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:space-y-4 md:p-5">
+              <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Checklist pembayaran</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Checklist pembayaran</p>
                     <p className="mt-2 text-sm font-bold text-slate-900">{checkoutChecklist.every(item => item.ok) ? 'Semua langkah siap' : 'Lengkapi langkah yang masih tertinggal'}</p>
                   </div>
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">{checkoutChecklist.filter(item => item.ok).length}/{checkoutChecklist.length}</span>
                 </div>
 
-                <div className="mt-4 space-y-3">
+                <div className="mt-3 grid gap-2 sm:mt-4 sm:space-y-3">
                   {checkoutChecklist.map(item => {
                     const Icon = item.ok ? CheckCircle : AlertCircle;
                     return (
-                      <div key={item.label} className="flex items-start gap-3 rounded-[18px] bg-slate-50 px-3 py-2">
-                        <Icon size={18} className={item.ok ? 'text-emerald-600' : 'text-amber-600'} />
-                        <p className="text-sm font-semibold text-slate-700">{item.label}</p>
+                      <div key={item.label} className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2 sm:gap-3 sm:rounded-[18px]">
+                        <Icon size={16} className={item.ok ? 'text-emerald-600' : 'text-amber-600'} />
+                        <p className="text-xs font-semibold text-slate-700 sm:text-sm">{item.label}</p>
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="rounded-[24px] bg-white p-5 border border-slate-100 shadow-sm">
+              <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Pelanggan</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Pelanggan</p>
                     <p className="mt-2 text-sm font-bold text-slate-900">{customerNameInput || 'Pelanggan belum diisi'}</p>
                   </div>
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">{totalItems} item</span>
@@ -631,7 +633,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                       onFocus={() => setShowSuggestions(true)}
                       onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                       placeholder="Ketik nama pelanggan *"
-                      className="w-full rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 sm:rounded-[18px] sm:px-4 sm:py-3"
                     />
                     {customerNameInput && (
                       <button
@@ -640,7 +642,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                           event.preventDefault();
                           resetCustomer();
                         }}
-                        className="rounded-[18px] border border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-600"
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 sm:rounded-[18px] sm:py-3"
                       >
                         Reset
                       </button>
@@ -728,12 +730,12 @@ export default function RentPage({ products, customers, transactions = [], onChe
                     placeholder="Telepon"
                     value={customerPhoneInput}
                     onChange={event => setCustomerPhoneInput(event.target.value)}
-                    className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 sm:rounded-[18px] sm:px-4 sm:py-3"
                   />
                   <select
                     value={customerIdentityType}
                     onChange={event => setCustomerIdentityType(event.target.value)}
-                    className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 sm:rounded-[18px] sm:px-4 sm:py-3"
                   >
                     <option value="KTP">KTP</option>
                     <option value="SIM">SIM</option>
@@ -747,14 +749,14 @@ export default function RentPage({ products, customers, transactions = [], onChe
                     placeholder="Nomor identitas"
                     value={customerIdentityNumber}
                     onChange={event => setCustomerIdentityNumber(event.target.value)}
-                    className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 sm:rounded-[18px] sm:px-4 sm:py-3"
                   />
                   <input
                     type="date"
                     value={returnDateInput}
                     min={formatDateInput()}
                     onChange={event => setReturnDateInput(event.target.value)}
-                    className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 sm:rounded-[18px] sm:px-4 sm:py-3"
                   />
                 </div>
                 <textarea
@@ -762,14 +764,14 @@ export default function RentPage({ products, customers, transactions = [], onChe
                   value={customerAddressInput}
                   onChange={event => setCustomerAddressInput(event.target.value)}
                   rows="2"
-                  className="mt-3 w-full rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 resize-none"
+                  className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 resize-none sm:rounded-[18px] sm:px-4 sm:py-3"
                 />
                 <textarea
                   placeholder="Catatan pelanggan / kebutuhan khusus"
                   value={customerNoteInput}
                   onChange={event => setCustomerNoteInput(event.target.value)}
                   rows="2"
-                  className="mt-3 w-full rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 resize-none"
+                  className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 resize-none sm:rounded-[18px] sm:px-4 sm:py-3"
                 />
                 <div className="mt-3 rounded-[18px] border border-amber-200 bg-amber-50 p-4">
                   <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-amber-800">Deposit / Jaminan (opsional)</label>
@@ -784,7 +786,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                 </div>
               </div>
 
-              <div className="rounded-[24px] bg-white p-5 border border-slate-100 shadow-sm">
+              <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
                 <div className="flex items-center justify-between">
                   <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Keranjang</h4>
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{cart.length} item</span>
@@ -796,7 +798,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                 ) : (
                   <div className="mt-4 space-y-3">
                     {cart.map(item => (
-                      <div key={item.product.id} className="rounded-[20px] bg-slate-50 px-4 py-3">
+                      <div key={item.product.id} className="rounded-2xl bg-slate-50 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <p className="break-words text-sm font-bold leading-snug text-slate-900">{item.product.name}</p>
@@ -829,7 +831,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                 )}
               </div>
 
-              <div className="rounded-[24px] bg-white p-5 border border-slate-100 shadow-sm">
+              <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
                 <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Diskon & Metode</h4>
                 <div className="mt-4 space-y-4">
                   <div className="grid gap-2 sm:grid-cols-[100px_1fr]">
@@ -942,10 +944,10 @@ export default function RentPage({ products, customers, transactions = [], onChe
               <button
                 type="button"
                 onClick={handleCheckoutClick}
-                disabled={cart.length === 0 || getStockIssue().length > 0 || (paymentMethod === 'Tunai' && finalCashReceived < grandTotal)}
+                disabled={isCheckingOut || cart.length === 0 || getStockIssue().length > 0 || (paymentMethod === 'Tunai' && finalCashReceived < grandTotal)}
                 className="mt-4 w-full rounded-[20px] bg-blue-800 px-4 py-4 text-lg font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {getStockIssue().length > 0 ? 'Periksa ulang stok' : 'Bayar & Cetak Nota'}
+                {isCheckingOut ? 'Memproses pembayaran...' : getStockIssue().length > 0 ? 'Periksa ulang stok' : 'Bayar & Cetak Nota'}
               </button>
             </div>
           </div>

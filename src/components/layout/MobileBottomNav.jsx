@@ -1,4 +1,4 @@
-export default function MobileBottomNav({ currentView, navItems, onNavigate }) {
+export default function MobileBottomNav({ currentView, isKeyboardVisible = false, navItems, onNavigate }) {
   const primaryItem = navItems.find(item => item.id === 'rent');
   const sideItems = navItems.filter(item => item.id !== 'rent');
   const leftItems = sideItems.slice(0, 2);
@@ -15,18 +15,18 @@ export default function MobileBottomNav({ currentView, navItems, onNavigate }) {
       aria-current={currentView === item.id ? 'page' : undefined}
       className={`flex min-w-0 flex-1 flex-col items-center justify-center transition-all px-0.5 ${currentView === item.id ? 'text-blue-700' : 'text-slate-400 hover:text-slate-600'}`}
     >
-      <div className={`mb-0.5 flex h-9 w-9 items-center justify-center rounded-full transition-all ${currentView === item.id ? 'bg-blue-50 scale-110 shadow-sm' : 'bg-transparent'}`}>
-        <item.icon size={21} className={currentView === item.id ? 'stroke-blue-700' : ''} />
+      <div className={`mb-0.5 flex h-8 w-8 items-center justify-center rounded-full transition-all ${currentView === item.id ? 'bg-blue-50 scale-105 shadow-sm' : 'bg-transparent'}`}>
+        <item.icon size={20} className={currentView === item.id ? 'stroke-blue-700' : ''} />
       </div>
-      <span className={`max-w-full truncate text-[10px] text-center leading-tight tracking-tight ${currentView === item.id ? 'font-bold text-blue-800' : 'font-medium'}`}>
+      <span className={`max-w-full truncate text-[10px] text-center leading-tight ${currentView === item.id ? 'font-bold text-blue-800' : 'font-medium'}`}>
         {item.label}
       </span>
     </button>
   );
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] z-40 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 px-2">
-      <div className="grid w-full grid-cols-[1fr_1fr_82px_1fr_1fr] items-end gap-1">
+    <nav className={`md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] z-40 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-1.5 px-2 transition-transform duration-200 ${isKeyboardVisible ? 'translate-y-full' : 'translate-y-0'}`}>
+      <div className="grid w-full grid-cols-[1fr_1fr_72px_1fr_1fr] items-end gap-1">
         {paddedLeftItems.map(renderSideItem)}
 
         {primaryItem && (
@@ -35,12 +35,12 @@ export default function MobileBottomNav({ currentView, navItems, onNavigate }) {
             onClick={() => onNavigate(primaryItem.id)}
             aria-label={`Buka ${primaryItem.label}`}
             aria-current={currentView === primaryItem.id ? 'page' : undefined}
-            className="relative -mt-9 flex flex-col items-center justify-center text-blue-700"
+            className="relative -mt-7 flex flex-col items-center justify-center text-blue-700"
           >
-            <div className={`flex h-[68px] w-[68px] items-center justify-center rounded-[24px] bg-blue-700 text-white shadow-[0_18px_36px_-20px_rgba(13,71,161,0.95)] ring-4 ring-white transition-all ${currentView === primaryItem.id ? 'scale-105 bg-blue-800' : ''}`}>
-              <primaryItem.icon size={31} strokeWidth={2.5} />
+            <div className={`flex h-14 w-14 items-center justify-center rounded-[20px] bg-blue-700 text-white shadow-[0_16px_30px_-20px_rgba(13,71,161,0.95)] ring-[3px] ring-white transition-all ${currentView === primaryItem.id ? 'scale-105 bg-blue-800' : ''}`}>
+              <primaryItem.icon size={25} strokeWidth={2.5} />
             </div>
-            <span className="mt-1 text-[10px] font-black leading-tight text-blue-800">{primaryItem.label}</span>
+            <span className="mt-0.5 text-[10px] font-bold leading-tight text-blue-800">{primaryItem.label}</span>
           </button>
         )}
 

@@ -12,6 +12,7 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
   const [notes, setNotes] = useState('');
   const [itemConditions, setItemConditions] = useState({});
   const [returnPage, setReturnPage] = useState(1);
+  const [isReturning, setIsReturning] = useState(false);
 
   const activeTransactions = useMemo(() => (
     transactions.filter(tx => tx.status === 'disewa')
@@ -117,19 +118,27 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     setNotes('');
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (isReturning) return;
     if (!selectedTrx) return;
 
-    onReturn({
-      ...selectedTrx,
-      paymentMethod,
-      notes,
-      itemConditions,
-      conditionFee,
-      lateFee,
-      totalFee: totalAdditionalFee,
-      paymentMethodForFees: paymentMethod
-    });
+    setIsReturning(true);
+    try {
+      await onReturn({
+        ...selectedTrx,
+        paymentMethod,
+        notes,
+        itemConditions,
+        conditionFee,
+        lateFee,
+        totalFee: totalAdditionalFee,
+        paymentMethodForFees: paymentMethod
+      });
+    } catch {
+      return;
+    } finally {
+      setIsReturning(false);
+    }
 
     setSelectedTrx(null);
   };
@@ -156,6 +165,7 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     handleConfirm,
     handleSelect,
     itemConditions,
+    isReturning,
     lateFee,
     lateItemCount,
     notes,

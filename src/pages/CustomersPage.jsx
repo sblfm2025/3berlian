@@ -118,42 +118,42 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5">
-      <div className="brand-gradient hidden rounded-[24px] p-5 text-white shadow-soft md:block md:p-6">
+    <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
+      <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
         <div className="max-w-2xl">
           <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-white/80">Pelanggan</p>
-          <h2 className="mt-3 text-2xl md:text-3xl font-black leading-tight">Data pelanggan dan pola kunjungan tersusun rapi</h2>
-          <p className="mt-3 text-sm md:text-base text-white/90">
+          <h2 className="mt-3 text-lg font-bold leading-tight sm:text-2xl md:text-3xl">Data pelanggan dan pola kunjungan tersusun rapi</h2>
+          <p className="mt-3 text-xs text-white/90 sm:text-sm md:text-base">
             Pantau pelanggan aktif, nilai transaksi, deposit, dan riwayat terakhir tanpa perlu membuka nota satu per satu.
           </p>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[22px] bg-white/10 border border-white/20 p-4 backdrop-blur-sm">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Pelanggan unik</p>
-            <p className="mt-2 text-2xl font-black">{enrichedCustomers.length}</p>
+            <p className="mt-2 text-lg font-black sm:text-2xl">{enrichedCustomers.length}</p>
           </div>
-          <div className="rounded-[22px] bg-white/10 border border-white/20 p-4 backdrop-blur-sm">
+          <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Pelanggan kembali</p>
-            <p className="mt-2 text-2xl font-black">{repeatCustomers}</p>
+            <p className="mt-2 text-lg font-black sm:text-2xl">{repeatCustomers}</p>
           </div>
-          <div className="rounded-[22px] bg-white/10 border border-white/20 p-4 backdrop-blur-sm">
+          <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Pelanggan aktif</p>
-            <p className="mt-2 text-2xl font-black">{activeCustomerCount}</p>
+            <p className="mt-2 text-lg font-black sm:text-2xl">{activeCustomerCount}</p>
           </div>
-          <div className="rounded-[22px] bg-white/10 border border-white/20 p-4 backdrop-blur-sm">
+          <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Total deposit</p>
-            <p className="mt-2 text-2xl font-black">{formatCurrency(totalDeposit)}</p>
+            <p className="mt-2 text-lg font-black sm:text-2xl">{formatCurrency(totalDeposit)}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="pos-card sticky top-0 z-20 p-4 md:static md:p-5">
+      <div className="grid gap-3 xl:grid-cols-[1.05fr_0.95fr] xl:gap-4">
+        <div className="pos-card sticky top-0 z-20 p-3 md:static md:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="hidden md:block">
               <p className="text-sm font-semibold text-slate-500">Daftar pelanggan</p>
-              <h3 className="mt-1 text-lg font-black text-slate-900">Cari nama, telepon, atau alamat</h3>
+              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Cari nama, telepon, atau alamat</h3>
             </div>
             <div className={`flex flex-wrap gap-2 ${searchTerm ? 'hidden md:flex' : ''}`}>
               <select
@@ -162,7 +162,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                   setSortBy(e.target.value);
                   setCustomerPage(1);
                 }}
-                className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 sm:rounded-[18px] sm:px-4 sm:py-3 sm:text-sm"
               >
                 <option value="terbaru">Terbaru</option>
                 <option value="terbanyak">Terbanyak transaksi</option>
@@ -219,37 +219,37 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
             </div>
           )}
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-3 space-y-2.5 sm:mt-4 sm:space-y-3">
             {filteredCustomers.length === 0 ? (
-              <div className="rounded-[22px] border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 sm:rounded-[22px] sm:p-8">
                 Tidak ada pelanggan sesuai pencarian.
               </div>
             ) : paginatedCustomers.map(customer => (
-              <div key={customer.id} className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div key={customer.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[22px] sm:p-4">
                 <div className="flex flex-wrap justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="break-words font-black text-slate-900">{customer.name}</p>
-                    <p className="mt-1 break-words text-sm text-slate-500">{customer.phone || 'Nomor telepon tidak tersedia'}</p>
+                    <p className="break-words text-sm font-semibold text-slate-900 sm:font-black">{customer.name}</p>
+                    <p className="mt-1 break-words text-xs text-slate-500 sm:text-sm">{customer.phone || 'Nomor telepon tidak tersedia'}</p>
                     <p className="mt-1 break-words text-xs text-slate-500">{customer.address || 'Alamat belum dicatat'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">{customer.visitCount} kunjungan</p>
-                    <p className="mt-2 text-sm font-black text-slate-900">{formatCurrency(customer.totalSpend)}</p>
+                    <p className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700 sm:px-3 sm:text-[11px]">{customer.visitCount} kunjungan</p>
+                    <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-black">{formatCurrency(customer.totalSpend)}</p>
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-[18px] bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Terakhir</p>
-                    <p className="mt-1 text-sm font-bold text-slate-900">{customer.lastRentDate ? formatDate(customer.lastRentDate) : 'Belum ada'}</p>
+                <div className="mt-3 grid gap-2 sm:mt-4 sm:grid-cols-3 sm:gap-3">
+                  <div className="rounded-xl bg-slate-50 px-3 py-2 sm:rounded-[18px]">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.2em]">Terakhir</p>
+                    <p className="mt-1 text-xs font-bold text-slate-900 sm:text-sm">{customer.lastRentDate ? formatDate(customer.lastRentDate) : 'Belum ada'}</p>
                   </div>
-                  <div className="rounded-[18px] bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Deposit</p>
-                    <p className="mt-1 text-sm font-bold text-slate-900">{formatCurrency(customer.depositAmount)}</p>
+                  <div className="rounded-xl bg-slate-50 px-3 py-2 sm:rounded-[18px]">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.2em]">Deposit</p>
+                    <p className="mt-1 text-xs font-bold text-slate-900 sm:text-sm">{formatCurrency(customer.depositAmount)}</p>
                   </div>
-                  <div className="rounded-[18px] bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Status</p>
-                    <p className="mt-1 text-sm font-bold text-emerald-700">{customer.pendingReturns > 0 ? 'Aktif' : 'Rutin'}</p>
+                  <div className="rounded-xl bg-slate-50 px-3 py-2 sm:rounded-[18px]">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.2em]">Status</p>
+                    <p className="mt-1 text-xs font-bold text-emerald-700 sm:text-sm">{customer.pendingReturns > 0 ? 'Aktif' : 'Rutin'}</p>
                   </div>
                 </div>
 
@@ -257,11 +257,11 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                   <p className="mt-3 break-words text-sm text-slate-600">Catatan: {customer.note}</p>
                 )}
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
                   <button
                     type="button"
                     onClick={() => openEditCustomer(customer)}
-                    className="rounded-[16px] bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-100"
+                    className="rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 sm:rounded-[16px] sm:px-4 sm:text-sm"
                   >
                     Ubah data pelanggan
                   </button>
@@ -275,12 +275,12 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
         </div>
 
         <div className="hidden gap-4 md:grid">
-          <div className="pos-card p-5">
+          <div className="pos-card p-3 sm:p-5">
             <p className="text-sm font-semibold text-slate-500">Pelanggan utama</p>
-            <h3 className="mt-1 text-lg font-black text-slate-900">Pelanggan prioritas</h3>
+            <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Pelanggan prioritas</h3>
             <div className="mt-4 space-y-3">
               {filteredCustomers.slice(0, 5).map(customer => (
-                <div key={customer.id} className="rounded-[18px] bg-slate-50 px-4 py-3">
+                <div key={customer.id} className="rounded-2xl bg-slate-50 px-3 py-2.5 sm:rounded-[18px] sm:px-4 sm:py-3">
                   <p className="font-bold text-slate-900">{customer.name}</p>
                   <p className="mt-1 text-sm text-slate-500">{customer.visitCount} kunjungan - {formatCurrency(customer.totalSpend)}</p>
                 </div>
@@ -291,12 +291,12 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
             </div>
           </div>
 
-          <div className="pos-card p-5">
+          <div className="pos-card p-3 sm:p-5">
             <p className="text-sm font-semibold text-slate-500">Informasi identitas</p>
-            <h3 className="mt-1 text-lg font-black text-slate-900">Data penting pelanggan</h3>
+            <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Data penting pelanggan</h3>
             <div className="mt-4 space-y-3">
               {filteredCustomers.slice(0, 5).map(customer => (
-                <div key={customer.id} className="rounded-[18px] border border-slate-100 bg-white p-4">
+                <div key={customer.id} className="rounded-2xl border border-slate-100 bg-white p-3 sm:rounded-[18px] sm:p-4">
                   <p className="font-bold text-slate-900">{customer.name}</p>
                   <p className="mt-2 text-sm text-slate-500">{customer.identityType || 'KTP'}: {customer.identityNumber || '-'}</p>
                   <p className="mt-1 text-sm text-slate-500">Telepon: {customer.phone || '-'}</p>

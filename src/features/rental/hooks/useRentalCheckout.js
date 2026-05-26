@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { formatDateInput } from '../../../utils/format';
 import { createInvoiceNumber } from '../../../utils/invoice';
 
@@ -25,7 +27,10 @@ export const useRentalCheckout = ({
   setPaymentMethod,
   subTotal
 }) => {
-  const handleCheckoutClick = () => {
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const handleCheckoutClick = async () => {
+    if (isCheckingOut) return undefined;
     if (cart.length === 0) return alert('Pilih barang terlebih dahulu');
     if (!customerNameInput.trim()) return alert('Masukkan nama pelanggan');
     if (!returnDateInput) return alert('Masukkan tanggal pengembalian');
@@ -47,28 +52,35 @@ export const useRentalCheckout = ({
       return alert('Transaksi Ditolak: Uang tunai yang diterima kurang dari total tagihan!');
     }
 
-    onCheckout({
-      id: invoiceNumber,
-      invoiceNumber,
-      customerName: customerNameInput,
-      customerPhone: customerPhoneInput,
-      customerAddress: customerAddressInput,
-      customerNote: customerNoteInput,
-      customerIdentityType,
-      customerIdentityNumber,
-      depositAmount,
-      items: cart,
-      rentDate,
-      expectedReturnDate: returnDateInput,
-      subTotal,
-      discountAmount,
-      totalAmount: grandTotal,
-      paymentMethod,
-      cashReceived: paymentMethod === 'Tunai' ? finalCashReceived : 0,
-      change: paymentMethod === 'Tunai' ? changeAmount : 0,
-      status: 'disewa',
-      lateFee: 0
-    }, cart);
+    setIsCheckingOut(true);
+    try {
+      await onCheckout({
+        id: invoiceNumber,
+        invoiceNumber,
+        customerName: customerNameInput,
+        customerPhone: customerPhoneInput,
+        customerAddress: customerAddressInput,
+        customerNote: customerNoteInput,
+        customerIdentityType,
+        customerIdentityNumber,
+        depositAmount,
+        items: cart,
+        rentDate,
+        expectedReturnDate: returnDateInput,
+        subTotal,
+        discountAmount,
+        totalAmount: grandTotal,
+        paymentMethod,
+        cashReceived: paymentMethod === 'Tunai' ? finalCashReceived : 0,
+        change: paymentMethod === 'Tunai' ? changeAmount : 0,
+        status: 'disewa',
+        lateFee: 0
+      }, cart);
+    } catch {
+      return undefined;
+    } finally {
+      setIsCheckingOut(false);
+    }
 
     clearCart();
     resetCustomerAfterCheckout();
@@ -78,5 +90,5 @@ export const useRentalCheckout = ({
     return undefined;
   };
 
-  return { handleCheckoutClick };
+  return { handleCheckoutClick, isCheckingOut };
 };

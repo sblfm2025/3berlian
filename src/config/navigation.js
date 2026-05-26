@@ -1,4 +1,4 @@
-import { ArrowLeftRight, FileText, Home, Package, ShoppingBag, UserCog, Users } from 'lucide-react';
+import { ArrowLeftRight, FileText, Home, Menu, Package, ShoppingBag, UserCog, Users } from 'lucide-react';
 
 export const navItems = [
   { id: 'dashboard', label: 'Beranda', icon: Home, roles: ['admin', 'cashier'], group: 'Utama' },
@@ -8,6 +8,7 @@ export const navItems = [
   { id: 'customers', label: 'Pelanggan', icon: Users, roles: ['admin', 'cashier'], group: 'Data Master' },
   { id: 'users', label: 'Pengguna', icon: UserCog, roles: ['admin'], group: 'Data Master' },
   { id: 'reports', label: 'Laporan', icon: FileText, roles: ['admin'], group: 'Analitik' },
+  { id: 'menu', label: 'Menu', icon: Menu, roles: ['admin', 'cashier'], group: 'Sistem' },
 ];
 
 export const pageMeta = {
@@ -52,6 +53,12 @@ export const pageMeta = {
     title: 'Rekap bisnis',
     subtitle: 'Filter transaksi, lihat omzet, dan unduh laporan operasional.',
     searchPlaceholder: 'Cari nota, pelanggan, telepon'
+  },
+  menu: {
+    eyebrow: 'Menu',
+    title: 'Pusat modul',
+    subtitle: 'Akses modul operasional dan ruang pengembangan layanan sanggar berikutnya.',
+    searchPlaceholder: 'Cari modul'
   }
 };
 
@@ -61,8 +68,8 @@ export const getRoleNavItems = (role) => {
 
 export const getMobileNavItems = (role) => {
   const mobileIds = role === 'admin'
-    ? ['dashboard', 'rent', 'return', 'products', 'reports']
-    : ['dashboard', 'return', 'rent', 'customers'];
+    ? ['dashboard', 'rent', 'return', 'reports', 'menu']
+    : ['dashboard', 'rent', 'return', 'customers', 'menu'];
 
   return getRoleNavItems(role).filter(item => mobileIds.includes(item.id));
 };

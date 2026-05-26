@@ -116,40 +116,40 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
   }, [dashboardSearch, operationalMenus]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="brand-gradient hidden rounded-[24px] p-6 text-white shadow-soft md:block md:p-8">
+    <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
+      <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
           <div className="max-w-2xl">
-            <p className="text-sm md:text-base font-semibold uppercase tracking-[0.2em] text-white/85">3 Berlian POS Penyewaan Kostum</p>
-            <h2 className="mt-3 text-2xl md:text-3xl font-black leading-tight">Pusat kerja kasir untuk sewa kostum adat</h2>
-            <p className="mt-3 text-sm md:text-base text-white/90 max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/85 md:text-sm">3 Berlian POS Penyewaan Kostum</p>
+            <h2 className="mt-3 text-lg font-bold leading-tight sm:text-2xl md:text-3xl">Pusat kerja kasir untuk sewa kostum adat</h2>
+            <p className="mt-3 max-w-xl text-xs text-white/90 sm:text-sm md:text-base">
               Pantau omzet, stok menipis, transaksi aktif, dan pengembalian jatuh tempo dari satu panel kerja cepat dan profesional.
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">Sewa cepat</span>
-              <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">Pengembalian terstruktur</span>
-              <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">Karyawan kasir siap</span>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm">Sewa cepat</span>
+              <span className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm">Pengembalian terstruktur</span>
+              <span className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm">Karyawan kasir siap</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 min-w-[280px]">
-            <div className="rounded-[22px] bg-white/10 backdrop-blur-sm p-4 border border-white/20">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/85">Omzet total</p>
-              <p className="mt-2 text-2xl font-black">{formatCurrency(totalRevenue)}</p>
+          <div className="grid min-w-[280px] grid-cols-2 gap-2">
+            <div className="rounded-[20px] bg-white/10 backdrop-blur-sm p-3 border border-white/20">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/85">Omzet total</p>
+              <p className="mt-2 text-lg font-black sm:text-2xl">{formatCurrency(totalRevenue)}</p>
             </div>
-            <div className="rounded-[22px] bg-white/10 backdrop-blur-sm p-4 border border-white/20">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/85">Produk tersedia</p>
-              <p className="mt-2 text-2xl font-black">{products.length}</p>
+            <div className="rounded-[20px] bg-white/10 backdrop-blur-sm p-3 border border-white/20">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/85">Produk tersedia</p>
+              <p className="mt-2 text-lg font-black sm:text-2xl">{products.length}</p>
             </div>
-            <div className="rounded-[22px] bg-white/10 backdrop-blur-sm p-4 border border-white/20 col-span-2">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/85">Status hari ini</p>
-              <p className="mt-2 text-lg font-bold">{completedToday.length} transaksi selesai - {pendingReturnCount} pengembalian perlu perhatian</p>
+            <div className="rounded-[20px] bg-white/10 backdrop-blur-sm p-3 border border-white/20 col-span-2">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/85">Status hari ini</p>
+              <p className="mt-2 text-sm font-bold sm:text-lg">{completedToday.length} transaksi selesai - {pendingReturnCount} pengembalian perlu perhatian</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="grid grid-cols-3 gap-x-4 gap-y-5 px-5 py-5 sm:grid-cols-4 md:grid-cols-6 md:px-6">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-[24px]">
+        <div className="grid grid-cols-3 gap-x-2 gap-y-3 px-3 py-3 sm:grid-cols-4 sm:gap-x-4 sm:gap-y-5 sm:px-5 sm:py-5 md:grid-cols-6 md:px-6">
           {filteredMenus.map(item => {
             const Icon = item.icon;
             return (
@@ -157,12 +157,12 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
                 key={item.target}
                 type="button"
                 onClick={() => onNavigate(item.target)}
-                className="group flex flex-col items-center rounded-[20px] px-2 py-2 text-center transition hover:bg-blue-50"
+                className="group flex flex-col items-center rounded-2xl px-1.5 py-2 text-center transition hover:bg-blue-50 sm:rounded-[20px] sm:px-2"
               >
-                <span className={`flex h-16 w-16 items-center justify-center rounded-full shadow-sm transition ${item.color}`}>
-                  <Icon size={27} strokeWidth={2.4} />
+                <span className={`flex h-11 w-11 items-center justify-center rounded-full shadow-sm transition sm:h-16 sm:w-16 ${item.color}`}>
+                  <Icon size={20} strokeWidth={2.4} className="sm:h-[27px] sm:w-[27px]" />
                 </span>
-                <span className="mt-2 min-h-[28px] text-xs font-bold leading-tight text-slate-700">{item.label}</span>
+                <span className="mt-1.5 min-h-[24px] text-[11px] font-bold leading-tight text-slate-700 sm:mt-2 sm:min-h-[28px] sm:text-xs">{item.label}</span>
               </button>
             );
           })}
@@ -174,7 +174,7 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         {statCards.map(card => (
           <KpiCard
             key={card.title}
@@ -231,11 +231,11 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
       </div>
 
       <div className="hidden grid-cols-1 gap-4 md:grid xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="pos-card p-5">
+        <div className="pos-card p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-slate-500">Performa omzet 7 hari</p>
-              <h3 className="mt-1 text-lg font-black text-slate-900">Pergerakan harian</h3>
+              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Pergerakan harian</h3>
             </div>
             <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Kasir</span>
           </div>
@@ -253,23 +253,23 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
         </div>
 
         <div className="grid gap-4">
-          <div className="pos-card p-5">
+          <div className="pos-card p-4 sm:p-5">
             <div>
               <p className="text-sm font-semibold text-slate-500">Peringatan operasional</p>
-              <h3 className="mt-1 text-lg font-black text-slate-900">Prioritas segera</h3>
+              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Prioritas segera</h3>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[20px] bg-red-50 border border-red-100 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-red-700">Terlambat</p>
-                <p className="mt-2 text-2xl font-black text-red-700">{overdueRentals.length}</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3 sm:gap-3">
+              <div className="rounded-2xl bg-red-50 border border-red-100 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-red-700 sm:text-[11px] sm:tracking-[0.2em]">Terlambat</p>
+                <p className="mt-1.5 text-xl font-bold text-red-700 sm:mt-2 sm:text-2xl sm:font-black">{overdueRentals.length}</p>
               </div>
-              <div className="rounded-[20px] bg-amber-50 border border-amber-100 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-amber-700">Mendekati batas</p>
-                <p className="mt-2 text-2xl font-black text-amber-700">{upcomingReturns.length}</p>
+              <div className="rounded-2xl bg-amber-50 border border-amber-100 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-amber-700 sm:text-[11px] sm:tracking-[0.2em]">Mendekati batas</p>
+                <p className="mt-1.5 text-xl font-bold text-amber-700 sm:mt-2 sm:text-2xl sm:font-black">{upcomingReturns.length}</p>
               </div>
-              <div className="rounded-[20px] bg-emerald-50 border border-emerald-100 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-emerald-700">Transaksi hari ini</p>
-                <p className="mt-2 text-2xl font-black text-emerald-700">{completedToday.length}</p>
+              <div className="rounded-2xl bg-emerald-50 border border-emerald-100 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-emerald-700 sm:text-[11px] sm:tracking-[0.2em]">Transaksi hari ini</p>
+                <p className="mt-1.5 text-xl font-bold text-emerald-700 sm:mt-2 sm:text-2xl sm:font-black">{completedToday.length}</p>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -320,10 +320,10 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
             </div>
           </div>
 
-          <div className="pos-card p-5">
+          <div className="pos-card p-4 sm:p-5">
             <div>
               <p className="text-sm font-semibold text-slate-500">Metode pembayaran</p>
-              <h3 className="mt-1 text-lg font-black text-slate-900">Komposisi transaksi & omzet</h3>
+              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Komposisi transaksi & omzet</h3>
             </div>
             <div className="mt-5 space-y-4">
               {Object.entries(paymentMix).length === 0 ? (
@@ -349,30 +349,30 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_1fr]">
-        <div className="pos-card p-5">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-[1.1fr_1fr]">
+        <div className="pos-card p-3 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-slate-500">Transaksi terakhir</p>
-              <h3 className="mt-1 text-lg font-black text-slate-900">Aktivitas paling baru</h3>
+              <h3 className="mt-1 text-base font-bold text-slate-900 sm:text-lg sm:font-black">Aktivitas paling baru</h3>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{recentTransactions.length} data</span>
           </div>
 
           <div className="mt-4 space-y-3">
             {recentTransactions.length === 0 ? (
-              <div className="rounded-[22px] border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+              <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-500 sm:rounded-[22px] sm:p-6">
                 Belum ada transaksi. Mulai penyewaan pertama untuk melihat ringkasan di sini.
               </div>
             ) : recentTransactions.map(tx => (
-              <div key={tx.id} className="flex items-center justify-between gap-3 rounded-[20px] bg-slate-50 px-4 py-3">
+              <div key={tx.id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
                 <div>
-                  <p className="font-bold text-slate-900">{tx.customerName || 'Pelanggan belum tercatat'}</p>
-                  <p className="text-sm text-slate-500">{tx.id} - {formatDate(tx.rentDate || new Date().toISOString())}</p>
+                  <p className="text-sm font-bold text-slate-900">{tx.customerName || 'Pelanggan belum tercatat'}</p>
+                  <p className="text-xs text-slate-500 sm:text-sm">{tx.id} - {formatDate(tx.rentDate || new Date().toISOString())}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-black text-slate-900">{formatCurrency((tx.totalAmount || 0) + (tx.lateFee || 0))}</p>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{getStatusLabel(tx.status)}</p>
+                  <p className="text-sm font-bold text-slate-900 sm:font-black">{formatCurrency((tx.totalAmount || 0) + (tx.lateFee || 0))}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">{getStatusLabel(tx.status)}</p>
                 </div>
               </div>
             ))}

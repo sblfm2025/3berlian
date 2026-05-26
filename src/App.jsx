@@ -30,6 +30,7 @@ const ProductsPage = lazy(() => import('./pages/ProductsPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const MenuPage = lazy(() => import('./pages/MenuPage'));
 
 const isKnownAppView = (view) => Object.prototype.hasOwnProperty.call(pageMeta, view);
 const APP_SESSION_KEY = 'pos-3berlian-session';
@@ -370,8 +371,9 @@ export default function App() {
     try {
       await saveCheckoutTransaction(newTransaction, cart);
       setReceiptData(newTransaction);
-    } catch {
+    } catch (error) {
       notify({ title: 'Transaksi gagal', message: 'Gagal memproses transaksi. Periksa stok dan koneksi lalu coba lagi.', type: 'error' });
+      throw error;
     }
   };
 
@@ -390,6 +392,7 @@ export default function App() {
     } catch (error) {
       console.error(error);
       notify({ title: 'Pengembalian gagal', message: 'Gagal memproses pengembalian. Periksa koneksi atau data produk.', type: 'error' });
+      throw error;
     }
   };
 
@@ -763,7 +766,8 @@ export default function App() {
     products: appDataStatus.products,
     customers: appDataStatus.customers,
     users: appDataStatus.users,
-    reports: appDataStatus.transactions
+    reports: appDataStatus.transactions,
+    menu: true
   };
   const isCurrentViewReady = Boolean(viewReady[currentView]);
 
@@ -812,34 +816,37 @@ export default function App() {
                 onEdit={handleEditTransactionDB}
               />
             )}
+            {isCurrentViewReady && currentView === 'menu' && (
+              <MenuPage onNavigate={navigateToView} role={user.role} />
+            )}
           </Suspense>
       </AppShell>
 
       {pwaPrompt && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/55 p-4 backdrop-blur-sm md:items-center">
-          <div className="w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-2xl">
-            <div className="bg-[#0d47a1] px-5 py-5 text-white">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-blue-100">3 Berlian POS</p>
-              <h2 className="mt-2 text-xl font-black">
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/55 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-sm md:items-center md:p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-t-[24px] bg-white shadow-2xl md:rounded-[28px]">
+            <div className="bg-[#0d47a1] px-4 py-4 text-white sm:px-5 sm:py-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-100 sm:text-[11px] sm:tracking-[0.22em]">3 Berlian POS</p>
+              <h2 className="mt-2 text-lg font-bold sm:text-xl sm:font-black">
                 {pwaPrompt === 'notification' ? 'Izinkan notifikasi aplikasi' : 'Instal aplikasi di HP'}
               </h2>
-              <p className="mt-2 text-sm font-semibold leading-relaxed text-blue-50">
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-blue-50 sm:text-sm">
                 {pwaPrompt === 'notification'
                   ? 'Aktifkan pengingat agar informasi penting dari aplikasi tidak terlewat.'
                   : 'Akses kasir lebih cepat dari layar utama tanpa membuka browser manual.'}
               </p>
             </div>
 
-            <div className="space-y-4 px-5 py-5">
+            <div className="space-y-3 px-4 py-4 sm:space-y-4 sm:px-5 sm:py-5">
               {pwaPrompt === 'install' && (
                 <>
-                  <div className="rounded-[22px] bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                  <div className="rounded-2xl bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-900 sm:rounded-[22px] sm:px-4 sm:py-3 sm:text-sm">
                     Untuk operasional harian, sebaiknya aplikasi dipasang di HP agar lebih cepat dan terasa seperti aplikasi native.
                   </div>
                   <button
                     type="button"
                     onClick={handleInstallApp}
-                    className="w-full rounded-[18px] bg-blue-800 px-4 py-3.5 text-sm font-black text-white shadow-sm"
+                    className="w-full rounded-2xl bg-blue-800 px-4 py-3 text-sm font-semibold text-white shadow-sm sm:rounded-[18px] sm:py-3.5 sm:font-black"
                   >
                     Instal Sekarang
                   </button>
@@ -847,8 +854,8 @@ export default function App() {
               )}
 
               {pwaPrompt === 'ios-install' && (
-                <div className="rounded-[22px] bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-700">
-                  <p className="font-black text-slate-900">Cara instal di iPhone/iPad:</p>
+                <div className="rounded-2xl bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-700 sm:rounded-[22px] sm:px-4 sm:py-4 sm:text-sm">
+                  <p className="font-bold text-slate-900 sm:font-black">Cara instal di iPhone/iPad:</p>
                   <p className="mt-2">1. Tekan tombol Share di Safari.</p>
                   <p className="mt-1">2. Pilih Add to Home Screen.</p>
                   <p className="mt-1">3. Tekan Add.</p>
@@ -856,21 +863,21 @@ export default function App() {
               )}
 
               {pwaPrompt === 'manual-install' && (
-                <div className="rounded-[22px] bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-700">
-                  <p className="font-black text-slate-900">Prompt install belum tersedia.</p>
+                <div className="rounded-2xl bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-700 sm:rounded-[22px] sm:px-4 sm:py-4 sm:text-sm">
+                  <p className="font-bold text-slate-900 sm:font-black">Prompt install belum tersedia.</p>
                   <p className="mt-2">Buka menu browser lalu pilih Install app atau Add to Home screen. Jika belum muncul, refresh halaman setelah beberapa detik.</p>
                 </div>
               )}
 
               {pwaPrompt === 'notification' && (
                 <>
-                  <div className="rounded-[22px] bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900">
+                  <div className="rounded-2xl bg-blue-50 px-3 py-2.5 text-xs font-semibold text-blue-900 sm:rounded-[22px] sm:px-4 sm:py-3 sm:text-sm">
                     Notifikasi browser dapat dipakai untuk pengingat penting seperti stok rendah, nota jatuh tempo, atau status aplikasi.
                   </div>
                   <button
                     type="button"
                     onClick={handleEnableNotifications}
-                    className="w-full rounded-[18px] bg-blue-800 px-4 py-3.5 text-sm font-black text-white shadow-sm"
+                    className="w-full rounded-2xl bg-blue-800 px-4 py-3 text-sm font-semibold text-white shadow-sm sm:rounded-[18px] sm:py-3.5 sm:font-black"
                   >
                     Izinkan Notifikasi
                   </button>
@@ -880,7 +887,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setPwaPrompt(null)}
-                className="w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 sm:rounded-[18px]"
               >
                 Nanti
               </button>

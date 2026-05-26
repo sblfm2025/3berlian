@@ -160,14 +160,14 @@ export default function LoginScreen({
                 <label className="block text-xs font-bold text-slate-700 mb-1">Username</label>
                 <div className="relative">
                   <UserCog size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input type="text" required value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-[16px] bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-300 outline-none text-sm" placeholder="Masukkan username" />
+                  <input type="text" autoComplete="username" required value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-[16px] bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-300 outline-none text-sm" placeholder="Masukkan username" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Password</label>
                 <div className="relative">
                   <Key size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-[16px] bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-300 outline-none text-sm" placeholder="Masukkan password" />
+                  <input type="password" autoComplete="current-password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-[16px] bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-300 outline-none text-sm" placeholder="Masukkan password" />
                 </div>
               </div>
               <button type="submit" disabled={!isDataLoaded} className="w-full bg-blue-800 hover:bg-blue-900 text-white py-3 rounded-[16px] font-bold transition shadow-[0_20px_40px_-24px_rgba(30,64,175,0.9)] disabled:cursor-not-allowed disabled:opacity-60">
@@ -184,7 +184,7 @@ export default function LoginScreen({
               <div>
                 <div className="relative">
                   <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input type="email" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} className="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-[16px] bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-300 outline-none text-sm" placeholder="email@contoh.com" />
+                  <input type="email" autoComplete="email" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} className="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-[16px] bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-300 outline-none text-sm" placeholder="email@contoh.com" />
                 </div>
               </div>
               <div className="flex gap-2">

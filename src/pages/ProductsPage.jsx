@@ -191,16 +191,16 @@ export default function ProductsPage({ products, onSave, onDelete }) {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className={`sticky top-0 z-20 mb-5 grid gap-4 rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm md:static md:mb-6 md:border-0 md:bg-transparent md:p-0 md:shadow-none xl:grid-cols-[1.2fr_1fr] xl:items-end ${searchTerm ? 'hidden md:grid' : ''}`}>
+      <div className={`sticky top-0 z-20 mb-3 grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:static md:mb-5 md:border-0 md:bg-transparent md:p-0 md:shadow-none xl:grid-cols-[1.2fr_1fr] xl:items-end ${searchTerm ? 'hidden md:grid' : ''}`}>
         <div className="hidden md:block">
           <p className="text-sm font-semibold text-slate-500">Inventaris</p>
-          <h2 className="mt-2 text-2xl font-black text-slate-900">Manajemen produk penyewaan</h2>
+          <h2 className="mt-2 text-lg font-bold text-slate-900 sm:text-2xl sm:font-black">Manajemen produk penyewaan</h2>
           <p className="mt-2 hidden max-w-2xl text-sm text-slate-600 md:block">
             Pantau stok, kategori, dan harga sewa dengan cepat agar proses pembayaran dan pengembalian lebih konsisten.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
           <div className="relative hidden flex-1 md:block">
             <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -217,7 +217,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
           <button
             type="button"
             onClick={() => openModal()}
-            className="rounded-[18px] bg-amber-500 px-5 py-3 text-sm font-black text-white shadow-sm transition-transform active:scale-95"
+            className="rounded-xl bg-amber-500 px-3 py-2.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-95 sm:rounded-[18px] sm:px-5 sm:py-3 sm:font-black"
           >
             <span className="flex items-center justify-center gap-2">
               <Plus size={18} strokeWidth={3} />
@@ -227,26 +227,26 @@ export default function ProductsPage({ products, onSave, onDelete }) {
         </div>
       </div>
 
-      <div className="mb-6 hidden gap-3 sm:grid-cols-2 md:grid xl:grid-cols-4">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Total produk</p>
-          <p className="mt-3 text-2xl font-black text-slate-900">{normalizedProducts.length}</p>
+      <div className="mb-5 hidden gap-3 sm:grid-cols-2 md:grid xl:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[24px] sm:p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">Total produk</p>
+          <p className="mt-2 text-xl font-bold text-slate-900 sm:mt-3 sm:text-2xl sm:font-black">{normalizedProducts.length}</p>
         </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Tersedia</p>
-          <p className="mt-3 text-2xl font-black text-emerald-600">{stats.available}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[24px] sm:p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">Tersedia</p>
+          <p className="mt-2 text-xl font-bold text-emerald-600 sm:mt-3 sm:text-2xl sm:font-black">{stats.available}</p>
         </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Stok rendah</p>
-          <p className="mt-3 text-2xl font-black text-amber-600">{stats.lowStock}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[24px] sm:p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">Stok rendah</p>
+          <p className="mt-2 text-xl font-bold text-amber-600 sm:mt-3 sm:text-2xl sm:font-black">{stats.lowStock}</p>
         </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Nilai stok</p>
-          <p className="mt-3 text-2xl font-black text-blue-700">{formatCurrency(stats.totalInventoryValue)}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[24px] sm:p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">Nilai stok</p>
+          <p className="mt-2 text-xl font-bold text-blue-700 sm:mt-3 sm:text-2xl sm:font-black">{formatCurrency(stats.totalInventoryValue)}</p>
         </div>
       </div>
 
-      <div className={`mb-5 rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm ${searchTerm ? 'hidden md:block' : ''}`}>
+      <div className={`mb-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:mb-5 sm:rounded-[20px] sm:p-4 ${searchTerm ? 'hidden md:block' : ''}`}>
         <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
           {categories.map(category => (
             <button
@@ -256,7 +256,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
                 setCategoryFilter(category);
                 setProductPage(1);
               }}
-              className={`shrink-0 max-w-full break-words rounded-full px-4 py-2 text-sm font-bold transition-all ${categoryFilter === category ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}
+              className={`shrink-0 max-w-full break-words rounded-full px-3 py-1.5 text-xs font-bold transition-all sm:px-4 sm:py-2 sm:text-sm ${categoryFilter === category ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}
             >
               {category}
             </button>
@@ -272,7 +272,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
                 setStatusFilter(option);
                 setProductPage(1);
               }}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all ${statusFilter === option ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-all sm:px-4 sm:py-2 sm:text-sm ${statusFilter === option ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
             >
               {option === 'Semua' ? 'Semua status' : getStatusOptionLabel(option)}
             </button>
@@ -391,51 +391,49 @@ export default function ProductsPage({ products, onSave, onDelete }) {
         </table>
       </div>
 
-      <div className="lg:hidden space-y-4">
+      <div className="space-y-2.5 lg:hidden">
         {filteredProducts.length === 0 ? (
-          <div className="rounded-[24px] border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
             Produk tidak ditemukan.
           </div>
         ) : paginatedProducts.map(product => (
-          <div key={product.id} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+          <div key={product.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
             <div className="flex gap-3 sm:gap-4">
               <div className="shrink-0">
                 {product.photo ? (
-                  <img src={product.photo} alt={product.name} className="h-20 w-20 rounded-[20px] border border-slate-100 object-cover sm:h-24 sm:w-24" />
+                  <img src={product.photo} alt={product.name} className="h-14 w-14 rounded-xl border border-slate-100 object-cover sm:h-24 sm:w-24 sm:rounded-[20px]" />
                 ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-[20px] bg-slate-100 text-slate-400 sm:h-24 sm:w-24">
-                    <Package size={28} />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-slate-400 sm:h-24 sm:w-24 sm:rounded-[20px]">
+                    <Package size={22} className="sm:h-7 sm:w-7" />
                   </div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="break-words font-black leading-tight text-slate-900">{product.name}</p>
-                    <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                      <span className="max-w-full break-words rounded-full bg-slate-100 px-2.5 py-1 font-bold text-slate-700">{product.category}</span>
-                      <span className="max-w-full break-words rounded-full bg-slate-100 px-2.5 py-1 font-bold text-slate-700">{product.size}</span>
-                      <span className="max-w-full break-words rounded-full bg-slate-100 px-2.5 py-1 font-bold text-slate-700">{product.color || 'Warna belum diisi'}</span>
+                    <p className="line-clamp-2 break-words text-sm font-semibold leading-tight text-slate-900 sm:font-black">{product.name}</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] sm:mt-2 sm:gap-2 sm:text-[11px]">
+                      <span className="max-w-full break-words rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-700 sm:px-2.5 sm:py-1">{product.category}</span>
+                      <span className="max-w-full break-words rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-700 sm:px-2.5 sm:py-1">{product.size}</span>
                     </div>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${product.stock > 2 ? 'bg-emerald-100 text-emerald-700' : product.stock > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold sm:text-[11px] sm:font-black ${product.stock > 2 ? 'bg-emerald-100 text-emerald-700' : product.stock > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
                     {product.stock} unit
                   </span>
                 </div>
 
-                <div className="mt-3 space-y-1 text-sm">
-                  <p className="break-words font-black text-amber-600">{formatCurrency(product.rentPrice)}</p>
-                  <p className="text-red-500 font-semibold">{formatCurrency(product.dailyLateFee)}/hari</p>
-                  <p className="break-words text-xs font-bold text-slate-400">Kode: {product.sku || '-'}</p>
-                  <p className="text-xs font-bold text-slate-400">
+                <div className="mt-2 space-y-0.5 text-xs sm:mt-3 sm:text-sm">
+                  <p className="break-words font-bold text-amber-600 sm:font-black">{formatCurrency(product.rentPrice)}</p>
+                  <p className="font-semibold text-red-500">{formatCurrency(product.dailyLateFee)}/hari</p>
+                  <p className="break-words text-[11px] font-bold text-slate-400 sm:text-xs">Kode: {product.sku || '-'}</p>
+                  <p className="text-[11px] font-bold text-slate-400 sm:text-xs">
                     {getProductStatusLabel(product)}
                   </p>
-                  <p className="mt-1 break-words text-sm leading-relaxed text-slate-500">{product.description || 'Deskripsi belum diisi'}</p>
                 </div>
 
-                <div className="mt-4 flex gap-2">
-                  <button type="button" onClick={() => openModal(product)} className="flex-1 rounded-[16px] bg-blue-50 py-2.5 text-sm font-bold text-blue-700">Edit</button>
-                  <button type="button" onClick={() => handleDelete(product.id)} className="flex-1 rounded-[16px] bg-red-50 py-2.5 text-sm font-bold text-red-700">Hapus</button>
+                <div className="mt-3 flex gap-2 sm:mt-4">
+                  <button type="button" onClick={() => openModal(product)} className="flex-1 rounded-xl bg-blue-50 py-2 text-xs font-bold text-blue-700 sm:rounded-[16px] sm:py-2.5 sm:text-sm">Edit</button>
+                  <button type="button" onClick={() => handleDelete(product.id)} className="flex-1 rounded-xl bg-red-50 py-2 text-xs font-bold text-red-700 sm:rounded-[16px] sm:py-2.5 sm:text-sm">Hapus</button>
                 </div>
               </div>
             </div>
