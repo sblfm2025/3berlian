@@ -38,7 +38,7 @@ export default function Toast({ message, onClose, title, type = 'info' }) {
             <Icon size={21} />
           </div>
           <div className="min-w-0 flex-1">
-            {title && <p className="text-sm font-black text-slate-900">{title}</p>}
+            {title && <p className="text-sm font-bold text-slate-900">{title}</p>}
             {message && <p className="mt-1 text-sm leading-relaxed text-slate-600">{message}</p>}
           </div>
           <button

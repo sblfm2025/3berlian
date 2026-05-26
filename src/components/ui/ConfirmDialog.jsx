@@ -22,14 +22,14 @@ export default function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_28px_90px_-38px_rgba(15,23,42,0.8)]">
+      <div className="w-full max-w-md overflow-hidden rounded-t-[22px] border border-slate-200 bg-white shadow-xl sm:rounded-[24px]">
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
           <div className="flex items-start gap-3">
             <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] border ${toneClass}`}>
               <AlertTriangle size={22} />
             </div>
             <div>
-              <p className="text-sm font-black text-slate-900">{title}</p>
+              <p className="text-sm font-bold text-slate-900">{title}</p>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">{description}</p>
             </div>
           </div>
@@ -57,7 +57,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`rounded-[16px] px-5 py-3 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60 ${buttonClass}`}
+            className={`rounded-xl px-3 py-2.5 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-[16px] sm:px-5 sm:py-3 ${buttonClass}`}
           >
             {isLoading ? 'Memproses...' : confirmLabel}
           </button>

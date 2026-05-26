@@ -21,7 +21,7 @@ export default function LoadingSkeleton({ type = 'card', count = 4 }) {
 
   if (type === 'table') {
     return (
-      <div className="w-full bg-white rounded-[28px] border border-slate-200 overflow-hidden shadow-sm">
+      <div className="w-full bg-white rounded-[18px] border border-slate-200 overflow-hidden shadow-sm sm:rounded-[28px]">
         <div className="bg-slate-50 border-b border-slate-200 p-4 flex gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-4 flex-1 rounded skeleton" />

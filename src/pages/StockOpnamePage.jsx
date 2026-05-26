@@ -207,12 +207,12 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
       {/* Banner */}
-      <div className="brand-gradient rounded-[24px] p-4 text-white shadow-soft md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-[18px] border border-emerald-100 bg-emerald-950 p-3 text-white shadow-sm md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/80">Audit Gudang & Logistik</p>
-          <h2 className="mt-2 text-lg sm:text-2xl font-black">Stock Opname & Rekonsiliasi Fisik</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/75 sm:text-xs sm:tracking-[0.18em]">Audit Gudang & Logistik</p>
+          <h2 className="mt-1.5 text-lg font-bold sm:text-2xl">Stock Opname & Rekonsiliasi Fisik</h2>
           <p className="mt-1 text-xs text-white/90">
             Audit fisik kostum adat secara real-time untuk memastikan data laci digital sinkron 100% dengan baju di gantungan rak.
           </p>
@@ -223,10 +223,10 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
       </div>
 
       {!isSessionActive && !savedSessionResult && (
-        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm max-w-xl mx-auto space-y-6 text-center">
+        <div className="rounded-[18px] border border-slate-200 bg-white p-4 shadow-sm max-w-xl mx-auto space-y-4 text-center sm:rounded-[28px] sm:p-6 sm:space-y-6">
           <Barcode size={48} className="mx-auto text-blue-800 animate-pulse" />
           <div className="space-y-2">
-            <h3 className="text-lg font-black text-slate-900">Mulai Sesi Audit Fisik Baru</h3>
+            <h3 className="text-base font-bold text-slate-900 sm:text-lg">Mulai Sesi Audit Fisik Baru</h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
               Pilih area rak/lokasi penyimpanan, lalu mulailah memindai unit kostum adat menggunakan scanner barcode atau input manual. Sistem akan secara otomatis menghitung selisih.
             </p>
@@ -248,7 +248,7 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
           <button
             type="button"
             onClick={handleStartSession}
-            className="w-full rounded-2xl bg-blue-800 hover:bg-blue-900 text-white py-3.5 text-sm font-black shadow-md flex items-center justify-center gap-2 transition"
+            className="w-full rounded-xl bg-blue-800 hover:bg-blue-900 text-white py-2.5 text-sm font-semibold shadow-md flex items-center justify-center gap-2 transition sm:rounded-2xl sm:py-3.5"
           >
             <Play size={16} /> Mulai Audit Sesi
           </button>
@@ -259,10 +259,10 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
         <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr] items-start">
           {/* Sisi Kiri: Scanner Terminal & Pemindaian */}
           <div className="space-y-4">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-3 sm:rounded-[28px] sm:p-5 sm:space-y-4">
               <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-1.5"><Barcode size={18} className="text-blue-800" /> Terminal Pemindaian Fisik</h3>
-                <span className="bg-blue-50 text-blue-700 text-xs font-black px-2.5 py-0.5 rounded-full">{scannedItemsList.length} Terscan</span>
+                <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-full">{scannedItemsList.length} Terscan</span>
               </div>
 
               {/* Form Scan */}
@@ -277,7 +277,7 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
                 />
                 <button
                   type="submit"
-                  className="rounded-2xl bg-blue-800 hover:bg-blue-900 text-white px-5 py-3 text-xs font-black shadow-sm transition"
+                  className="rounded-xl bg-blue-800 hover:bg-blue-900 text-white px-3 py-2.5 text-xs font-semibold shadow-sm transition sm:rounded-2xl sm:px-5 sm:py-3"
                 >
                   Input
                 </button>
@@ -309,7 +309,7 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
             </div>
 
             {/* List Item Sistem untuk Area Terpilih */}
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-3 sm:rounded-[28px] sm:p-5">
               <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Total Unit Terdaftar Sistem ({systemItems.length} unit)</h3>
               <div className="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto pr-1">
                 {systemItems.map(item => {
@@ -333,32 +333,32 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
 
           {/* Sisi Kanan: Laporan Discrepancy & Aksi */}
           <div className="space-y-4">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-4 sm:rounded-[28px] sm:p-5 sm:space-y-5">
               <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Laporan Discrepancy (Selisih)</h3>
 
               <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
                 <div className="bg-emerald-50 text-emerald-700 p-3 rounded-2xl border border-emerald-100">
                   <p className="text-[9px] uppercase opacity-75">Cocok</p>
-                  <p className="text-base font-black mt-0.5">{discrepancyReport.matched.length}</p>
+                  <p className="text-base font-bold mt-0.5">{discrepancyReport.matched.length}</p>
                 </div>
                 <div className="bg-red-50 text-red-700 p-3 rounded-2xl border border-red-100">
                   <p className="text-[9px] uppercase opacity-75">Hilang</p>
-                  <p className="text-base font-black mt-0.5">{discrepancyReport.missing.length}</p>
+                  <p className="text-base font-bold mt-0.5">{discrepancyReport.missing.length}</p>
                 </div>
                 <div className="bg-amber-50 text-amber-700 p-3 rounded-2xl border border-amber-100">
                   <p className="text-[9px] uppercase opacity-75">Tersesat</p>
-                  <p className="text-base font-black mt-0.5">{discrepancyReport.unexpected.length}</p>
+                  <p className="text-base font-bold mt-0.5">{discrepancyReport.unexpected.length}</p>
                 </div>
               </div>
 
               {/* Detail Items Missing */}
               {discrepancyReport.missing.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-black text-red-800 flex items-center gap-1.5"><ShieldAlert size={14} /> Item Hilang dari Rak ({discrepancyReport.missing.length})</h4>
+                  <h4 className="text-xs font-bold text-red-800 flex items-center gap-1.5"><ShieldAlert size={14} /> Item Hilang dari Rak ({discrepancyReport.missing.length})</h4>
                   <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
                     {discrepancyReport.missing.map(item => (
                       <div key={item.itemCode} className="flex justify-between items-center text-[10px] font-bold text-slate-700 bg-red-50/40 p-2 rounded-xl border border-red-100">
-                        <span className="font-black">{item.itemCode}</span>
+                        <span className="font-bold">{item.itemCode}</span>
                         <span className="truncate max-w-[150px]">{item.productName}</span>
                       </div>
                     ))}
@@ -369,11 +369,11 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
               {/* Detail Items Unexpected */}
               {discrepancyReport.unexpected.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-black text-amber-800 flex items-center gap-1.5"><AlertTriangle size={14} /> Item Tak Terduga di Rak ({discrepancyReport.unexpected.length})</h4>
+                  <h4 className="text-xs font-bold text-amber-800 flex items-center gap-1.5"><AlertTriangle size={14} /> Item Tak Terduga di Rak ({discrepancyReport.unexpected.length})</h4>
                   <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
                     {discrepancyReport.unexpected.map(item => (
                       <div key={item.itemCode} className="flex justify-between items-center text-[10px] font-bold text-slate-700 bg-amber-50/40 p-2 rounded-xl border border-amber-100">
-                        <span className="font-black">{item.itemCode}</span>
+                        <span className="font-bold">{item.itemCode}</span>
                         <span className="truncate max-w-[150px]">{item.productName}</span>
                       </div>
                     ))}
@@ -402,7 +402,7 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
                   type="button"
                   onClick={handleSaveOpname}
                   disabled={isSaving}
-                  className="flex-1 rounded-2xl bg-blue-800 hover:bg-blue-900 text-white py-3 text-sm font-black shadow-md flex items-center justify-center gap-1.5 transition"
+                  className="flex-1 rounded-xl bg-blue-800 hover:bg-blue-900 text-white py-2.5 text-sm font-semibold shadow-md flex items-center justify-center gap-1.5 transition sm:rounded-2xl sm:py-3"
                 >
                   {isSaving ? (
                     <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -419,10 +419,10 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
 
       {/* STRUK RECEIPT PREVIEW STOCK OPNAME SESI SELESAI */}
       {savedSessionResult && (
-        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm max-w-lg mx-auto space-y-6 text-center">
+        <div className="rounded-[18px] border border-slate-200 bg-white p-4 shadow-sm max-w-lg mx-auto space-y-4 text-center sm:rounded-[28px] sm:p-6 sm:space-y-6">
           <CheckCircle2 size={48} className="mx-auto text-emerald-600 animate-bounce" />
           <div className="space-y-1">
-            <h3 className="text-lg font-black text-slate-900">Rekonsiliasi Sesi Berhasil!</h3>
+            <h3 className="text-base font-bold text-slate-900 sm:text-lg">Rekonsiliasi Sesi Berhasil!</h3>
             <p className="text-xs text-slate-500">Stok inventaris dan log pergerakan gudang telah dimutakhirkan secara atomik.</p>
           </div>
 
@@ -485,7 +485,7 @@ export default function StockOpnamePage({ products, onNotify, operatorId }) {
                 printWindow.print();
                 printWindow.close();
               }}
-              className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-3 text-xs font-black text-white shadow-sm flex items-center justify-center gap-1.5 transition"
+              className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-3 text-xs font-semibold text-white shadow-sm flex items-center justify-center gap-1.5 transition"
             >
               <Printer size={14} /> Cetak Struk
             </button>

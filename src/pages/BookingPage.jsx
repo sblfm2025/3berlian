@@ -216,31 +216,31 @@ export default function BookingPage({
   }, [selectedDateStr, getEventsForDate]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5">
+    <div className="max-w-7xl mx-auto space-y-3 sm:space-y-5">
       {/* HEADER UTAMA */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-500">Operasional</p>
-          <h2 className="mt-1 text-lg font-bold text-slate-900 sm:text-2xl sm:font-black">Kalender Booking & Ketersediaan</h2>
-          <p className="mt-2 text-sm text-slate-600">
+          <h2 className="mt-1 text-lg font-bold text-slate-900 sm:text-2xl">Kalender Booking & Ketersediaan</h2>
+          <p className="mt-1.5 text-xs text-slate-600 sm:mt-2 sm:text-sm">
             Hindari bentrok penyewaan kostum dengan memantau jadwal sewa aktif dan pesanan di kalender visual.
           </p>
         </div>
         <button
           type="button"
           onClick={handleOpenModal}
-          className="rounded-2xl bg-blue-800 px-5 py-3 text-sm font-black text-white hover:bg-blue-950 transition active:scale-95 flex items-center justify-center gap-2 shadow-md"
+          className="rounded-xl bg-blue-800 px-3 py-2.5 text-sm font-semibold text-white hover:bg-blue-950 transition active:scale-95 flex items-center justify-center gap-2 shadow-md sm:rounded-2xl sm:px-5 sm:py-3"
         >
           <Plus size={18} strokeWidth={3} />
           Buat Booking Baru
         </button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.8fr_1.2fr]">
+      <div className="grid gap-3 sm:gap-5 lg:grid-cols-[1.8fr_1.2fr]">
         {/* PANEL KIRI: KALENDER BULANAN */}
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+        <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-3 sm:rounded-[28px] sm:p-5 sm:space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-black text-slate-900 sm:text-lg">
+            <h3 className="text-base font-bold text-slate-900 sm:text-lg">
               {monthNames[month]} {year}
             </h3>
             <div className="flex gap-2">
@@ -262,7 +262,7 @@ export default function BookingPage({
           </div>
 
           {/* GRID HARI */}
-          <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-black text-slate-400 uppercase tracking-widest pb-2">
+          <div className="grid grid-cols-7 gap-1.5 text-center text-[10px] font-semibold text-slate-400 uppercase tracking-[0.12em] pb-2 sm:text-xs sm:font-bold">
             <div>Min</div>
             <div>Sen</div>
             <div>Sel</div>
@@ -284,23 +284,23 @@ export default function BookingPage({
                   key={idx}
                   type="button"
                   onClick={() => handleSelectDate(item.year, item.month, item.day)}
-                  className={`min-h-[75px] rounded-[18px] p-2 text-left border flex flex-col justify-between transition-all group ${
+                  className={`min-h-[64px] rounded-xl p-1.5 text-left border flex flex-col justify-between transition-all group sm:min-h-[75px] sm:rounded-[18px] sm:p-2 ${
                     !item.isCurrentMonth ? 'bg-slate-50/50 border-slate-100 text-slate-400' : 'bg-white border-slate-200 hover:border-blue-400 text-slate-900'
                   } ${isSelected ? 'ring-4 ring-blue-100 border-blue-600 bg-blue-50/30' : ''}`}
                 >
-                  <span className={`text-xs font-black rounded-full h-6 w-6 flex items-center justify-center ${isSelected ? 'bg-blue-800 text-white' : 'text-slate-800'}`}>
+                  <span className={`text-[11px] font-bold rounded-full h-6 w-6 flex items-center justify-center ${isSelected ? 'bg-blue-800 text-white' : 'text-slate-800'}`}>
                     {item.day}
                   </span>
 
                   {hasEvents && (
                     <div className="space-y-0.5 mt-1.5 w-full">
                       {rentals.length > 0 && (
-                        <div className="bg-blue-100 text-blue-800 text-[9px] font-black px-1.5 py-0.5 rounded-[6px] truncate leading-normal">
+                        <div className="bg-blue-100 text-blue-800 text-[9px] font-semibold px-1.5 py-0.5 rounded-[6px] truncate leading-normal">
                           {rentals.length} Disewa
                         </div>
                       )}
                       {dayBook.length > 0 && (
-                        <div className="bg-amber-100 text-amber-800 text-[9px] font-black px-1.5 py-0.5 rounded-[6px] truncate leading-normal">
+                        <div className="bg-amber-100 text-amber-800 text-[9px] font-semibold px-1.5 py-0.5 rounded-[6px] truncate leading-normal">
                           {dayBook.length} Booking
                         </div>
                       )}
@@ -313,14 +313,14 @@ export default function BookingPage({
         </div>
 
         {/* PANEL KANAN: RINCIAN AGENDA HARIAN */}
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+        <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm space-y-3 sm:rounded-[28px] sm:p-5 sm:space-y-4">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
               <CalendarIcon size={18} />
             </span>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Jadwal Harian</p>
-              <h3 className="mt-0.5 text-base font-black text-slate-900">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-[11px] sm:tracking-[0.15em]">Jadwal Harian</p>
+              <h3 className="mt-0.5 text-sm font-bold text-slate-900 sm:text-base">
                 Agenda {new Date(selectedDateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
               </h3>
             </div>
@@ -328,7 +328,7 @@ export default function BookingPage({
 
           <div className="space-y-3.5 max-h-[500px] overflow-y-auto pr-1">
             {selectedDateEvents.rentals.length === 0 && selectedDateEvents.bookings.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm font-semibold text-slate-500 bg-slate-50/30">
+              <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-center text-xs font-semibold text-slate-500 bg-slate-50/30 sm:p-8 sm:text-sm">
                 Tidak ada agenda transaksi sewa atau booking aktif pada tanggal ini.
               </div>
             )}
@@ -338,11 +338,11 @@ export default function BookingPage({
               <div key={trx.id} className="rounded-2xl border border-blue-100 bg-blue-50/40 p-4 border-l-4 border-l-blue-600 space-y-2">
                 <div className="flex justify-between items-start gap-2">
                   <div>
-                    <span className="bg-blue-600 text-white font-black text-[9px] px-1.5 py-0.5 rounded">DISEWA</span>
-                    <p className="mt-1 text-sm font-black text-slate-900">{trx.customerName || trx.customer?.name}</p>
+                    <span className="bg-blue-600 text-white font-semibold text-[9px] px-1.5 py-0.5 rounded">DISEWA</span>
+                    <p className="mt-1 text-sm font-bold text-slate-900">{trx.customerName || trx.customer?.name}</p>
                     <p className="text-xs font-bold text-slate-500">Invoice: {trx.id}</p>
                   </div>
-                  <span className="text-xs font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
                     {trx.items?.length || 0} Kostum
                   </span>
                 </div>
@@ -358,11 +358,11 @@ export default function BookingPage({
               <div key={book.id} className="rounded-2xl border border-amber-100 bg-amber-50/40 p-4 border-l-4 border-l-amber-500 space-y-2.5">
                 <div className="flex justify-between items-start gap-2">
                   <div>
-                    <span className="bg-amber-500 text-white font-black text-[9px] px-1.5 py-0.5 rounded">BOOKING</span>
-                    <p className="mt-1 text-sm font-black text-slate-900">{book.customerName}</p>
+                    <span className="bg-amber-500 text-white font-semibold text-[9px] px-1.5 py-0.5 rounded">BOOKING</span>
+                    <p className="mt-1 text-sm font-bold text-slate-900">{book.customerName}</p>
                     <p className="text-xs font-bold text-slate-500">Kode: {book.bookingNumber}</p>
                   </div>
-                  <span className="text-xs font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                     {book.items?.[0]?.qty || 1} Kostum
                   </span>
                 </div>
@@ -381,7 +381,7 @@ export default function BookingPage({
                       <button
                         type="button"
                         onClick={() => handleProcessRental(book)}
-                        className="rounded-lg bg-blue-800 text-white hover:bg-blue-900 px-2.5 py-1 text-[11px] font-black shadow-sm transition"
+                        className="rounded-lg bg-blue-800 text-white hover:bg-blue-900 px-2.5 py-1 text-[11px] font-semibold shadow-sm transition"
                       >
                         Proses Sewa
                       </button>
@@ -405,18 +405,18 @@ export default function BookingPage({
       {/* FORM MODAL BOOKING BARU */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl">
+          <div className="w-full max-w-lg overflow-hidden rounded-t-[22px] bg-white shadow-xl sm:rounded-[24px]">
             <div className="flex items-center justify-between bg-blue-900 px-5 py-4 text-white">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-blue-100">Booking</p>
-                <h3 className="mt-1 text-lg font-black">Buat Booking Kostum Baru</h3>
+                <h3 className="mt-1 text-base font-bold sm:text-lg">Buat Booking Kostum Baru</h3>
               </div>
               <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-full bg-blue-800 p-2 hover:bg-blue-700">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveBooking} className="max-h-[80vh] overflow-y-auto bg-slate-50 px-5 py-5 space-y-4">
+            <form onSubmit={handleSaveBooking} className="max-h-[80vh] overflow-y-auto bg-slate-50 px-3 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
               <div className="rounded-[24px] bg-white p-4 border border-slate-100 space-y-3">
                 <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Informasi Pelanggan</label>
                 <input
@@ -505,7 +505,7 @@ export default function BookingPage({
                     <>
                       <AlertTriangle size={18} className="shrink-0 text-red-600 mt-0.5 animate-bounce" />
                       <div>
-                        <p className="font-black text-xs sm:text-sm">Bentrok Terdeteksi!</p>
+                        <p className="font-bold text-xs sm:text-sm">Bentrok Terdeteksi!</p>
                         <p className="mt-1 text-[11px] sm:text-xs leading-relaxed text-red-700">
                           Kostum adat ini telah di-booking/disewa pada rentang tanggal tersebut. Stok maksimal tersedia hanyalah **{availableStockForForm} unit**.
                         </p>
@@ -515,7 +515,7 @@ export default function BookingPage({
                     <>
                       <CheckCircle2 size={18} className="shrink-0 text-emerald-600 mt-0.5" />
                       <div>
-                        <p className="font-black text-xs sm:text-sm">Stok Tersedia Aman</p>
+                        <p className="font-bold text-xs sm:text-sm">Stok Tersedia Aman</p>
                         <p className="mt-1 text-[11px] sm:text-xs leading-relaxed text-emerald-700">
                           Kostum adat ini siap disewa. Sisa kapasitas stok aman hingga **{availableStockForForm} unit** di tanggal terpilih.
                         </p>
@@ -556,7 +556,7 @@ export default function BookingPage({
                 <button
                   type="submit"
                   disabled={isConflictDetected}
-                  className="flex-1 rounded-[18px] bg-blue-800 py-3.5 text-sm font-black text-white disabled:opacity-50"
+                  className="flex-1 rounded-xl bg-blue-800 py-2.5 text-sm font-semibold text-white disabled:opacity-50 sm:rounded-[18px] sm:py-3.5"
                 >
                   Simpan Booking
                 </button>
@@ -569,12 +569,12 @@ export default function BookingPage({
       {/* DIALOG PEMBATALAN BOOKING WAJIB ALASAN */}
       {cancelDialog.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-2xl">
+          <div className="w-full max-w-md overflow-hidden rounded-t-[22px] bg-white shadow-xl sm:rounded-[24px]">
             <div className="bg-red-900 px-5 py-4 text-white">
-              <h3 className="text-base font-black">Batalkan Booking Pemesanan?</h3>
+              <h3 className="text-base font-bold">Batalkan Booking Pemesanan?</h3>
               <p className="mt-1 text-xs text-red-200">Aksi ini tidak dapat dibatalkan kembali.</p>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-3 space-y-3 sm:p-5 sm:space-y-4">
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Alasan Pembatalan (Wajib)</label>
                 <textarea
@@ -599,7 +599,7 @@ export default function BookingPage({
                   type="button"
                   disabled={!cancelDialog.reason.trim()}
                   onClick={handleConfirmCancel}
-                  className="flex-1 rounded-[16px] bg-red-700 py-3 text-xs font-black text-white hover:bg-red-800 disabled:opacity-50"
+                  className="flex-1 rounded-[16px] bg-red-700 py-3 text-xs font-semibold text-white hover:bg-red-800 disabled:opacity-50"
                 >
                   Batalkan Booking
                 </button>
