@@ -12,6 +12,7 @@ dist
 dist-ssr
 .sixth
 backups
+artifacts
 test-results
 *.local
 
