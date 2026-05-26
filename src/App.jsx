@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { lazy, Suspense, useRef, useState, useEffect } from 'react';
 
 import { signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { normalizeProduct } from './utils/product';
@@ -24,10 +24,10 @@ import ReceiptModal from './components/receipt/ReceiptModal';
 import DashboardPage from './pages/DashboardPage';
 import RentPage from './pages/RentPage';
 import ReturnPage from './pages/ReturnPage';
-import ProductsPage from './pages/ProductsPage';
-import CustomersPage from './pages/CustomersPage';
-import UsersPage from './pages/UsersPage';
-import ReportsPage from './pages/ReportsPage';
+const ProductsPage = lazy(() => import('./pages/ProductsPage'));
+const CustomersPage = lazy(() => import('./pages/CustomersPage'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 
 const isKnownAppView = (view) => Object.prototype.hasOwnProperty.call(pageMeta, view);
 
@@ -63,6 +63,19 @@ function AppDataSkeleton({ message }) {
   );
 }
 
+function PageFallback() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="h-4 w-40 rounded-full bg-slate-200 animate-pulse" />
+      <div className="mt-5 grid gap-3">
+        {[0, 1, 2, 3].map((item) => (
+          <div key={item} className="h-12 rounded-xl bg-slate-100 animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // --- KOMPONEN UTAMA (MAIN APP COMPONENT) ---
 export default function App() {
   const [firebaseUser, setFirebaseUser] = useState(null);
@@ -76,6 +89,12 @@ export default function App() {
   const [appUsers, setAppUsers] = useState([]); 
   const [isLoginDataLoaded, setIsLoginDataLoaded] = useState(false);
   const [isAppDataLoaded, setIsAppDataLoaded] = useState(false);
+  const [appDataStatus, setAppDataStatus] = useState({
+    products: false,
+    customers: false,
+    transactions: false,
+    users: false
+  });
   const [loginLoadingMessage, setLoginLoadingMessage] = useState('Menyiapkan halaman login...');
   const [appLoadingMessage, setAppLoadingMessage] = useState('Memuat data aplikasi...');
   const [dataLoadError, setDataLoadError] = useState('');
@@ -136,6 +155,13 @@ export default function App() {
       setLoginLoadingMessage('Memuat data pengguna...');
       setDataLoadError('');
     }, 0);
+    let loginProfilerActive = true;
+    console.time('load-login-users');
+    const endLoginProfiler = () => {
+      if (!loginProfilerActive) return;
+      console.timeEnd('load-login-users');
+      loginProfilerActive = false;
+    };
     const loginTimeout = window.setTimeout(() => {
       setDataLoadError('Data pengguna belum berhasil dimuat. Periksa koneksi lalu coba lagi.');
       setIsLoginDataLoaded(true);
@@ -145,17 +171,20 @@ export default function App() {
       onUsers: (users) => {
         setAppUsers(users);
         setIsLoginDataLoaded(true);
+        endLoginProfiler();
         window.clearTimeout(loginTimeout);
       },
       onError: (collectionName, error) => {
         console.error(`Error fetching ${collectionName}:`, error);
         setDataLoadError('Data pengguna belum bisa dibaca. Periksa koneksi lalu coba lagi.');
         setIsLoginDataLoaded(true);
+        endLoginProfiler();
         window.clearTimeout(loginTimeout);
       }
     });
 
     return () => {
+      endLoginProfiler();
       window.clearTimeout(loginTimeout);
       unsubscribeUsers();
     };
@@ -167,6 +196,12 @@ export default function App() {
 
     const startLoadingNotice = window.setTimeout(() => {
       setIsAppDataLoaded(false);
+      setAppDataStatus({
+        products: false,
+        customers: false,
+        transactions: false,
+        users: false
+      });
       setAppLoadingMessage('Memuat data produk, pelanggan, dan transaksi...');
       setDataLoadError('');
     }, 0);
@@ -184,9 +219,12 @@ export default function App() {
       transactions: false,
       users: false
     };
+    Object.keys(loaded).forEach(name => console.time(`load-${name}`));
 
     const markCollectionLoaded = (name) => {
+      if (!loaded[name]) console.timeEnd(`load-${name}`);
       loaded[name] = true;
+      setAppDataStatus(prev => ({ ...prev, [name]: true }));
 
       if (Object.values(loaded).every(Boolean)) {
         window.clearTimeout(slowConnectionNotice);
@@ -220,6 +258,9 @@ export default function App() {
     });
 
     return () => {
+      Object.keys(loaded).forEach((name) => {
+        if (!loaded[name]) console.timeEnd(`load-${name}`);
+      });
       window.clearTimeout(startLoadingNotice);
       window.clearTimeout(slowConnectionNotice);
       window.clearTimeout(loadingTimeout);
@@ -321,6 +362,12 @@ export default function App() {
     setDataLoadError('');
     setIsLoginDataLoaded(true);
     setIsAppDataLoaded(true);
+    setAppDataStatus({
+      products: true,
+      customers: true,
+      transactions: true,
+      users: true
+    });
     setIsDemoMode(true);
   };
 
@@ -335,6 +382,12 @@ export default function App() {
     setCustomers([]);
     setTransactions([]);
     setIsAppDataLoaded(false);
+    setAppDataStatus({
+      products: false,
+      customers: false,
+      transactions: false,
+      users: false
+    });
     setDataLoadError('');
   };
 
@@ -391,6 +444,16 @@ export default function App() {
   const mobileNavItems = getMobileNavItems(user.role);
   const currentPage = pageMeta[currentView] || pageMeta.dashboard;
   const currentDateLabel = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const viewReady = {
+    dashboard: appDataStatus.products || appDataStatus.transactions,
+    rent: appDataStatus.products,
+    return: appDataStatus.transactions,
+    products: appDataStatus.products,
+    customers: appDataStatus.customers,
+    users: appDataStatus.users,
+    reports: appDataStatus.transactions
+  };
+  const isCurrentViewReady = Boolean(viewReady[currentView]);
 
   // --- TAMPILAN UTAMA (VIEWS) ---
   return (
@@ -406,28 +469,36 @@ export default function App() {
         onNavigate={navigateToView}
         user={user}
       >
-          {!isAppDataLoaded && <AppDataSkeleton message={appLoadingMessage} />}
+          {!isAppDataLoaded && (
+            <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
+              {appLoadingMessage}
+            </div>
+          )}
 
-          {isAppDataLoaded && currentView === 'dashboard' && <DashboardPage transactions={transactions} products={products} onNavigate={navigateToView} />}
-          {isAppDataLoaded && currentView === 'rent' && <RentPage products={products} customers={customers} transactions={transactions} onCheckout={handleCheckoutDB} />}
-          {isAppDataLoaded && currentView === 'return' && <ReturnPage transactions={transactions} onReturn={handleReturnDB} />}
-          {isAppDataLoaded && currentView === 'products' && user.role === 'admin' && (
-            <ProductsPage products={products} onSave={handleAddEditProductDB} onDelete={handleDeleteProductDB} />
-          )}
-          {isAppDataLoaded && currentView === 'customers' && (
-            <CustomersPage customers={customers} transactions={transactions} onUpdateCustomer={handleUpdateCustomerDB} />
-          )}
-          {isAppDataLoaded && currentView === 'users' && user.role === 'admin' && (
-            <UsersPage usersList={appUsers} onUpdateUser={handleUpdateAppUserDB} />
-          )}
-          {isAppDataLoaded && currentView === 'reports' && user.role === 'admin' && (
-            <ReportsPage 
-              transactions={transactions} 
-              onViewReceipt={setReceiptData} 
-              onDelete={handleDeleteTransactionDB}
-              onEdit={handleEditTransactionDB}
-            />
-          )}
+          {!isCurrentViewReady && <AppDataSkeleton message={appLoadingMessage} />}
+
+          {isCurrentViewReady && currentView === 'dashboard' && <DashboardPage transactions={transactions} products={products} onNavigate={navigateToView} />}
+          {isCurrentViewReady && currentView === 'rent' && <RentPage products={products} customers={customers} transactions={transactions} onCheckout={handleCheckoutDB} />}
+          {isCurrentViewReady && currentView === 'return' && <ReturnPage transactions={transactions} onReturn={handleReturnDB} />}
+          <Suspense fallback={<PageFallback />}>
+            {isCurrentViewReady && currentView === 'products' && user.role === 'admin' && (
+              <ProductsPage products={products} onSave={handleAddEditProductDB} onDelete={handleDeleteProductDB} />
+            )}
+            {isCurrentViewReady && currentView === 'customers' && (
+              <CustomersPage customers={customers} transactions={transactions} onUpdateCustomer={handleUpdateCustomerDB} />
+            )}
+            {isCurrentViewReady && currentView === 'users' && user.role === 'admin' && (
+              <UsersPage usersList={appUsers} onUpdateUser={handleUpdateAppUserDB} />
+            )}
+            {isCurrentViewReady && currentView === 'reports' && user.role === 'admin' && (
+              <ReportsPage
+                transactions={transactions}
+                onViewReceipt={setReceiptData}
+                onDelete={handleDeleteTransactionDB}
+                onEdit={handleEditTransactionDB}
+              />
+            )}
+          </Suspense>
       </AppShell>
 
       {/* MODAL NOTA */}

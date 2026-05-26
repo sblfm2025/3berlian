@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, increment, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, increment, limit, onSnapshot, orderBy, query, setDoc, updateDoc } from 'firebase/firestore';
 
 import { formatDateInput } from '../utils/format';
 import { normalizeProduct } from '../utils/product';
@@ -13,35 +13,76 @@ const dataCollection = (name) => collection(getDb(), 'artifacts', appId, 'public
 const dataDoc = (name, id) => doc(dataCollection(name), id);
 
 export const listenToAppData = ({ onProducts, onCustomers, onTransactions, onUsers, onError }) => {
-  const unsubProducts = onSnapshot(
-    dataCollection('products'),
-    (snap) => onProducts(snap.docs.map(docSnap => normalizeProduct({ id: docSnap.id, ...docSnap.data() }))),
-    (error) => onError?.('products', error)
-  );
+  const unsubscribers = [];
+  const started = {
+    products: false,
+    customers: false,
+    transactions: false
+  };
 
-  const unsubCustomers = onSnapshot(
-    dataCollection('customers'),
-    (snap) => onCustomers(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
-    (error) => onError?.('customers', error)
-  );
+  const startTransactions = () => {
+    if (started.transactions) return;
+    started.transactions = true;
 
-  const unsubTransactions = onSnapshot(
-    dataCollection('transactions'),
-    (snap) => onTransactions(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
-    (error) => onError?.('transactions', error)
-  );
+    const unsubscribe = onSnapshot(
+      query(dataCollection('transactions'), orderBy('rentDate', 'desc'), limit(100)),
+      (snap) => onTransactions(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
+      (error) => onError?.('transactions', error)
+    );
+    unsubscribers.push(unsubscribe);
+  };
+
+  const startCustomers = () => {
+    if (started.customers) return;
+    started.customers = true;
+
+    const unsubscribe = onSnapshot(
+      dataCollection('customers'),
+      (snap) => {
+        onCustomers(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+        startTransactions();
+      },
+      (error) => {
+        onError?.('customers', error);
+        startTransactions();
+      }
+    );
+    unsubscribers.push(unsubscribe);
+  };
+
+  const startProducts = () => {
+    if (started.products) return;
+    started.products = true;
+
+    const unsubscribe = onSnapshot(
+      dataCollection('products'),
+      (snap) => {
+        onProducts(snap.docs.map(docSnap => normalizeProduct({ id: docSnap.id, ...docSnap.data() })));
+        startCustomers();
+      },
+      (error) => {
+        onError?.('products', error);
+        startCustomers();
+      }
+    );
+    unsubscribers.push(unsubscribe);
+  };
 
   const unsubUsers = onSnapshot(
     dataCollection('users'),
-    (snap) => onUsers(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
-    (error) => onError?.('users', error)
+    (snap) => {
+      onUsers(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+      startProducts();
+    },
+    (error) => {
+      onError?.('users', error);
+      startProducts();
+    }
   );
+  unsubscribers.push(unsubUsers);
 
   return () => {
-    unsubProducts();
-    unsubCustomers();
-    unsubTransactions();
-    unsubUsers();
+    unsubscribers.forEach(unsubscribe => unsubscribe());
   };
 };
 
@@ -56,7 +97,10 @@ export const listenToAppUsers = ({ onUsers, onError }) => {
 };
 
 export const saveCheckoutTransaction = async (newTransaction, cart) => {
-  await setDoc(dataDoc('transactions', newTransaction.id), newTransaction);
+  await setDoc(dataDoc('transactions', newTransaction.id), {
+    ...newTransaction,
+    createdAt: newTransaction.createdAt || new Date().toISOString()
+  });
 
   for (const item of cart) {
     await updateDoc(dataDoc('products', item.product.id), {

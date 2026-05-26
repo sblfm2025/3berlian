@@ -19,6 +19,11 @@ export default function LoginScreen({
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
+    if (!isDataLoaded) {
+      alert('Data akun masih dimuat. Tunggu sebentar lalu coba lagi.');
+      return;
+    }
+
     const foundUser = appUsers.find(user => user.username === loginUsername && user.password === loginPassword);
     if (foundUser) {
       onLoginSuccess(foundUser);
@@ -30,6 +35,11 @@ export default function LoginScreen({
 
   const handleForgotSubmit = (e) => {
     e.preventDefault();
+    if (!isDataLoaded) {
+      alert('Data akun masih dimuat. Tunggu sebentar lalu coba lagi.');
+      return;
+    }
+
     const foundUser = appUsers.find(user => user.email === forgotEmail);
     if (foundUser) {
       alert(`Instruksi pemulihan akun telah disiapkan untuk ${forgotEmail}.`);
@@ -97,13 +107,7 @@ export default function LoginScreen({
           <h2 className="mt-4 text-2xl font-black text-slate-900">Masuk ke Sistem</h2>
           <p className="mt-2 text-sm text-slate-500">Masuk untuk mengelola transaksi sewa dan pengembalian hari ini.</p>
 
-          {!isDataLoaded ? (
-            <div className="py-10 text-center">
-              <div className="mx-auto h-10 w-10 rounded-full border-4 border-blue-100 border-t-blue-700 animate-spin" />
-              <p className="mt-4 text-sm font-semibold text-slate-500">{loadingMessage}</p>
-              <p className="mt-2 text-xs text-slate-400">Jika terlalu lama, periksa koneksi internet lalu muat ulang aplikasi.</p>
-            </div>
-          ) : dataLoadError ? (
+          {dataLoadError ? (
             <div className="bg-red-50 p-4 rounded-[20px] border border-red-200 mt-6 text-left">
               <AlertCircle className="mx-auto text-red-500 mb-2" />
               <p className="text-sm font-bold text-red-800">Sistem belum berhasil memuat data.</p>
@@ -124,7 +128,7 @@ export default function LoginScreen({
                 Gunakan Data Contoh
               </button>
             </div>
-          ) : appUsers.length === 0 ? (
+          ) : isDataLoaded && appUsers.length === 0 ? (
             <div className="bg-amber-50 p-4 rounded-[20px] border border-amber-200 mt-6 text-left">
               <AlertCircle className="mx-auto text-amber-500 mb-2" />
               <p className="text-sm text-amber-800 mb-3">Data akun masih kosong. Buat akun awal untuk Admin dan Kasir.</p>
@@ -134,6 +138,14 @@ export default function LoginScreen({
             </div>
           ) : !showForgotPwd ? (
             <form onSubmit={handleLoginSubmit} className="mt-6 space-y-4 text-left">
+              {!isDataLoaded && (
+                <div className="rounded-[18px] border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                  <div className="flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-full border-2 border-blue-100 border-t-blue-700 animate-spin" />
+                    <p className="font-bold">{loadingMessage}</p>
+                  </div>
+                </div>
+              )}
               {isDemoMode && (
                 <div className="rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   <p className="font-bold">Data contoh aktif</p>
@@ -154,8 +166,8 @@ export default function LoginScreen({
                   <input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-[16px] bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-300 outline-none text-sm" placeholder="Masukkan password" />
                 </div>
               </div>
-              <button type="submit" className="w-full bg-blue-800 hover:bg-blue-900 text-white py-3 rounded-[16px] font-bold transition shadow-[0_20px_40px_-24px_rgba(30,64,175,0.9)]">
-                Masuk ke Sistem
+              <button type="submit" disabled={!isDataLoaded} className="w-full bg-blue-800 hover:bg-blue-900 text-white py-3 rounded-[16px] font-bold transition shadow-[0_20px_40px_-24px_rgba(30,64,175,0.9)] disabled:cursor-not-allowed disabled:opacity-60">
+                {isDataLoaded ? 'Masuk ke Sistem' : 'Menunggu Data Akun'}
               </button>
               <div className="text-center pt-2">
                 <button type="button" onClick={() => setShowForgotPwd(true)} className="text-xs text-blue-600 hover:underline font-semibold">Lupa Password?</button>
