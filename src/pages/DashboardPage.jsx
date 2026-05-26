@@ -99,6 +99,7 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
       ]
     }
   ];
+  const operationalMenus = menuGroups.flatMap(group => group.items);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -134,33 +135,23 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
       </div>
 
       <div className="rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="divide-y divide-slate-100">
-          {menuGroups.map(group => (
-            <section key={group.title} className="px-5 py-5 md:px-6">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-blue-800">{group.title}</h4>
-                <span className="text-xs font-bold text-slate-400">{group.items.length} menu</span>
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
-                {group.items.map(item => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.target}
-                      type="button"
-                      onClick={() => onNavigate(item.target)}
-                      className="group flex flex-col items-center rounded-[20px] px-2 py-2 text-center transition hover:bg-blue-50"
-                    >
-                      <span className={`flex h-16 w-16 items-center justify-center rounded-full shadow-sm transition ${item.color}`}>
-                        <Icon size={27} strokeWidth={2.4} />
-                      </span>
-                      <span className="mt-2 min-h-[28px] text-xs font-bold leading-tight text-slate-700">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+        <div className="grid grid-cols-3 gap-x-4 gap-y-5 px-5 py-5 sm:grid-cols-4 md:grid-cols-6 md:px-6">
+          {operationalMenus.map(item => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.target}
+                type="button"
+                onClick={() => onNavigate(item.target)}
+                className="group flex flex-col items-center rounded-[20px] px-2 py-2 text-center transition hover:bg-blue-50"
+              >
+                <span className={`flex h-16 w-16 items-center justify-center rounded-full shadow-sm transition ${item.color}`}>
+                  <Icon size={27} strokeWidth={2.4} />
+                </span>
+                <span className="mt-2 min-h-[28px] text-xs font-bold leading-tight text-slate-700">{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
