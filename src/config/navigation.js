@@ -1,13 +1,13 @@
-import { ArrowLeftRight, FileText, Home, Package, ShoppingBag, Users } from 'lucide-react';
+import { ArrowLeftRight, FileText, Home, Package, ShoppingBag, UserCog, Users } from 'lucide-react';
 
 export const navItems = [
-  { id: 'dashboard', label: 'Beranda', icon: Home, roles: ['admin', 'cashier'] },
-  { id: 'rent', label: 'Sewa', icon: ShoppingBag, roles: ['admin', 'cashier'] },
-  { id: 'return', label: 'Kembali', icon: ArrowLeftRight, roles: ['admin', 'cashier'] },
-  { id: 'products', label: 'Produk', icon: Package, roles: ['admin'] },
-  { id: 'customers', label: 'Pelanggan', icon: Users, roles: ['admin', 'cashier'] },
-  { id: 'users', label: 'Pengguna', icon: Users, roles: ['admin'] },
-  { id: 'reports', label: 'Laporan', icon: FileText, roles: ['admin'] },
+  { id: 'dashboard', label: 'Beranda', icon: Home, roles: ['admin', 'cashier'], group: 'Utama' },
+  { id: 'rent', label: 'Sewa', icon: ShoppingBag, roles: ['admin', 'cashier'], group: 'Transaksi' },
+  { id: 'return', label: 'Kembali', icon: ArrowLeftRight, roles: ['admin', 'cashier'], group: 'Transaksi' },
+  { id: 'products', label: 'Produk', icon: Package, roles: ['admin'], group: 'Data Master' },
+  { id: 'customers', label: 'Pelanggan', icon: Users, roles: ['admin', 'cashier'], group: 'Data Master' },
+  { id: 'users', label: 'Pengguna', icon: UserCog, roles: ['admin'], group: 'Data Master' },
+  { id: 'reports', label: 'Laporan', icon: FileText, roles: ['admin'], group: 'Analitik' },
 ];
 
 export const pageMeta = {

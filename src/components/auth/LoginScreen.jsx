@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, Cloud, Key, Mail, UserCog } from 'lucide-react';
+import { AlertCircle, BarChart3, Cloud, Key, Mail, PackageCheck, RotateCcw, Shirt, ShoppingBag, UserCog } from 'lucide-react';
 
 export default function LoginScreen({
   appUsers,
@@ -33,6 +33,13 @@ export default function LoginScreen({
     alert('Username atau password salah!');
   };
 
+  const quickMenus = [
+    { label: 'Sewa', icon: ShoppingBag },
+    { label: 'Kembali', icon: RotateCcw },
+    { label: 'Produk', icon: Shirt },
+    { label: 'Laporan', icon: BarChart3 }
+  ];
+
   const handleForgotSubmit = (e) => {
     e.preventDefault();
     if (!isDataLoaded) {
@@ -51,61 +58,57 @@ export default function LoginScreen({
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,_#eef5ff_0%,_#f8fafc_54%,_#fff9e8_100%)] flex items-center justify-center p-4 md:p-8 font-sans relative">
-      <div className={`absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${firebaseUser ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
-        <Cloud size={14} /> {firebaseUser ? 'Terhubung' : 'Menghubungkan'}
-      </div>
+    <div className="min-h-screen bg-[linear-gradient(135deg,_#e9f6fb_0%,_#d8edf4_45%,_#f8fafc_100%)] flex items-center justify-center p-4 md:p-8 font-sans">
+      <div className="grid w-full max-w-5xl items-center gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+        <section className="overflow-hidden rounded-[30px] bg-white shadow-[0_30px_90px_-42px_rgba(13,71,161,0.65)]">
+          <div className="relative bg-[#1688d8] px-6 pb-14 pt-7 text-white">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-white shadow-lg">
+                  <img src="/app-logo-192.png" alt="Logo 3 Berlian" className="h-10 w-10 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                </div>
+                <div>
+                  <h1 className="text-xl font-black text-white">3 Berlian POS</h1>
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.22em] text-blue-50">Rental Kostum</p>
+                </div>
+              </div>
+              <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${firebaseUser ? 'bg-white/15 text-white' : 'bg-white/10 text-blue-50'}`}>
+                <Cloud size={14} /> {firebaseUser ? 'Online' : 'Sync'}
+              </div>
+            </div>
 
-      <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr] items-center">
-        <div className="order-2 lg:order-1 rounded-[24px] bg-white border border-slate-200 p-5 md:p-8 shadow-[0_26px_70px_-38px_rgba(15,23,42,0.35)]">
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] text-blue-700">
-            <span className="h-2 w-2 rounded-full bg-amber-400" /> 3 Berlian POS
-          </div>
-          <div className="mt-5 flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-white shadow-lg border border-slate-100">
-              <img src="/app-logo-192.png" alt="Logo 3 Berlian" className="h-10 w-10 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>
+            <div className="mt-8 flex items-end justify-center gap-5">
+              <div className="flex h-32 w-28 rotate-[-5deg] flex-col justify-end rounded-[28px] bg-blue-950/30 p-4 shadow-inner">
+                <Shirt size={46} className="mx-auto text-amber-300" />
+                <div className="mt-4 h-2 rounded-full bg-white/30" />
+                <div className="mt-2 h-2 w-16 rounded-full bg-white/20" />
+              </div>
+              <div className="mb-3 flex h-24 w-24 rotate-[7deg] items-center justify-center rounded-full bg-amber-300 text-blue-900 shadow-xl">
+                <PackageCheck size={48} strokeWidth={2.2} />
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight">Sanggar Seni 3 Berlian</h1>
-              <p className="text-sm font-semibold text-slate-500 mt-1">POS penyewaan kostum adat</p>
-            </div>
-          </div>
-          <p className="mt-4 text-base md:text-lg text-slate-600 leading-relaxed">
-            Sistem kasir modern untuk penyewaan kostum adat, dengan ringkasan bisnis, pengembalian terstruktur, dan alur kerja cepat untuk karyawan.
-          </p>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[20px] bg-slate-50 p-4 border border-slate-100">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Branding</p>
-              <p className="mt-2 text-lg font-black text-slate-900">Biru & Emas</p>
-            </div>
-            <div className="rounded-[20px] bg-slate-50 p-4 border border-slate-100">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Operasi</p>
-              <p className="mt-2 text-lg font-black text-slate-900">POS cepat</p>
-            </div>
-            <div className="rounded-[20px] bg-slate-50 p-4 border border-slate-100">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Alur kerja</p>
-              <p className="mt-2 text-lg font-black text-slate-900">Pengembalian siap</p>
-            </div>
+            <div className="absolute inset-x-0 bottom-[-1px] h-12 rounded-t-[50%] bg-white" />
           </div>
 
-          <div className="mt-6 rounded-[20px] border border-amber-100 bg-amber-50/80 p-4 text-sm text-amber-900">
-            <p className="font-bold">POS profesional untuk kasir & admin</p>
-            <p className="mt-1 text-amber-900/80">Kelola penyewaan, inventaris, dan pengembalian dari satu aplikasi dengan identitas visual yang lebih premium.</p>
-          </div>
-        </div>
+          <div className="px-6 pb-7 pt-2">
+            <div className="mx-auto mb-5 grid max-w-sm grid-cols-4 gap-3 rounded-[24px] border border-slate-100 bg-white p-4 shadow-[0_20px_50px_-36px_rgba(15,23,42,0.45)]">
+              {quickMenus.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className="text-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                      <Icon size={24} />
+                    </div>
+                    <p className="mt-2 text-[11px] font-bold text-slate-700">{item.label}</p>
+                  </div>
+                );
+              })}
+            </div>
 
-        <div className="order-1 lg:order-2 bg-white p-6 md:p-8 rounded-[24px] shadow-[0_30px_80px_-38px_rgba(15,23,42,0.35)] border border-slate-100 text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[22px] bg-gradient-to-br from-blue-700 to-amber-400 text-white shadow-xl">
-            <img
-              src="/app-logo-192.png"
-              alt="Logo"
-              className="h-12 w-12 object-contain"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-          </div>
-          <h2 className="mt-4 text-2xl font-black text-slate-900">Masuk ke Sistem</h2>
-          <p className="mt-2 text-sm text-slate-500">Masuk untuk mengelola transaksi sewa dan pengembalian hari ini.</p>
+            <div className="mx-auto max-w-sm text-center">
+              <h2 className="text-2xl font-black text-slate-900">Masuk Sistem</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500">Kelola penyewaan, pengembalian, dan stok kostum.</p>
+            </div>
 
           {dataLoadError ? (
             <div className="bg-red-50 p-4 rounded-[20px] border border-red-200 mt-6 text-left">
@@ -137,7 +140,7 @@ export default function LoginScreen({
               </button>
             </div>
           ) : !showForgotPwd ? (
-            <form onSubmit={handleLoginSubmit} className="mt-6 space-y-4 text-left">
+            <form onSubmit={handleLoginSubmit} className="mx-auto mt-6 max-w-sm space-y-4 text-left">
               {!isDataLoaded && (
                 <div className="rounded-[18px] border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
                   <div className="flex items-center gap-3">
@@ -174,7 +177,7 @@ export default function LoginScreen({
               </div>
             </form>
           ) : (
-            <form onSubmit={handleForgotSubmit} className="mt-6 space-y-4 text-left animate-in fade-in">
+            <form onSubmit={handleForgotSubmit} className="mx-auto mt-6 max-w-sm space-y-4 text-left animate-in fade-in">
               <h3 className="font-bold text-slate-900 border-b pb-2">Reset Password</h3>
               <p className="text-xs text-slate-500">Masukkan email yang terdaftar pada akun Anda untuk menerima instruksi pemulihan.</p>
               <div>
@@ -189,7 +192,60 @@ export default function LoginScreen({
               </div>
             </form>
           )}
-        </div>
+          </div>
+        </section>
+
+        <section className="hidden lg:block">
+          <div className="mx-auto max-w-sm overflow-hidden rounded-[32px] bg-slate-50 shadow-[0_34px_100px_-48px_rgba(15,23,42,0.85)] ring-1 ring-white">
+            <div className="bg-[#1688d8] px-6 pb-20 pt-7 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-blue-50">Status Hari Ini</p>
+                  <p className="mt-2 text-2xl font-black">POS Kostum Aktif</p>
+                </div>
+                <img src="/app-logo-192.png" alt="Logo" className="h-12 w-12 rounded-2xl bg-white p-2" />
+              </div>
+              <div className="mt-7 rounded-[20px] bg-blue-900/18 p-4 shadow-inner">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-blue-50/80">Transaksi</p>
+                    <p className="mt-1 text-lg font-black">Cepat</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-50/80">Inventaris</p>
+                    <p className="mt-1 text-lg font-black">Realtime</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="-mt-12 mx-5 rounded-[26px] bg-white p-5 shadow-[0_20px_55px_-32px_rgba(15,23,42,0.55)]">
+              <p className="font-black text-blue-800">Menu Kilat</p>
+              <div className="mt-4 grid grid-cols-4 gap-4">
+                {quickMenus.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="text-center">
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                        <Icon size={24} />
+                      </div>
+                      <p className="mt-2 text-[11px] font-bold text-slate-700">{item.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="p-5">
+              <p className="text-sm font-black text-blue-800">Prioritas Kerja</p>
+              <div className="mt-3 space-y-3">
+                {['Cek pengembalian hari ini', 'Pantau stok menipis', 'Cetak nota pelanggan'].map((item) => (
+                  <div key={item} className="rounded-[20px] bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

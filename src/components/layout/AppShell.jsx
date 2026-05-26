@@ -29,7 +29,7 @@ export default function AppShell({
 
       <MobileHeader onLogout={onLogout} />
 
-      <main className="flex-1 flex flex-col h-[calc(100vh-64px)] md:h-screen overflow-hidden bg-transparent">
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden bg-transparent md:h-screen">
         <Topbar
           currentDateLabel={currentDateLabel}
           currentPage={currentPage}
