@@ -33,6 +33,7 @@ const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 
 const isKnownAppView = (view) => Object.prototype.hasOwnProperty.call(pageMeta, view);
 const APP_SESSION_KEY = 'pos-3berlian-session';
+const PWA_INSTALLED_KEY = 'pos-3berlian-pwa-installed';
 
 const getStoredUserSession = () => {
   try {
@@ -57,6 +58,17 @@ const saveUserSession = (nextUser) => {
     email: nextUser.email
   };
   window.localStorage.setItem(APP_SESSION_KEY, JSON.stringify(sessionUser));
+};
+
+const getDevicePlatform = () => {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(userAgent) || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+  const isAndroid = /android/.test(userAgent);
+  return { isAndroid, isIOS };
+};
+
+const isPwaStandalone = () => {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 };
 
 function AppDataSkeleton({ message }) {
@@ -129,7 +141,14 @@ export default function App() {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [toast, setToast] = useState(null);
   const [deleteTransactionDialog, setDeleteTransactionDialog] = useState({ isOpen: false, transaction: null, isLoading: false });
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(() => isPwaStandalone() || window.localStorage.getItem(PWA_INSTALLED_KEY) === 'true');
+  const [pwaPrompt, setPwaPrompt] = useState(null);
+  const [notificationPermission, setNotificationPermission] = useState(() => (
+    'Notification' in window ? window.Notification.permission : 'unsupported'
+  ));
   const appHistoryReady = useRef(false);
+  const notificationPromptShownRef = useRef(false);
 
   const notify = ({ message, title, type = 'info' }) => {
     setToast({ id: Date.now(), message, title, type });
@@ -230,6 +249,43 @@ export default function App() {
     const timeout = window.setTimeout(() => setToast(null), 4200);
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setDeferredInstallPrompt(event);
+      setIsAppInstalled(isPwaStandalone());
+    };
+
+    const handleAppInstalled = () => {
+      window.localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+      setDeferredInstallPrompt(null);
+      setIsAppInstalled(true);
+      setPwaPrompt(null);
+      notify({ title: 'Aplikasi terpasang', message: '3 Berlian POS sudah siap dibuka dari layar utama.', type: 'success' });
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const updateDisplayMode = () => {
+      if (isPwaStandalone()) {
+        window.localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+        setIsAppInstalled(true);
+      }
+    };
+
+    updateDisplayMode();
+    mediaQuery.addEventListener?.('change', updateDisplayMode);
+    return () => mediaQuery.removeEventListener?.('change', updateDisplayMode);
+  }, []);
 
   // Memuat data operasional setelah login
   useEffect(() => {
@@ -476,6 +532,81 @@ export default function App() {
     setCurrentView(view);
   };
 
+  const showInstallPrompt = () => {
+    setPwaPrompt('install');
+  };
+
+  const showNotificationPermissionPrompt = () => {
+    setPwaPrompt('notification');
+  };
+
+  const handleNotificationAction = (action) => {
+    if (action === 'install-app') {
+      showInstallPrompt();
+      return;
+    }
+
+    if (action === 'enable-notifications') {
+      showNotificationPermissionPrompt();
+    }
+  };
+
+  const handleInstallApp = async () => {
+    const platform = getDevicePlatform();
+
+    if (isPwaStandalone()) {
+      window.localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+      setIsAppInstalled(true);
+      setPwaPrompt(null);
+      return;
+    }
+
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const choiceResult = await deferredInstallPrompt.userChoice;
+      setDeferredInstallPrompt(null);
+      if (choiceResult?.outcome === 'accepted') {
+        window.localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+        setIsAppInstalled(true);
+        setPwaPrompt(null);
+      }
+      return;
+    }
+
+    if (platform.isIOS) {
+      setPwaPrompt('ios-install');
+      return;
+    }
+
+    setPwaPrompt('manual-install');
+  };
+
+  const handleEnableNotifications = async () => {
+    if (!('Notification' in window)) {
+      setNotificationPermission('unsupported');
+      notify({ title: 'Notifikasi tidak didukung', message: 'Browser ini belum mendukung notifikasi aplikasi.', type: 'warning' });
+      return;
+    }
+
+    const permission = await window.Notification.requestPermission();
+    setNotificationPermission(permission);
+    if (permission !== 'granted') return;
+
+    try {
+      const registration = await window.navigator.serviceWorker?.ready;
+      await registration?.showNotification('Notifikasi 3 Berlian aktif', {
+        body: 'Anda akan melihat pengingat penting dari aplikasi saat browser mengizinkan.',
+        icon: '/app-logo-192.png',
+        badge: '/app-logo-32.png',
+        tag: '3berlian-notification-ready'
+      });
+    } catch {
+      notify({ title: 'Notifikasi aktif', message: 'Izin notifikasi sudah diberikan.', type: 'success' });
+    }
+
+    setPwaPrompt(null);
+  };
+
   useEffect(() => {
     if (!user) {
       appHistoryReady.current = false;
@@ -509,6 +640,29 @@ export default function App() {
     const lowStockProducts = products.filter(product => Number(product.stock || 0) > 0 && Number(product.stock || 0) <= 2);
     const outOfStockProducts = products.filter(product => Number(product.stock || 0) <= 0);
     const notices = [];
+    const platform = getDevicePlatform();
+
+    if (!isAppInstalled && (platform.isAndroid || platform.isIOS || deferredInstallPrompt)) {
+      notices.push({
+        id: 'install-app',
+        title: 'Instal aplikasi 3 Berlian POS',
+        message: platform.isIOS
+          ? 'Pasang ke layar utama agar akses kasir lebih cepat.'
+          : 'Tekan untuk memasang aplikasi di HP Android.',
+        tone: 'warning',
+        action: 'install-app'
+      });
+    }
+
+    if (notificationPermission === 'default') {
+      notices.push({
+        id: 'enable-notifications',
+        title: 'Aktifkan notifikasi aplikasi',
+        message: 'Izinkan pengingat penting seperti stok rendah dan nota jatuh tempo.',
+        tone: 'info',
+        action: 'enable-notifications'
+      });
+    }
 
     if (dataLoadError) {
       notices.push({
@@ -571,7 +725,15 @@ export default function App() {
     }
 
     return notices;
-  }, [appLoadingMessage, currentView, dataLoadError, isAppDataLoaded, products, transactions, user?.role]);
+  }, [appLoadingMessage, currentView, dataLoadError, deferredInstallPrompt, isAppDataLoaded, isAppInstalled, notificationPermission, products, transactions, user?.role]);
+
+  useEffect(() => {
+    if (!user || notificationPromptShownRef.current || notificationPermission !== 'default') return;
+
+    notificationPromptShownRef.current = true;
+    const timeout = window.setTimeout(() => setPwaPrompt('notification'), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [notificationPermission, user]);
 
   if (!user) {
     return (
@@ -616,6 +778,7 @@ export default function App() {
         firebaseUser={firebaseUser}
         mobileNavItems={mobileNavItems}
         notifications={appNotifications}
+        onNotificationAction={handleNotificationAction}
         onLogout={handleLogout}
         onNavigate={navigateToView}
         user={user}
@@ -651,6 +814,80 @@ export default function App() {
             )}
           </Suspense>
       </AppShell>
+
+      {pwaPrompt && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/55 p-4 backdrop-blur-sm md:items-center">
+          <div className="w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-2xl">
+            <div className="bg-[#0d47a1] px-5 py-5 text-white">
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-blue-100">3 Berlian POS</p>
+              <h2 className="mt-2 text-xl font-black">
+                {pwaPrompt === 'notification' ? 'Izinkan notifikasi aplikasi' : 'Instal aplikasi di HP'}
+              </h2>
+              <p className="mt-2 text-sm font-semibold leading-relaxed text-blue-50">
+                {pwaPrompt === 'notification'
+                  ? 'Aktifkan pengingat agar informasi penting dari aplikasi tidak terlewat.'
+                  : 'Akses kasir lebih cepat dari layar utama tanpa membuka browser manual.'}
+              </p>
+            </div>
+
+            <div className="space-y-4 px-5 py-5">
+              {pwaPrompt === 'install' && (
+                <>
+                  <div className="rounded-[22px] bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                    Untuk operasional harian, sebaiknya aplikasi dipasang di HP agar lebih cepat dan terasa seperti aplikasi native.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleInstallApp}
+                    className="w-full rounded-[18px] bg-blue-800 px-4 py-3.5 text-sm font-black text-white shadow-sm"
+                  >
+                    Instal Sekarang
+                  </button>
+                </>
+              )}
+
+              {pwaPrompt === 'ios-install' && (
+                <div className="rounded-[22px] bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-700">
+                  <p className="font-black text-slate-900">Cara instal di iPhone/iPad:</p>
+                  <p className="mt-2">1. Tekan tombol Share di Safari.</p>
+                  <p className="mt-1">2. Pilih Add to Home Screen.</p>
+                  <p className="mt-1">3. Tekan Add.</p>
+                </div>
+              )}
+
+              {pwaPrompt === 'manual-install' && (
+                <div className="rounded-[22px] bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-700">
+                  <p className="font-black text-slate-900">Prompt install belum tersedia.</p>
+                  <p className="mt-2">Buka menu browser lalu pilih Install app atau Add to Home screen. Jika belum muncul, refresh halaman setelah beberapa detik.</p>
+                </div>
+              )}
+
+              {pwaPrompt === 'notification' && (
+                <>
+                  <div className="rounded-[22px] bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900">
+                    Notifikasi browser dapat dipakai untuk pengingat penting seperti stok rendah, nota jatuh tempo, atau status aplikasi.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleEnableNotifications}
+                    className="w-full rounded-[18px] bg-blue-800 px-4 py-3.5 text-sm font-black text-white shadow-sm"
+                  >
+                    Izinkan Notifikasi
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setPwaPrompt(null)}
+                className="w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600"
+              >
+                Nanti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL NOTA */}
       <ReceiptModal 

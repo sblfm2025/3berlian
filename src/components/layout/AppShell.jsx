@@ -13,6 +13,7 @@ export default function AppShell({
   firebaseUser,
   mobileNavItems,
   notifications,
+  onNotificationAction,
   onLogout,
   onNavigate,
   user
@@ -29,7 +30,7 @@ export default function AppShell({
       />
 
       <MobileSearchProvider>
-        <MobileHeader currentPage={currentPage} notifications={notifications} onLogout={onLogout} onNavigate={onNavigate} />
+        <MobileHeader currentPage={currentPage} notifications={notifications} onNotificationAction={onNotificationAction} onLogout={onLogout} onNavigate={onNavigate} />
 
         <main className="flex-1 min-h-0 flex flex-col overflow-hidden bg-transparent md:h-screen">
           <Topbar

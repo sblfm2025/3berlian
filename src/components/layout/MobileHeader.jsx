@@ -8,7 +8,7 @@ const notificationToneClass = {
   info: 'bg-blue-50 text-blue-700 border-blue-100'
 };
 
-export default function MobileHeader({ currentPage, notifications = [], onLogout, onNavigate }) {
+export default function MobileHeader({ currentPage, notifications = [], onNotificationAction, onLogout, onNavigate }) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const mobileSearch = useMobileSearch();
   const searchConfig = mobileSearch?.searchConfig;
@@ -16,6 +16,10 @@ export default function MobileHeader({ currentPage, notifications = [], onLogout
   const unreadCount = notifications.length;
   const handleNotificationClick = (notification) => {
     setIsNotificationOpen(false);
+    if (notification.action) {
+      onNotificationAction?.(notification.action);
+      return;
+    }
     if (notification.target) onNavigate?.(notification.target);
   };
 
