@@ -21,6 +21,8 @@ import { getMobileNavItems, getRoleNavItems, pageMeta } from './config/navigatio
 import { initialAppUsers, initialProducts } from './constants/seedData';
 import LoginScreen from './components/auth/LoginScreen';
 import ReceiptModal from './components/receipt/ReceiptModal';
+import ConfirmDialog from './components/ui/ConfirmDialog';
+import Toast from './components/ui/Toast';
 import DashboardPage from './pages/DashboardPage';
 import RentPage from './pages/RentPage';
 import ReturnPage from './pages/ReturnPage';
@@ -99,7 +101,13 @@ export default function App() {
   const [appLoadingMessage, setAppLoadingMessage] = useState('Memuat data aplikasi...');
   const [dataLoadError, setDataLoadError] = useState('');
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [deleteTransactionDialog, setDeleteTransactionDialog] = useState({ isOpen: false, transaction: null, isLoading: false });
   const appHistoryReady = useRef(false);
+
+  const notify = ({ message, title, type = 'info' }) => {
+    setToast({ id: Date.now(), message, title, type });
+  };
 
   // Menyiapkan sesi aplikasi
   useEffect(() => {
@@ -190,6 +198,13 @@ export default function App() {
     };
   }, [firebaseUser, user, isDemoMode]);
 
+  useEffect(() => {
+    if (!toast) return undefined;
+
+    const timeout = window.setTimeout(() => setToast(null), 4200);
+    return () => window.clearTimeout(timeout);
+  }, [toast]);
+
   // Memuat data operasional setelah login
   useEffect(() => {
     if (!db || !firebaseUser || !user || isDemoMode) return;
@@ -274,7 +289,7 @@ export default function App() {
       await saveCheckoutTransaction(newTransaction, cart);
       setReceiptData(newTransaction);
     } catch {
-      alert('Gagal memproses transaksi.');
+      notify({ title: 'Transaksi gagal', message: 'Gagal memproses transaksi. Periksa stok dan koneksi lalu coba lagi.', type: 'error' });
     }
   };
 
@@ -282,75 +297,109 @@ export default function App() {
     try {
       await updateCustomerProfile(customer);
     } catch {
-      alert('Gagal memperbarui data pelanggan.');
+      notify({ title: 'Pelanggan gagal diperbarui', message: 'Data pelanggan belum berhasil disimpan.', type: 'error' });
     }
   };
 
   const handleReturnDB = async (selectedTrx) => {
     try {
       await completeReturnTransaction(selectedTrx);
-      alert('Barang berhasil dikembalikan!');
+      notify({ title: 'Pengembalian selesai', message: 'Barang berhasil dikembalikan dan stok sudah diperbarui.', type: 'success' });
     } catch (error) {
       console.error(error);
-      alert('Gagal memproses pengembalian.');
+      notify({ title: 'Pengembalian gagal', message: 'Gagal memproses pengembalian. Periksa koneksi atau data produk.', type: 'error' });
     }
   };
 
   const handleAddEditProductDB = async (productData, isEdit) => {
     try {
       await saveProduct(productData, isEdit);
-      alert(isEdit ? 'Produk diperbarui!' : 'Produk ditambahkan!');
+      notify({
+        title: isEdit ? 'Produk diperbarui' : 'Produk ditambahkan',
+        message: isEdit ? 'Data kostum berhasil diperbarui.' : 'Kostum baru berhasil masuk inventaris.',
+        type: 'success'
+      });
     } catch (err) { 
       console.error(err);
-      alert('Proses penyimpanan dibatalkan karena terjadi kesalahan.'); 
+      notify({ title: 'Produk gagal disimpan', message: 'Proses penyimpanan dibatalkan karena terjadi kesalahan.', type: 'error' });
     }
   };
 
   const handleDeleteProductDB = async (id) => {
     try {
       await deleteProduct(id);
-      alert('Produk dihapus!');
+      notify({ title: 'Produk dihapus', message: 'Data produk berhasil dihapus dari inventaris.', type: 'success' });
     } catch {
-      alert('Gagal menghapus produk.');
+      notify({ title: 'Produk gagal dihapus', message: 'Gagal menghapus produk. Periksa koneksi atau izin database.', type: 'error' });
     }
   };
 
   const handleUpdateAppUserDB = async (userData) => {
     try {
       await updateAppUser(userData);
-      alert('Data pengguna berhasil diperbarui!');
+      notify({ title: 'Pengguna diperbarui', message: 'Data pengguna berhasil disimpan.', type: 'success' });
     } catch {
-      alert('Gagal memperbarui pengguna.');
+      notify({ title: 'Pengguna gagal diperbarui', message: 'Gagal memperbarui pengguna.', type: 'error' });
     }
   };
 
-  const handleDeleteTransactionDB = async (trx) => {
-    if (!window.confirm(`Yakin ingin menghapus transaksi ${trx.id}?\n\nJika nota masih aktif, stok barang akan otomatis dikembalikan ke rak.`)) return;
+  const handleDeleteTransactionDB = (trx) => {
+    setDeleteTransactionDialog({ isOpen: true, transaction: trx, isLoading: false });
+  };
+
+  const handleCancelDeleteTransaction = () => {
+    setDeleteTransactionDialog({ isOpen: false, transaction: null, isLoading: false });
+  };
+
+  const handleConfirmDeleteTransaction = async () => {
+    const trx = deleteTransactionDialog.transaction;
+    if (!trx) return;
+
+    setDeleteTransactionDialog(prev => ({ ...prev, isLoading: true }));
     try {
-      await deleteTransaction(trx);
-      alert('Transaksi berhasil dihapus!');
+      const result = await deleteTransaction(trx);
+      setDeleteTransactionDialog({ isOpen: false, transaction: null, isLoading: false });
+      if (result?.stockRestoreWarnings?.length) {
+        notify({
+          title: 'Transaksi dihapus',
+          message: 'Nota berhasil dihapus, tetapi sebagian stok produk lama tidak bisa dikembalikan otomatis. Periksa stok produk secara manual.',
+          type: 'warning'
+        });
+        return;
+      }
+
+      notify({
+        title: 'Transaksi dihapus',
+        message: `Nota ${trx.id} berhasil dihapus dan stok aktif sudah dikembalikan.`,
+        type: 'success'
+      });
     } catch (err) {
       console.error(err);
-      alert('Gagal menghapus transaksi.');
+      setDeleteTransactionDialog(prev => ({ ...prev, isLoading: false }));
+      notify({
+        title: 'Gagal menghapus transaksi',
+        message: 'Firebase menolak penghapusan nota. Periksa koneksi, izin database, atau coba muat ulang aplikasi.',
+        type: 'error'
+      });
     }
   };
 
   const handleEditTransactionDB = async (updatedTrx) => {
     try {
       await editTransaction(updatedTrx);
-      alert('Transaksi berhasil diperbarui!');
+      notify({ title: 'Transaksi diperbarui', message: `Nota ${updatedTrx.id} berhasil diperbarui.`, type: 'success' });
     } catch (err) {
       console.error(err);
-      alert('Gagal memperbarui transaksi.');
+      notify({ title: 'Transaksi gagal diperbarui', message: 'Gagal memperbarui transaksi.', type: 'error' });
     }
   };
 
   const handleSeedInit = async () => {
     try {
       await seedInitialData({ users: initialAppUsers, products: initialProducts });
-      alert('Sistem berhasil diinisialisasi!');
+      notify({ title: 'Sistem siap', message: 'Akun awal dan data produk berhasil diinisialisasi.', type: 'success' });
     } catch {
-      alert('Gagal inisialisasi awal.');
+      notify({ title: 'Inisialisasi gagal', message: 'Gagal menyiapkan data awal.', type: 'error' });
     }
   };
 
@@ -508,6 +557,26 @@ export default function App() {
           setReceiptData(null);
           if (currentView === 'rent') navigateToView('dashboard');
         }} 
+      />
+
+      <ConfirmDialog
+        cancelLabel="Batal"
+        confirmLabel="Hapus Nota"
+        description={`Nota ${deleteTransactionDialog.transaction?.id || ''} akan dihapus. Jika nota masih aktif, sistem akan mencoba mengembalikan stok barang ke rak terlebih dahulu.`}
+        isLoading={deleteTransactionDialog.isLoading}
+        onCancel={handleCancelDeleteTransaction}
+        onConfirm={handleConfirmDeleteTransaction}
+        open={deleteTransactionDialog.isOpen}
+        title="Hapus transaksi ini?"
+        tone="danger"
+      />
+
+      <Toast
+        key={toast?.id}
+        message={toast?.message}
+        onClose={() => setToast(null)}
+        title={toast?.title}
+        type={toast?.type}
       />
     </>
   );

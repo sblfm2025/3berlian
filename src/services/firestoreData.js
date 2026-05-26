@@ -215,16 +215,39 @@ export const updateAppUser = async (userData) => {
 };
 
 export const deleteTransaction = async (trx) => {
+  const stockRestoreResults = [];
+
   if (trx.status === 'disewa') {
-    for (const item of trx.items) {
-      await updateDoc(dataDoc('products', item.product.id), {
-        stock: increment(item.qty),
-        stockAvailable: increment(item.qty)
+    const stockUpdates = (trx.items || [])
+      .filter(item => item.product?.id)
+      .map(async (item) => {
+        try {
+          await updateDoc(dataDoc('products', item.product.id), {
+            stock: increment(item.qty),
+            stockAvailable: increment(item.qty)
+          });
+          return { productId: item.product.id };
+        } catch (error) {
+          throw { productId: item.product.id, error };
+        }
       });
-    }
+
+    const results = await Promise.allSettled(stockUpdates);
+    results.forEach((result) => {
+      if (result.status === 'rejected') {
+        stockRestoreResults.push({
+          productId: result.reason?.productId || 'unknown',
+          reason: result.reason?.error || result.reason
+        });
+      }
+    });
   }
 
   await deleteDoc(dataDoc('transactions', trx.id));
+
+  return {
+    stockRestoreWarnings: stockRestoreResults
+  };
 };
 
 export const editTransaction = async (updatedTrx) => {
