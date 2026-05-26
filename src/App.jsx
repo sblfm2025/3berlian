@@ -483,6 +483,7 @@ export default function App() {
         isDemoMode={isDemoMode}
         loadingMessage={loginLoadingMessage}
         onLoginSuccess={handleLoginSuccess}
+        onNotify={notify}
         onSeedInit={handleSeedInit}
         onStartDemoMode={handleStartDemoMode}
       />

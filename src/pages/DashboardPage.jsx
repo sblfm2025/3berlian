@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeftRight, FileText, ShoppingBag, Users, X } from 'lucide-react';
+import { ArrowLeftRight, FileText, Package, ShoppingBag, UserCog, Users, X } from 'lucide-react';
 
 import KpiCard from '../components/dashboard/KpiCard';
 import MetricCard from '../components/dashboard/MetricCard';
@@ -83,6 +83,30 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
     { label: 'Laporan', target: 'reports', icon: FileText, accent: 'bg-violet-50 text-violet-700' }
   ];
 
+  const menuGroups = [
+    {
+      title: 'Transaksi',
+      items: [
+        { label: 'Sewa Kostum', target: 'rent', icon: ShoppingBag },
+        { label: 'Pengembalian', target: 'return', icon: ArrowLeftRight }
+      ]
+    },
+    {
+      title: 'Data Master',
+      items: [
+        { label: 'Produk', target: 'products', icon: Package },
+        { label: 'Pelanggan', target: 'customers', icon: Users },
+        { label: 'Pengguna', target: 'users', icon: UserCog }
+      ]
+    },
+    {
+      title: 'Analitik',
+      items: [
+        { label: 'Laporan', target: 'reports', icon: FileText }
+      ]
+    }
+  ];
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="brand-gradient hidden rounded-[24px] p-6 text-white shadow-soft md:block md:p-8">
@@ -152,6 +176,49 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
             </button>
           );
         })}
+      </div>
+
+      <div className="rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="bg-[#1688d8] px-5 py-4 text-white md:px-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-blue-50/85">Menu operasional</p>
+              <h3 className="mt-1 text-lg font-black">Akses cepat POS 3 Berlian</h3>
+            </div>
+            <div className="hidden rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-slate-500 shadow-sm md:flex md:min-w-[280px] md:items-center">
+              Cari menu, nota, atau pelanggan
+            </div>
+          </div>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {menuGroups.map(group => (
+            <section key={group.title} className="px-5 py-5 md:px-6">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-blue-800">{group.title}</h4>
+                <span className="text-xs font-bold text-slate-400">{group.items.length} menu</span>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
+                {group.items.map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.target}
+                      type="button"
+                      onClick={() => onNavigate(item.target)}
+                      className="group flex flex-col items-center rounded-[20px] px-2 py-2 text-center transition hover:bg-blue-50"
+                    >
+                      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-700 shadow-sm transition group-hover:bg-blue-700 group-hover:text-white">
+                        <Icon size={27} strokeWidth={2.4} />
+                      </span>
+                      <span className="mt-2 min-h-[28px] text-xs font-bold leading-tight text-slate-700">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">

@@ -9,6 +9,7 @@ export default function LoginScreen({
   isDemoMode,
   loadingMessage,
   onLoginSuccess,
+  onNotify,
   onSeedInit,
   onStartDemoMode
 }) {
@@ -20,7 +21,7 @@ export default function LoginScreen({
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     if (!isDataLoaded) {
-      alert('Data akun masih dimuat. Tunggu sebentar lalu coba lagi.');
+      onNotify?.({ title: 'Data akun masih dimuat', message: 'Tunggu sebentar lalu coba lagi.', type: 'info' });
       return;
     }
 
@@ -30,7 +31,7 @@ export default function LoginScreen({
       return;
     }
 
-    alert('Username atau password salah!');
+    onNotify?.({ title: 'Login gagal', message: 'Username atau password salah.', type: 'error' });
   };
 
   const quickMenus = [
@@ -43,18 +44,18 @@ export default function LoginScreen({
   const handleForgotSubmit = (e) => {
     e.preventDefault();
     if (!isDataLoaded) {
-      alert('Data akun masih dimuat. Tunggu sebentar lalu coba lagi.');
+      onNotify?.({ title: 'Data akun masih dimuat', message: 'Tunggu sebentar lalu coba lagi.', type: 'info' });
       return;
     }
 
     const foundUser = appUsers.find(user => user.email === forgotEmail);
     if (foundUser) {
-      alert(`Instruksi pemulihan akun telah disiapkan untuk ${forgotEmail}.`);
+      onNotify?.({ title: 'Pemulihan akun', message: `Instruksi pemulihan akun telah disiapkan untuk ${forgotEmail}.`, type: 'success' });
       setShowForgotPwd(false);
       return;
     }
 
-    alert('Email tidak terdaftar di sistem!');
+    onNotify?.({ title: 'Email tidak ditemukan', message: 'Email tidak terdaftar di sistem.', type: 'error' });
   };
 
   return (
