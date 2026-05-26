@@ -5,6 +5,17 @@ import { spawnSync } from 'node:child_process';
 
 const projectRoot = path.resolve(process.cwd());
 const safeRoot = path.join(os.tmpdir(), '3berlian-build-safe');
+const safeNodeModules = path.join(safeRoot, 'node_modules');
+
+const cleanupSafeRoot = () => {
+  if (!fs.existsSync(safeRoot)) return;
+
+  if (fs.existsSync(safeNodeModules) && fs.lstatSync(safeNodeModules).isSymbolicLink()) {
+    fs.unlinkSync(safeNodeModules);
+  }
+
+  fs.rmSync(safeRoot, { recursive: true, force: true });
+};
 
 const runBuild = () => {
   const result = spawnSync(process.execPath, [path.join(safeRoot, 'node_modules/vite/bin/vite.js'), 'build'], {
@@ -18,9 +29,7 @@ const runBuild = () => {
 };
 
 try {
-  if (fs.existsSync(safeRoot)) {
-    fs.rmSync(safeRoot, { recursive: true, force: true });
-  }
+  cleanupSafeRoot();
 
   fs.cpSync(projectRoot, safeRoot, {
     recursive: true,
@@ -28,9 +37,11 @@ try {
     filter: (source) => {
       const relativePath = path.relative(projectRoot, source);
       if (!relativePath) return true;
-      return !['.git', '.sixth', 'dist'].some(folder => relativePath === folder || relativePath.startsWith(`${folder}${path.sep}`));
+      return !['.git', '.sixth', 'dist', 'node_modules'].some(folder => relativePath === folder || relativePath.startsWith(`${folder}${path.sep}`));
     }
   });
+
+  fs.symlinkSync(path.join(projectRoot, 'node_modules'), safeNodeModules, 'junction');
   runBuild();
 
   const distSource = path.join(safeRoot, 'dist');
@@ -42,7 +53,5 @@ try {
 
   fs.cpSync(distSource, distTarget, { recursive: true, force: true });
 } finally {
-  if (fs.existsSync(safeRoot)) {
-    fs.rmSync(safeRoot, { recursive: true, force: true });
-  }
+  cleanupSafeRoot();
 }

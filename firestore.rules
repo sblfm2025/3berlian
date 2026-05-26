@@ -1,0 +1,48 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function stockIsNonNegative() {
+      return (!('stock' in request.resource.data) || request.resource.data.stock >= 0)
+        && (!('stockTotal' in request.resource.data) || request.resource.data.stockTotal >= 0)
+        && (!('stockAvailable' in request.resource.data) || request.resource.data.stockAvailable >= 0)
+        && (!('stockRented' in request.resource.data) || request.resource.data.stockRented >= 0)
+        && (!('stockLaundry' in request.resource.data) || request.resource.data.stockLaundry >= 0)
+        && (!('stockDamaged' in request.resource.data) || request.resource.data.stockDamaged >= 0);
+    }
+
+    match /artifacts/{appId}/public/data/products/{productId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && stockIsNonNegative();
+      allow delete: if false;
+    }
+
+    match /artifacts/{appId}/public/data/transactions/{transactionId} {
+      allow read, create, update: if isSignedIn();
+      allow delete: if false;
+    }
+
+    match /artifacts/{appId}/public/data/auditLogs/{auditId} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    match /artifacts/{appId}/public/data/customers/{customerId} {
+      allow read, create, update: if isSignedIn();
+      allow delete: if false;
+    }
+
+    match /artifacts/{appId}/public/data/{collectionName}/{documentId} {
+      allow read, create, update: if isSignedIn();
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

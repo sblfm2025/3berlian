@@ -1,9 +1,24 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Clock } from 'lucide-react';
 import { formatCurrency, formatDate, formatNumberDot } from '../utils/format';
+import { isActiveTransaction } from '../utils/transactionStatus';
 import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 const CUSTOMERS_PER_PAGE = 20;
+const isRevenueTransaction = (transaction) => transaction.status !== 'void';
+
+const getDepositAmount = (transaction) => Number(transaction.depositAmount ?? transaction.deposit ?? 0);
+
+const getDepositDeducted = (transaction) => Number(transaction.depositDeducted || transaction.returnInfo?.depositDeducted || 0);
+
+const getLateDays = (transaction) => {
+  if (!transaction.expectedReturnDate) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expected = new Date(transaction.expectedReturnDate);
+  expected.setHours(0, 0, 0, 0);
+  return today > expected ? Math.ceil((today - expected) / (1000 * 60 * 60 * 24)) : 0;
+};
 
 // ==========================================
 export default function CustomersPage({ customers, transactions, onUpdateCustomer }) {
@@ -11,9 +26,12 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
   const [sortBy, setSortBy] = useState('terbaru');
   const [customerPage, setCustomerPage] = useState(1);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [draftRiskNote, setDraftRiskNote] = useState('');
   const [draftCustomer, setDraftCustomer] = useState({
     address: '',
     note: '',
+    riskNote: '',
     identityType: 'KTP',
     identityNumber: '',
     depositAmount: ''
@@ -31,23 +49,36 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
   const enrichedCustomers = useMemo(() => {
     return customers.map(customer => {
       const customerTransactions = transactions.filter(tx => tx.customerName === customer.name);
+      const revenueTransactions = customerTransactions.filter(isRevenueTransaction);
       const recentTransactions = [...customerTransactions].sort((a, b) => new Date(b.rentDate || 0) - new Date(a.rentDate || 0));
-      const totalSpend = customerTransactions.reduce((sum, tx) => sum + (tx.totalAmount || 0) + (tx.lateFee || 0), 0);
-      const visitCount = customerTransactions.length;
+      const totalSpend = revenueTransactions.reduce((sum, tx) => sum + (tx.totalAmount || 0) + (tx.lateFee || 0), 0);
+      const visitCount = revenueTransactions.length;
       const lastRentDate = customer.lastRentDate || recentTransactions[0]?.rentDate || '';
-      const pendingReturns = customerTransactions.filter(tx => tx.status === 'disewa').length;
+      const activeTransactions = customerTransactions.filter(isActiveTransaction);
+      const pendingReturns = activeTransactions.length;
+      const overdueReturns = activeTransactions.filter(tx => getLateDays(tx) > 0).length;
+      const activeDeposit = activeTransactions.reduce((sum, tx) => sum + getDepositAmount(tx), 0);
+      const depositDeducted = revenueTransactions.reduce((sum, tx) => sum + getDepositDeducted(tx), 0);
 
       return {
         ...customer,
+        activeDeposit,
+        depositDeducted,
+        overdueReturns,
         recentTransactions,
         totalSpend,
         visitCount,
         lastRentDate,
         pendingReturns,
-        depositAmount: Number(customer.depositAmount || 0)
+        depositAmount: Number(customer.depositAmount || 0) + activeDeposit
       };
     });
   }, [customers, transactions]);
+
+  const selectedCustomer = useMemo(() => {
+    if (!selectedCustomerId) return null;
+    return enrichedCustomers.find(c => c.id === selectedCustomerId) || null;
+  }, [selectedCustomerId, enrichedCustomers]);
 
   const filteredCustomers = useMemo(() => {
     const haystack = searchTerm.toLowerCase();
@@ -77,13 +108,14 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
 
   const repeatCustomers = enrichedCustomers.filter(customer => customer.visitCount > 1).length;
   const activeCustomerCount = enrichedCustomers.filter(customer => customer.pendingReturns > 0).length;
-  const totalDeposit = enrichedCustomers.reduce((sum, customer) => sum + customer.depositAmount, 0);
+  const riskCustomerCount = enrichedCustomers.filter(customer => customer.overdueReturns > 0 || customer.depositDeducted > 0).length;
 
   const openEditCustomer = (customer) => {
     setEditingCustomer(customer);
     setDraftCustomer({
       address: customer.address || '',
       note: customer.note || '',
+      riskNote: customer.riskNote || '',
       identityType: customer.identityType || 'KTP',
       identityNumber: customer.identityNumber || '',
       depositAmount: customer.depositAmount ? String(customer.depositAmount) : ''
@@ -95,6 +127,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
     setDraftCustomer({
       address: '',
       note: '',
+      riskNote: '',
       identityType: 'KTP',
       identityNumber: '',
       depositAmount: ''
@@ -109,6 +142,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
       ...editingCustomer,
       address: draftCustomer.address,
       note: draftCustomer.note,
+      riskNote: draftCustomer.riskNote,
       identityType: draftCustomer.identityType,
       identityNumber: draftCustomer.identityNumber,
       depositAmount: draftCustomer.depositAmount ? Number(draftCustomer.depositAmount) : 0
@@ -142,8 +176,8 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
             <p className="mt-2 text-lg font-black sm:text-2xl">{activeCustomerCount}</p>
           </div>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Total deposit</p>
-            <p className="mt-2 text-lg font-black sm:text-2xl">{formatCurrency(totalDeposit)}</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">Perlu perhatian</p>
+            <p className="mt-2 text-lg font-black sm:text-2xl">{riskCustomerCount}</p>
           </div>
         </div>
       </div>
@@ -246,10 +280,15 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                   <div className="rounded-xl bg-slate-50 px-3 py-2 sm:rounded-[18px]">
                     <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.2em]">Deposit</p>
                     <p className="mt-1 text-xs font-bold text-slate-900 sm:text-sm">{formatCurrency(customer.depositAmount)}</p>
+                    {customer.depositDeducted > 0 && (
+                      <p className="mt-1 text-[10px] font-bold text-red-600">Dipotong {formatCurrency(customer.depositDeducted)}</p>
+                    )}
                   </div>
                   <div className="rounded-xl bg-slate-50 px-3 py-2 sm:rounded-[18px]">
                     <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.2em]">Status</p>
-                    <p className="mt-1 text-xs font-bold text-emerald-700 sm:text-sm">{customer.pendingReturns > 0 ? 'Aktif' : 'Rutin'}</p>
+                    <p className={`mt-1 text-xs font-bold sm:text-sm ${customer.overdueReturns > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
+                      {customer.overdueReturns > 0 ? `${customer.overdueReturns} terlambat` : customer.pendingReturns > 0 ? 'Aktif' : 'Rutin'}
+                    </p>
                   </div>
                 </div>
 
@@ -265,9 +304,24 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                   >
                     Ubah data pelanggan
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCustomerId(customer.id);
+                      setDraftRiskNote(customer.riskNote || '');
+                    }}
+                    className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800 sm:rounded-[16px] sm:px-4 sm:text-sm"
+                  >
+                    Riwayat &amp; Detail
+                  </button>
                   <span className="rounded-[16px] bg-slate-100 px-3 py-2 text-[11px] font-bold text-slate-600">
                     {customer.recentTransactions.length} transaksi terdokumentasi
                   </span>
+                  {customer.activeDeposit > 0 && (
+                    <span className="rounded-[16px] bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-700">
+                      Deposit aktif {formatCurrency(customer.activeDeposit)}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -283,6 +337,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                 <div key={customer.id} className="rounded-2xl bg-slate-50 px-3 py-2.5 sm:rounded-[18px] sm:px-4 sm:py-3">
                   <p className="font-bold text-slate-900">{customer.name}</p>
                   <p className="mt-1 text-sm text-slate-500">{customer.visitCount} kunjungan - {formatCurrency(customer.totalSpend)}</p>
+                  <p className="mt-1 text-xs font-bold text-slate-500">Deposit aktif {formatCurrency(customer.activeDeposit)}</p>
                 </div>
               ))}
               {filteredCustomers.length === 0 && (
@@ -368,6 +423,17 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
               </div>
 
               <div className="rounded-[20px] bg-white border border-slate-100 p-4">
+                <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Catatan Risiko Khusus</label>
+                <textarea
+                  rows="2"
+                  value={draftCustomer.riskNote}
+                  onChange={(event) => setDraftCustomer(prev => ({ ...prev, riskNote: event.target.value }))}
+                  placeholder="Tulis tingkat/catatan risiko pelanggan (misal: Sering terlambat)..."
+                  className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 resize-none"
+                />
+              </div>
+
+              <div className="rounded-[20px] bg-white border border-slate-100 p-4">
                 <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Deposit / Jaminan</label>
                 <input
                   type="text"
@@ -394,6 +460,200 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {selectedCustomer && (
+        <div className="fixed inset-0 bg-slate-950/55 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-[28px] w-full max-w-4xl overflow-hidden shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-5 bg-blue-900 text-white flex justify-between items-center border-b border-blue-800">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">Profil &amp; Riwayat Pelanggan</p>
+                <h3 className="mt-2 text-lg font-black">{selectedCustomer.name}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCustomerId(null)}
+                className="p-2 bg-blue-800 rounded-full hover:bg-blue-700 transition-colors"
+                aria-label="Tutup riwayat"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content (Scrollable) */}
+            <div className="p-5 md:p-6 bg-slate-50 overflow-y-auto flex-1 space-y-5">
+              {/* Profil Singkat & Deposit */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-[20px] bg-white border border-slate-100 p-4 shadow-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Kontak &amp; Identitas</p>
+                  <p className="mt-2 text-sm font-bold text-slate-900">{selectedCustomer.phone || '-'}</p>
+                  <p className="text-xs text-slate-500 mt-1">{selectedCustomer.identityType || 'KTP'}: {selectedCustomer.identityNumber || '-'}</p>
+                  <p className="text-xs text-slate-600 mt-2 font-medium break-words">{selectedCustomer.address || 'Alamat tidak tercatat'}</p>
+                </div>
+                <div className="rounded-[20px] bg-white border border-slate-100 p-4 shadow-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Statistik Belanja</p>
+                  <p className="mt-2 text-lg font-black text-slate-900">{formatCurrency(selectedCustomer.totalSpend)}</p>
+                  <p className="text-xs text-slate-500 font-semibold mt-1">{selectedCustomer.visitCount} Kunjungan terdokumentasi</p>
+                  <p className="text-xs text-slate-500 mt-1 font-medium font-semibold">Terakhir: {selectedCustomer.lastRentDate ? formatDate(selectedCustomer.lastRentDate) : 'Belum'}</p>
+                </div>
+                <div className="rounded-[20px] bg-white border border-slate-100 p-4 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Deposit Aktif saat ini</p>
+                    <p className="mt-2 text-lg font-black text-amber-700">{formatCurrency(selectedCustomer.activeDeposit)}</p>
+                  </div>
+                  {selectedCustomer.depositDeducted > 0 && (
+                    <p className="text-[11px] font-bold text-red-600">Total Pernah Dipotong: {formatCurrency(selectedCustomer.depositDeducted)}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Catatan Risiko Khusus */}
+              <div className="rounded-[20px] bg-amber-50 border border-amber-200 p-4 space-y-3 shadow-sm">
+                <div className="flex items-center gap-2 text-amber-800">
+                  <AlertTriangle size={18} />
+                  <p className="text-xs font-bold uppercase tracking-[0.1em]">Catatan Risiko Khusus Pelanggan</p>
+                </div>
+                <p className="text-xs text-slate-600 font-semibold font-medium">
+                  Catatan ini hanya terlihat oleh staf kasir &amp; admin untuk menganalisis tingkat risiko keterlambatan atau kerusakan barang dari pelanggan ini.
+                </p>
+                <div className="flex gap-2">
+                  <textarea
+                    rows="2"
+                    value={draftRiskNote}
+                    onChange={(e) => setDraftRiskNote(e.target.value)}
+                    placeholder="Tulis catatan risiko khusus di sini (misal: Sering terlambat mengembalikan kostum, pernah merusak payet kostum, dll)..."
+                    className="w-full rounded-[14px] border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 focus:border-amber-400 focus:outline-none resize-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await onUpdateCustomer({
+                        ...selectedCustomer,
+                        riskNote: draftRiskNote
+                      });
+                    }}
+                    className="self-end rounded-[14px] bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-3 shrink-0 shadow-sm transition-colors"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </div>
+
+              {/* Riwayat Transaksi */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400 flex items-center gap-1.5">
+                  <Clock size={14} /> Riwayat Nota Transaksi
+                </p>
+                <div className="space-y-3 max-h-[30vh] overflow-y-auto pr-1">
+                  {selectedCustomer.recentTransactions.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-xs sm:text-sm text-slate-400">
+                      Belum ada nota transaksi tercatat untuk pelanggan ini.
+                    </div>
+                  ) : (
+                    selectedCustomer.recentTransactions.map((tx) => {
+                      const isOverdue = tx.status === 'overdue' || (isActiveTransaction(tx) && getLateDays(tx) > 0);
+                      const statusLabel = tx.status === 'void'
+                        ? 'Void'
+                        : tx.status === 'returned'
+                          ? 'Selesai'
+                          : tx.status === 'partially_returned'
+                            ? 'Sebagian Kembali'
+                            : isOverdue
+                              ? 'Terlambat'
+                              : 'Disewa';
+
+                      const statusClass = tx.status === 'void'
+                        ? 'bg-slate-100 text-slate-600'
+                        : tx.status === 'returned'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : tx.status === 'partially_returned'
+                            ? 'bg-blue-100 text-blue-700'
+                            : isOverdue
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-amber-100 text-amber-800';
+
+                      return (
+                        <div key={tx.id} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm">
+                          <div className="flex flex-wrap justify-between items-start gap-2">
+                            <div>
+                              <p className="text-xs sm:text-sm font-bold text-slate-900">{tx.id}</p>
+                              <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Sewa: {formatDate(tx.rentDate)} | Batas: {formatDate(tx.expectedReturnDate)}</p>
+                            </div>
+                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${statusClass}`}>
+                              {statusLabel}
+                            </span>
+                          </div>
+
+                          {/* Item yang disewa */}
+                          <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1">
+                            <p className="font-bold text-slate-400 uppercase tracking-wider text-[9px] mb-1">Daftar Kostum</p>
+                            {(tx.items || []).map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-slate-800 font-semibold">
+                                <span>{item.qty}x {item.product?.name || item.productName || 'Kostum'}</span>
+                                <span>{formatCurrency((item.product?.rentPrice || item.rentPrice || 0) * item.qty)}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Detail returnHistory jika ada */}
+                          {tx.returnHistory && tx.returnHistory.length > 0 && (
+                            <div className="border-t border-slate-100 pt-3 space-y-2">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Riwayat Pengembalian</p>
+                              <div className="space-y-3">
+                                {tx.returnHistory.map((ret, rIdx) => (
+                                  <div key={rIdx} className="bg-emerald-50/40 border border-emerald-100 rounded-xl p-3 text-[11px] sm:text-xs space-y-2">
+                                    <div className="flex justify-between font-bold text-slate-800">
+                                      <span>Pengembalian #{rIdx + 1}</span>
+                                      <span className="text-slate-500 font-medium font-semibold">{formatDate(ret.returnedAt)}</span>
+                                    </div>
+                                    <div className="space-y-1 font-semibold text-slate-700">
+                                      {ret.items?.map((retItem, riIdx) => (
+                                        <div key={riIdx} className="flex justify-between">
+                                          <span>{retItem.qty}x {retItem.productName}</span>
+                                          <span className="text-slate-500 font-medium font-semibold">Kondisi: {retItem.condition}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="border-t border-emerald-100/60 pt-2 grid grid-cols-2 gap-1.5 text-[11px] text-slate-600 font-semibold">
+                                      <div>Denda Lambat: <span className="font-bold text-slate-900">{formatCurrency(ret.lateFee || 0)}</span></div>
+                                      <div>Biaya Kondisi: <span className="font-bold text-slate-900">{formatCurrency(ret.conditionFee || 0)}</span></div>
+                                      <div>Deposit Dipotong: <span className="font-bold text-red-600">{formatCurrency(ret.depositDeducted || 0)}</span></div>
+                                      <div>Deposit Kembali: <span className="font-bold text-emerald-700">{formatCurrency(ret.depositReturned || 0)}</span></div>
+                                    </div>
+                                    {ret.notes && (
+                                      <p className="text-[10px] text-slate-500 italic mt-1 font-medium font-semibold">Catatan: "{ret.notes}"</p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap justify-between items-center text-xs pt-2 border-t border-slate-100 text-slate-600 font-semibold">
+                            <div>Total Belanja: <span className="font-bold text-slate-900">{formatCurrency(tx.totalAmount)}</span></div>
+                            <div>Deposit: <span className="font-bold text-slate-900">{formatCurrency(tx.depositAmount ?? tx.deposit ?? 0)}</span></div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-5 bg-slate-100 border-t border-slate-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedCustomerId(null)}
+                className="rounded-[16px] bg-slate-950 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

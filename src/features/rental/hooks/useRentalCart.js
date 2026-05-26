@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 
+import { getRentableStock } from '../../../utils/stock';
 import { getCartStockIssues } from '../utils/rentalValidation';
 
-export const useRentalCart = ({ products, onEmptyCart }) => {
+export const useRentalCart = ({ products, onCartWarning, onEmptyCart }) => {
   const [cart, setCart] = useState([]);
 
   const clearCart = useCallback(() => {
@@ -22,8 +23,10 @@ export const useRentalCart = ({ products, onEmptyCart }) => {
     setCart(currentCart => {
       const existing = currentCart.find(item => item.product.id === product.id);
 
-      if (product.stock <= 0 && delta > 0) {
-        alert(`Produk ${product.name} sedang habis.`);
+      const stockAvailable = getRentableStock(product);
+
+      if (stockAvailable <= 0 && delta > 0) {
+        onCartWarning?.(`Produk ${product.name} sedang habis.`);
         return currentCart;
       }
 
@@ -40,14 +43,14 @@ export const useRentalCart = ({ products, onEmptyCart }) => {
         return nextCart;
       }
 
-      if (nextQty > product.stock) {
-        alert(`Stok ${product.name} tersisa ${product.stock} unit.`);
+      if (nextQty > stockAvailable) {
+        onCartWarning?.(`Stok ${product.name} tersisa ${stockAvailable} unit.`);
         return currentCart;
       }
 
       return currentCart.map(item => item.product.id === product.id ? { ...item, qty: nextQty } : item);
     });
-  }, [onEmptyCart]);
+  }, [onCartWarning, onEmptyCart]);
 
   const getStockIssue = useCallback(() => (
     getCartStockIssues({ cart, products })

@@ -2,20 +2,19 @@ import { lazy, Suspense, useMemo, useRef, useState, useEffect } from 'react';
 
 import { signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { normalizeProduct } from './utils/product';
+import { isActiveTransaction } from './utils/transactionStatus';
 import { auth, db } from './services/firebase';
 import {
-  completeReturnTransaction,
   deleteProduct,
-  deleteTransaction,
   editTransaction,
   listenToAppData,
   listenToAppUsers,
-  saveCheckoutTransaction,
   saveProduct,
   seedInitialData,
   updateAppUser,
   updateCustomerProfile
 } from './services/firestoreData';
+import { completeReturnTransaction, createRentalTransaction, voidTransaction } from './services/transactionService';
 import AppShell from './components/layout/AppShell';
 import { getMobileNavItems, getRoleNavItems, pageMeta } from './config/navigation';
 import { initialAppUsers, initialProducts } from './constants/seedData';
@@ -141,7 +140,7 @@ export default function App() {
   const [dataLoadError, setDataLoadError] = useState('');
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [toast, setToast] = useState(null);
-  const [deleteTransactionDialog, setDeleteTransactionDialog] = useState({ isOpen: false, transaction: null, isLoading: false });
+  const [voidTransactionDialog, setVoidTransactionDialog] = useState({ isOpen: false, transaction: null, isLoading: false });
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
   const [isAppInstalled, setIsAppInstalled] = useState(() => isPwaStandalone() || window.localStorage.getItem(PWA_INSTALLED_KEY) === 'true');
   const [pwaPrompt, setPwaPrompt] = useState(null);
@@ -369,8 +368,8 @@ export default function App() {
   // Menyimpan perubahan data
   const handleCheckoutDB = async (newTransaction, cart) => {
     try {
-      await saveCheckoutTransaction(newTransaction, cart);
-      setReceiptData(newTransaction);
+      const savedTransaction = await createRentalTransaction(newTransaction, cart);
+      setReceiptData(savedTransaction);
     } catch (error) {
       notify({ title: 'Transaksi gagal', message: 'Gagal memproses transaksi. Periksa stok dan koneksi lalu coba lagi.', type: 'error' });
       throw error;
@@ -429,41 +428,41 @@ export default function App() {
   };
 
   const handleDeleteTransactionDB = (trx) => {
-    setDeleteTransactionDialog({ isOpen: true, transaction: trx, isLoading: false });
+    setVoidTransactionDialog({ isOpen: true, transaction: trx, isLoading: false });
   };
 
   const handleCancelDeleteTransaction = () => {
-    setDeleteTransactionDialog({ isOpen: false, transaction: null, isLoading: false });
+    setVoidTransactionDialog({ isOpen: false, transaction: null, isLoading: false });
   };
 
   const handleConfirmDeleteTransaction = async () => {
-    const trx = deleteTransactionDialog.transaction;
+    const trx = voidTransactionDialog.transaction;
     if (!trx) return;
 
-    setDeleteTransactionDialog(prev => ({ ...prev, isLoading: true }));
+    setVoidTransactionDialog(prev => ({ ...prev, isLoading: true }));
     try {
-      const result = await deleteTransaction(trx);
-      setDeleteTransactionDialog({ isOpen: false, transaction: null, isLoading: false });
+      const result = await voidTransaction(trx, { operatorId: user?.id || user?.username || 'system' });
+      setVoidTransactionDialog({ isOpen: false, transaction: null, isLoading: false });
       if (result?.stockRestoreWarnings?.length) {
         notify({
-          title: 'Transaksi dihapus',
-          message: 'Nota berhasil dihapus, tetapi sebagian stok produk lama tidak bisa dikembalikan otomatis. Periksa stok produk secara manual.',
+          title: 'Transaksi dibatalkan',
+          message: 'Nota berhasil dibatalkan, tetapi sebagian stok produk lama perlu diperiksa manual.',
           type: 'warning'
         });
         return;
       }
 
       notify({
-        title: 'Transaksi dihapus',
-        message: `Nota ${trx.id} berhasil dihapus dan stok aktif sudah dikembalikan.`,
+        title: 'Transaksi dibatalkan',
+        message: `Nota ${trx.id} sudah void dan stok aktif sudah dikembalikan.`,
         type: 'success'
       });
     } catch (err) {
       console.error(err);
-      setDeleteTransactionDialog(prev => ({ ...prev, isLoading: false }));
+      setVoidTransactionDialog(prev => ({ ...prev, isLoading: false }));
       notify({
-        title: 'Gagal menghapus transaksi',
-        message: 'Firebase menolak penghapusan nota. Periksa koneksi, izin database, atau coba muat ulang aplikasi.',
+        title: 'Gagal membatalkan transaksi',
+        message: 'Firebase menolak pembatalan nota. Periksa koneksi, izin database, atau coba muat ulang aplikasi.',
         type: 'error'
       });
     }
@@ -637,7 +636,7 @@ export default function App() {
 
   const appNotifications = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    const activeTransactions = transactions.filter(transaction => transaction.status === 'disewa');
+    const activeTransactions = transactions.filter(isActiveTransaction);
     const overdueTransactions = activeTransactions.filter(transaction => transaction.expectedReturnDate && transaction.expectedReturnDate < today);
     const dueTodayTransactions = activeTransactions.filter(transaction => transaction.expectedReturnDate === today);
     const lowStockProducts = products.filter(product => Number(product.stock || 0) > 0 && Number(product.stock || 0) <= 2);
@@ -796,11 +795,11 @@ export default function App() {
           {!isCurrentViewReady && <AppDataSkeleton message={appLoadingMessage} />}
 
           {isCurrentViewReady && currentView === 'dashboard' && <DashboardPage transactions={transactions} products={products} onNavigate={navigateToView} />}
-          {isCurrentViewReady && currentView === 'rent' && <RentPage products={products} customers={customers} transactions={transactions} onCheckout={handleCheckoutDB} />}
+          {isCurrentViewReady && currentView === 'rent' && <RentPage products={products} customers={customers} transactions={transactions} onCheckout={handleCheckoutDB} onNotify={notify} />}
           {isCurrentViewReady && currentView === 'return' && <ReturnPage transactions={transactions} onReturn={handleReturnDB} />}
           <Suspense fallback={<PageFallback />}>
             {isCurrentViewReady && currentView === 'products' && user.role === 'admin' && (
-              <ProductsPage products={products} onSave={handleAddEditProductDB} onDelete={handleDeleteProductDB} />
+              <ProductsPage products={products} onSave={handleAddEditProductDB} onDelete={handleDeleteProductDB} onNotify={notify} />
             )}
             {isCurrentViewReady && currentView === 'customers' && (
               <CustomersPage customers={customers} transactions={transactions} onUpdateCustomer={handleUpdateCustomerDB} />
@@ -814,6 +813,7 @@ export default function App() {
                 onViewReceipt={setReceiptData}
                 onDelete={handleDeleteTransactionDB}
                 onEdit={handleEditTransactionDB}
+                onNotify={notify}
               />
             )}
             {isCurrentViewReady && currentView === 'menu' && (
@@ -907,13 +907,13 @@ export default function App() {
 
       <ConfirmDialog
         cancelLabel="Batal"
-        confirmLabel="Hapus Nota"
-        description={`Nota ${deleteTransactionDialog.transaction?.id || ''} akan dihapus. Jika nota masih aktif, sistem akan mencoba mengembalikan stok barang ke rak terlebih dahulu.`}
-        isLoading={deleteTransactionDialog.isLoading}
+        confirmLabel="Void Nota"
+        description={`Nota ${voidTransactionDialog.transaction?.id || ''} akan dibatalkan tanpa menghapus riwayat. Jika nota masih aktif, stok akan dikembalikan ke rak.`}
+        isLoading={voidTransactionDialog.isLoading}
         onCancel={handleCancelDeleteTransaction}
         onConfirm={handleConfirmDeleteTransaction}
-        open={deleteTransactionDialog.isOpen}
-        title="Hapus transaksi ini?"
+        open={voidTransactionDialog.isOpen}
+        title="Void transaksi ini?"
         tone="danger"
       />
 

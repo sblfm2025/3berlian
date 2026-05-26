@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import { isActiveTransaction } from '../../../utils/transactionStatus';
 import { getConditionFee, getDailyFine, getLateDays } from '../utils/returnCalculations';
 
 const RETURNS_PER_PAGE = 12;
@@ -11,11 +12,13 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
   const [paymentMethod, setPaymentMethod] = useState('Tunai');
   const [notes, setNotes] = useState('');
   const [itemConditions, setItemConditions] = useState({});
+  const [returnQtyByProduct, setReturnQtyByProduct] = useState({});
+  const [useDepositForFees, setUseDepositForFees] = useState(true);
   const [returnPage, setReturnPage] = useState(1);
   const [isReturning, setIsReturning] = useState(false);
 
   const activeTransactions = useMemo(() => (
-    transactions.filter(tx => tx.status === 'disewa')
+    transactions.filter(isActiveTransaction)
   ), [transactions]);
 
   const returnSummary = useMemo(() => {
@@ -71,16 +74,24 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
 
   const handleSelect = (trx) => {
     const lateDays = getLateDays(trx);
-    const initialConditions = trx.items.reduce((acc, item) => {
+    const returnableItems = trx.remainingItems?.length ? trx.remainingItems : trx.items;
+    const initialConditions = returnableItems.reduce((acc, item) => {
       acc[item.product.id] = 'Baik';
+      return acc;
+    }, {});
+    const initialReturnQty = returnableItems.reduce((acc, item) => {
+      acc[item.product.id] = Number(item.qty || 0);
       return acc;
     }, {});
 
     setItemConditions(initialConditions);
+    setReturnQtyByProduct(initialReturnQty);
+    setUseDepositForFees(Number(trx.depositAmount ?? trx.deposit ?? 0) > 0);
     setPaymentMethod('Tunai');
     setNotes('');
     setSelectedTrx({
       ...trx,
+      items: returnableItems,
       customerName: trx.customerName || 'Pelanggan belum tercatat',
       calculatedLateDays: lateDays,
       calculatedFine: lateDays * getDailyFine(trx),
@@ -99,28 +110,58 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
   };
 
   const conditionBreakdown = selectedTrx
-    ? selectedTrx.items.map(item => ({
-        ...item,
-        condition: itemConditions[item.product.id] || 'Baik',
-        fee: getConditionFee(itemConditions[item.product.id] || 'Baik', item)
-      }))
+    ? selectedTrx.items.map(item => {
+        const returnQty = Math.min(Number(item.qty || 0), Number(returnQtyByProduct[item.product.id] ?? item.qty ?? 0));
+        const condition = itemConditions[item.product.id] || 'Baik';
+        return {
+          ...item,
+          condition,
+          fee: getConditionFee(condition, item) * returnQty,
+          returnQty
+        };
+      })
     : [];
 
   const conditionFee = conditionBreakdown.reduce((sum, item) => sum + item.fee, 0);
   const lateFee = selectedTrx?.calculatedFine || 0;
   const totalAdditionalFee = lateFee + conditionFee;
+  const depositAmount = Number(selectedTrx?.depositAmount ?? selectedTrx?.deposit ?? 0);
+  const depositDeducted = useDepositForFees ? Math.min(depositAmount, totalAdditionalFee) : 0;
+  const depositReturned = Math.max(0, depositAmount - depositDeducted);
+  const feePaidSeparately = Math.max(0, totalAdditionalFee - depositDeducted);
   const lateItemCount = conditionBreakdown.filter(item => item.condition !== 'Baik').length;
+  const selectedReturnItems = conditionBreakdown
+    .filter(item => Number(item.returnQty || 0) > 0)
+    .map(item => ({ ...item, qty: Number(item.returnQty || 0), returnQty: Number(item.returnQty || 0) }));
+  const totalReturnQty = selectedReturnItems.reduce((sum, item) => sum + Number(item.returnQty || 0), 0);
+  const totalReturnableQty = conditionBreakdown.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+  const isFullReturn = totalReturnQty > 0 && totalReturnQty === totalReturnableQty;
+  const returnModeLabel = totalReturnQty <= 0
+    ? 'Belum ada item'
+    : isFullReturn
+      ? 'Full return'
+      : 'Partial return';
 
   const resetSelection = () => {
     setSelectedTrx(null);
     setItemConditions({});
+    setReturnQtyByProduct({});
+    setUseDepositForFees(true);
     setPaymentMethod('Tunai');
     setNotes('');
+  };
+
+  const updateReturnQty = (productId, nextQty, maxQty) => {
+    setReturnQtyByProduct(prev => ({
+      ...prev,
+      [productId]: Math.max(0, Math.min(Number(maxQty || 0), Number(nextQty || 0)))
+    }));
   };
 
   const handleConfirm = async () => {
     if (isReturning) return;
     if (!selectedTrx) return;
+    if (totalReturnQty <= 0) return;
 
     setIsReturning(true);
     try {
@@ -129,10 +170,12 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
         paymentMethod,
         notes,
         itemConditions,
+        returnItems: selectedReturnItems,
         conditionFee,
         lateFee,
         totalFee: totalAdditionalFee,
-        paymentMethodForFees: paymentMethod
+        paymentMethodForFees: paymentMethod,
+        useDepositForFees
       });
     } catch {
       return;
@@ -141,6 +184,8 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     }
 
     setSelectedTrx(null);
+    setReturnQtyByProduct({});
+    setUseDepositForFees(true);
   };
 
   const updateFilter = useCallback((nextFilter) => {
@@ -159,6 +204,10 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     applyConditionToAll,
     conditionBreakdown,
     conditionFee,
+    depositAmount,
+    depositDeducted,
+    depositReturned,
+    feePaidSeparately,
     filter,
     filteredTransactions,
     getLateDays,
@@ -173,7 +222,9 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     paymentMethod,
     resetSelection,
     returnEndNumber,
+    returnModeLabel,
     returnPageCount,
+    returnQtyByProduct,
     returnStartNumber,
     safeReturnPage,
     searchTerm,
@@ -182,7 +233,12 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     setNotes,
     setPaymentMethod,
     setReturnPage,
+    setUseDepositForFees,
+    totalReturnQty,
+    totalReturnableQty,
     totalAdditionalFee,
+    useDepositForFees,
+    updateReturnQty,
     updateFilter,
     updateSearchTerm,
     ...returnSummary

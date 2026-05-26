@@ -1,13 +1,15 @@
 import { useState, useMemo } from 'react';
-import { Package, Plus, Search, Cloud, Edit, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, Plus, Search, Cloud, Edit, Trash2, X, ChevronLeft, ChevronRight, Copy, Minus } from 'lucide-react';
 import { formatCurrency, formatNumberDot } from '../utils/format';
 import { normalizeProduct } from '../utils/product';
 import { compressImage } from '../utils/browser';
 import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 
 const PRODUCTS_PER_PAGE = 20;
 
 const getProductStatusLabel = (product) => {
+  if (product.isActive === false || product.status === 'inactive') return 'Nonaktif';
   if (product.status === 'maintenance') return 'Perbaikan';
   if (product.status === 'laundry') return 'Laundry';
   if (product.stock <= 0) return 'Habis';
@@ -19,13 +21,14 @@ const getStatusOptionLabel = (status) => {
   if (status === 'maintenance') return 'Perbaikan';
   if (status === 'laundry') return 'Laundry';
   if (status === 'habis') return 'Habis';
+  if (status === 'inactive') return 'Nonaktif';
   if (status === 'rendah') return 'Stok rendah';
   if (status === 'tersedia') return 'Tersedia';
   return status;
 };
 
 // ==========================================
-export default function ProductsPage({ products, onSave, onDelete }) {
+export default function ProductsPage({ products, onSave, onDelete, onNotify }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -33,6 +36,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
   const [categoryFilter, setCategoryFilter] = useState('Semua');
   const [statusFilter, setStatusFilter] = useState('Semua');
   const [productPage, setProductPage] = useState(1);
+  const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, product: null, isLoading: false });
   const mobileSearchConfig = useMemo(() => ({
     placeholder: 'Cari nama, kategori, ukuran',
     value: searchTerm,
@@ -58,7 +62,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
   });
 
   const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'All Size'];
-  const statusOptions = ['tersedia', 'maintenance', 'laundry', 'habis'];
+  const statusOptions = ['tersedia', 'maintenance', 'laundry', 'habis', 'inactive'];
 
   const normalizedProducts = useMemo(() => {
     return products.map(normalizeProduct);
@@ -70,10 +74,11 @@ export default function ProductsPage({ products, onSave, onDelete }) {
   }, [normalizedProducts]);
 
   const stats = useMemo(() => {
-    const available = normalizedProducts.filter(product => product.stock > 0).length;
-    const lowStock = normalizedProducts.filter(product => product.stock > 0 && product.stock <= 2).length;
-    const outOfStock = normalizedProducts.filter(product => product.stock <= 0).length;
-    const totalInventoryValue = normalizedProducts.reduce((sum, product) => sum + product.rentPrice * product.stock, 0);
+    const activeProducts = normalizedProducts.filter(product => product.isActive !== false && product.status !== 'inactive');
+    const available = activeProducts.filter(product => product.stock > 0).length;
+    const lowStock = activeProducts.filter(product => product.stock > 0 && product.stock <= 2).length;
+    const outOfStock = activeProducts.filter(product => product.stock <= 0).length;
+    const totalInventoryValue = activeProducts.reduce((sum, product) => sum + product.rentPrice * product.stock, 0);
 
     return { available, lowStock, outOfStock, totalInventoryValue };
   }, [normalizedProducts]);
@@ -82,12 +87,16 @@ export default function ProductsPage({ products, onSave, onDelete }) {
     const term = searchTerm.toLowerCase();
 
     return normalizedProducts.filter(product => {
+      const isActive = product.isActive !== false && product.status !== 'inactive';
       const matchesSearch = [product.name, product.category, product.size].join(' ').toLowerCase().includes(term);
       const matchesCategory = categoryFilter === 'Semua' || product.category === categoryFilter;
       const matchesStatus = statusFilter === 'Semua'
-        || (statusFilter === 'tersedia' && product.stock > 0)
-        || (statusFilter === 'habis' && product.stock <= 0)
-        || (statusFilter === 'rendah' && product.stock > 0 && product.stock <= 2);
+        || (statusFilter === 'tersedia' && isActive && product.status === 'tersedia' && product.stock > 0)
+        || (statusFilter === 'habis' && isActive && product.stock <= 0)
+        || (statusFilter === 'rendah' && isActive && product.stock > 0 && product.stock <= 2)
+        || (statusFilter === 'laundry' && isActive && product.status === 'laundry')
+        || (statusFilter === 'maintenance' && isActive && product.status === 'maintenance')
+        || (statusFilter === 'inactive' && !isActive);
       return matchesSearch && matchesCategory && matchesStatus;
     });
   }, [normalizedProducts, searchTerm, categoryFilter, statusFilter]);
@@ -145,7 +154,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
       const base64Image = await compressImage(file);
       setFormData(prev => ({ ...prev, photo: base64Image }));
     } catch {
-      alert('Gagal memproses gambar. Coba gambar lain.');
+      onNotify?.({ title: 'Gambar gagal diproses', message: 'Coba gunakan gambar lain.', type: 'error' });
     } finally {
       setIsUploading(false);
     }
@@ -159,16 +168,20 @@ export default function ProductsPage({ products, onSave, onDelete }) {
       const stockValue = Number(formData.stock);
       const rentPriceValue = Number(formData.rentPrice);
       const dailyLateFeeValue = Number(formData.dailyLateFee);
+      const stockRentedValue = Number(editingProduct?.stockRented || 0);
+      const stockLaundryValue = Number(editingProduct?.stockLaundry || 0);
+      const stockDamagedValue = Number(editingProduct?.stockDamaged || 0);
+      const stockTotalValue = stockValue + stockRentedValue + stockLaundryValue + stockDamagedValue;
       const dataToSave = {
         ...formData,
         rentPrice: rentPriceValue,
         dailyRentPrice: rentPriceValue,
         stock: stockValue,
-        stockTotal: Number(formData.stockTotal ?? stockValue),
-        stockAvailable: Number(formData.stockAvailable ?? stockValue),
-        stockRented: Number(formData.stockRented || 0),
-        stockLaundry: Number(formData.stockLaundry || 0),
-        stockDamaged: Number(formData.stockDamaged || 0),
+        stockTotal: stockTotalValue,
+        stockAvailable: stockValue,
+        stockRented: stockRentedValue,
+        stockLaundry: stockLaundryValue,
+        stockDamaged: stockDamagedValue,
         dailyLateFee: dailyLateFeeValue,
         lateFeePerDay: dailyLateFeeValue,
         gender: formData.gender || 'Unisex',
@@ -185,8 +198,60 @@ export default function ProductsPage({ products, onSave, onDelete }) {
     }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Yakin ingin menghapus produk ini?')) onDelete(id);
+  const handleDelete = (product) => {
+    setDeleteDialog({ isOpen: true, product, isLoading: false });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteDialog.product) return;
+    setDeleteDialog(prev => ({ ...prev, isLoading: true }));
+    await onDelete(deleteDialog.product.id);
+    setDeleteDialog({ isOpen: false, product: null, isLoading: false });
+  };
+
+  const handleDuplicate = (product) => {
+    setEditingProduct(null);
+    setFormData({
+      name: `${product.name} (Salinan)`,
+      category: product.category,
+      size: product.size,
+      sku: product.sku ? `${product.sku}-COPY` : '',
+      color: product.color || '',
+      description: product.description || '',
+      status: product.status || 'tersedia',
+      rentPrice: String(product.rentPrice || ''),
+      stock: String(product.stock || ''),
+      photo: product.photo || '',
+      dailyLateFee: String(product.dailyLateFee || '')
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleQuickSave = async (product, updates) => {
+    const nextStock = updates.stock !== undefined ? Number(updates.stock) : Number(product.stock || 0);
+    const rentPriceValue = Number(product.rentPrice || 0);
+    const dailyLateFeeValue = Number(product.dailyLateFee || 0);
+    const stockRentedValue = Number(product.stockRented || 0);
+    const stockLaundryValue = Number(product.stockLaundry || 0);
+    const stockDamagedValue = Number(product.stockDamaged || 0);
+    const stockTotalValue = nextStock + stockRentedValue + stockLaundryValue + stockDamagedValue;
+
+    const dataToSave = {
+      ...product,
+      ...updates,
+      rentPrice: rentPriceValue,
+      dailyRentPrice: rentPriceValue,
+      stock: nextStock,
+      stockTotal: stockTotalValue,
+      stockAvailable: nextStock,
+      stockRented: stockRentedValue,
+      stockLaundry: stockLaundryValue,
+      stockDamaged: stockDamagedValue,
+      dailyLateFee: dailyLateFeeValue,
+      lateFeePerDay: dailyLateFeeValue
+    };
+
+    await onSave(dataToSave, true);
   };
 
   return (
@@ -264,7 +329,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
         </div>
 
         <div className="mt-3 flex flex-nowrap gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
-          {['Semua', 'tersedia', 'rendah', 'habis'].map(option => (
+          {['Semua', 'tersedia', 'rendah', 'habis', 'laundry', 'maintenance', 'inactive'].map(option => (
             <button
               key={option}
               type="button"
@@ -370,19 +435,45 @@ export default function ProductsPage({ products, onSave, onDelete }) {
                   <p className="text-xs text-red-500 font-semibold">{formatCurrency(product.dailyLateFee)}/hari</p>
                 </td>
                 <td className="p-4">
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-black ${product.status === 'maintenance' ? 'bg-violet-100 text-violet-700' : product.status === 'laundry' ? 'bg-cyan-100 text-cyan-700' : product.stock <= 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                    {getProductStatusLabel(product)}
-                  </span>
+                  <select
+                    value={product.status || 'tersedia'}
+                    onChange={(e) => handleQuickSave(product, { status: e.target.value })}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-black border-0 bg-transparent focus:ring-2 focus:ring-blue-100 transition-colors cursor-pointer ${product.isActive === false || product.status === 'inactive' ? 'bg-slate-100 text-slate-600' : product.status === 'maintenance' ? 'bg-violet-100 text-violet-700' : product.status === 'laundry' ? 'bg-cyan-100 text-cyan-700' : product.stock <= 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}
+                  >
+                    <option value="tersedia" className="bg-white text-emerald-700 font-bold">Tersedia</option>
+                    <option value="laundry" className="bg-white text-cyan-700 font-bold">Laundry</option>
+                    <option value="maintenance" className="bg-white text-violet-700 font-bold">Perbaikan</option>
+                    <option value="inactive" className="bg-white text-slate-600 font-bold">Nonaktif</option>
+                  </select>
                 </td>
                 <td className="p-4">
-                  <span className={`rounded-full px-3 py-1 text-xs font-black ${product.stock > 2 ? 'bg-emerald-100 text-emerald-700' : product.stock > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-                    {product.stock} unit
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickSave(product, { stock: Math.max(0, Number(product.stock || 0) - 1) })}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 shadow-sm transition-colors"
+                      aria-label="Kurangi stok"
+                    >
+                      <Minus size={12} strokeWidth={3} />
+                    </button>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-black ${product.stock > 2 ? 'bg-emerald-100 text-emerald-700' : product.stock > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                      {product.stock} unit
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickSave(product, { stock: Number(product.stock || 0) + 1 })}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-blue-700 hover:bg-blue-800 text-white shadow-sm transition-colors"
+                      aria-label="Tambah stok"
+                    >
+                      <Plus size={12} strokeWidth={3} />
+                    </button>
+                  </div>
                 </td>
                 <td className="p-4">
-                  <div className="flex justify-center gap-2">
-                    <button type="button" onClick={() => openModal(product)} className="rounded-[14px] bg-blue-50 p-2.5 text-blue-700 transition-colors hover:bg-blue-700 hover:text-white"><Edit size={16} /></button>
-                    <button type="button" onClick={() => handleDelete(product.id)} className="rounded-[14px] bg-red-50 p-2.5 text-red-700 transition-colors hover:bg-red-700 hover:text-white"><Trash2 size={16} /></button>
+                  <div className="flex justify-center gap-1.5">
+                    <button type="button" onClick={() => openModal(product)} className="rounded-[12px] bg-blue-50 p-2 text-blue-700 transition-colors hover:bg-blue-700 hover:text-white" title="Ubah produk"><Edit size={14} /></button>
+                    <button type="button" onClick={() => handleDuplicate(product)} className="rounded-[12px] bg-emerald-50 p-2 text-emerald-700 transition-colors hover:bg-emerald-700 hover:text-white" title="Duplikat produk"><Copy size={14} /></button>
+                    <button type="button" onClick={() => handleDelete(product)} className="rounded-[12px] bg-red-50 p-2 text-red-700 transition-colors hover:bg-red-700 hover:text-white" title="Nonaktifkan"><Trash2 size={14} /></button>
                   </div>
                 </td>
               </tr>
@@ -433,7 +524,8 @@ export default function ProductsPage({ products, onSave, onDelete }) {
 
                 <div className="mt-3 flex gap-2 sm:mt-4">
                   <button type="button" onClick={() => openModal(product)} className="flex-1 rounded-xl bg-blue-50 py-2 text-xs font-bold text-blue-700 sm:rounded-[16px] sm:py-2.5 sm:text-sm">Edit</button>
-                  <button type="button" onClick={() => handleDelete(product.id)} className="flex-1 rounded-xl bg-red-50 py-2 text-xs font-bold text-red-700 sm:rounded-[16px] sm:py-2.5 sm:text-sm">Hapus</button>
+                  <button type="button" onClick={() => handleDuplicate(product)} className="flex-1 rounded-xl bg-emerald-50 py-2 text-xs font-bold text-emerald-700 sm:rounded-[16px] sm:py-2.5 sm:text-sm">Salin</button>
+                  <button type="button" onClick={() => handleDelete(product)} className="flex-1 rounded-xl bg-red-50 py-2 text-xs font-bold text-red-700 sm:rounded-[16px] sm:py-2.5 sm:text-sm">Hapus</button>
                 </div>
               </div>
             </div>
@@ -654,6 +746,17 @@ export default function ProductsPage({ products, onSave, onDelete }) {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        cancelLabel="Batal"
+        confirmLabel="Nonaktifkan"
+        description={`Produk ${deleteDialog.product?.name || ''} akan dinonaktifkan dari transaksi baru tanpa menghapus riwayat inventaris.`}
+        isLoading={deleteDialog.isLoading}
+        onCancel={() => setDeleteDialog({ isOpen: false, product: null, isLoading: false })}
+        onConfirm={handleConfirmDelete}
+        open={deleteDialog.isOpen}
+        title="Nonaktifkan produk ini?"
+        tone="danger"
+      />
     </div>
   );
 }

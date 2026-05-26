@@ -1,20 +1,6 @@
-export const getCartStockIssues = ({ cart, products }) => (
-  cart.reduce((issues, item) => {
-    const latestProduct = products.find(product => product.id === item.product.id);
-    if (!latestProduct) {
-      issues.push({ item, reason: 'Produk tidak ditemukan' });
-      return issues;
-    }
-    if (latestProduct.stock <= 0) {
-      issues.push({ item, reason: 'Produk sudah habis' });
-      return issues;
-    }
-    if (item.qty > latestProduct.stock) {
-      issues.push({ item, reason: `Stok tersisa ${latestProduct.stock} unit` });
-    }
-    return issues;
-  }, [])
-);
+import { validateCartAgainstProducts } from '../../../validators/rentalValidator';
+
+export const getCartStockIssues = ({ cart, products }) => validateCartAgainstProducts({ cart, products });
 
 export const getCustomerMissingFields = ({ customerPhoneInput, customerAddressInput, customerIdentityNumber }) => {
   const missingFields = [];

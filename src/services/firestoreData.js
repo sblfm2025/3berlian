@@ -1,7 +1,7 @@
-import { collection, deleteDoc, doc, limit, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, limit, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
 
-import { formatDateInput } from '../utils/format';
 import { normalizeProduct } from '../utils/product';
+import { normalizeStock } from '../utils/stock';
 import { appId, db } from './firebase';
 
 const getDb = () => {
@@ -20,17 +20,15 @@ const sanitizeDocId = (value) => String(value || '')
 
 const auditDoc = (action, entityId) => dataDoc('auditLogs', `${Date.now()}-${action}-${sanitizeDocId(entityId)}`);
 
-const auditPayload = ({ action, after = null, before = null, entityId, operatorId = 'system' }) => ({
+const auditPayload = ({ action, after = null, before = null, entityId, entityType = 'transaction', operatorId = 'system' }) => ({
   action,
   after,
   before,
   createdAt: serverTimestamp(),
   entityId,
-  entityType: 'transaction',
+  entityType,
   operatorId
 });
-
-const getItemQty = (item) => Number(item.qty || 0);
 
 export const listenToAppData = ({ onProducts, onCustomers, onTransactions, onUsers, onError }) => {
   const unsubscribers = [];
@@ -116,250 +114,73 @@ export const listenToAppUsers = ({ onUsers, onError }) => {
   return () => unsubUsers();
 };
 
-export const saveCheckoutTransaction = async (newTransaction, cart) => {
-  const transactionRef = dataDoc('transactions', newTransaction.id);
-  const productRefs = cart.map(item => ({
-    item,
-    ref: dataDoc('products', item.product.id)
-  }));
-  const customerId = newTransaction.customerName
-    ? `CUST-${sanitizeDocId(newTransaction.customerPhone || newTransaction.customerName)}`
-    : '';
-  const customerRef = customerId ? dataDoc('customers', customerId) : null;
-  const transactionData = {
-    ...newTransaction,
-    createdAt: newTransaction.createdAt || new Date().toISOString()
-  };
-
-  await runTransaction(getDb(), async (dbTransaction) => {
-    const productSnapshots = await Promise.all(productRefs.map(({ ref }) => dbTransaction.get(ref)));
-
-    productSnapshots.forEach((snapshot, index) => {
-      const { item } = productRefs[index];
-      const qty = getItemQty(item);
-      const productName = item.product?.name || item.product?.id || 'Produk';
-
-      if (!snapshot.exists()) {
-        throw new Error(`${productName} tidak ditemukan di database.`);
-      }
-
-      const currentStock = Number(snapshot.data().stock || 0);
-      if (qty <= 0 || currentStock < qty) {
-        throw new Error(`${productName}: stok tersisa ${currentStock} unit.`);
-      }
-    });
-
-    dbTransaction.set(transactionRef, transactionData);
-
-    productRefs.forEach(({ item, ref }, index) => {
-      const productData = productSnapshots[index].data();
-      const qty = getItemQty(item);
-      const nextStock = Number(productData.stock || 0) - qty;
-      const nextStockAvailable = Number(productData.stockAvailable ?? productData.stock ?? 0) - qty;
-
-      dbTransaction.update(ref, {
-        stock: nextStock,
-        stockAvailable: nextStockAvailable
-      });
-    });
-
-    if (customerRef) {
-      dbTransaction.set(customerRef, {
-        name: newTransaction.customerName,
-        phone: newTransaction.customerPhone || '',
-        address: newTransaction.customerAddress || '',
-        note: newTransaction.customerNote || '',
-        identityType: newTransaction.customerIdentityType || 'KTP',
-        identityNumber: newTransaction.customerIdentityNumber || '',
-        lastRentDate: newTransaction.rentDate,
-        lastTransactionId: newTransaction.id,
-        depositAmount: newTransaction.depositAmount || 0
-      }, { merge: true });
-    }
-
-    dbTransaction.set(auditDoc('checkout', newTransaction.id), auditPayload({
-      action: 'checkout',
-      after: transactionData,
-      entityId: newTransaction.id
-    }));
-  });
-};
-
 export const updateCustomerProfile = async (customer) => {
   await setDoc(dataDoc('customers', customer.id), {
     address: customer.address || '',
     note: customer.note || '',
+    riskNote: customer.riskNote || '',
     identityType: customer.identityType || 'KTP',
     identityNumber: customer.identityNumber || '',
     depositAmount: Number(customer.depositAmount || 0)
   }, { merge: true });
 };
 
-export const completeReturnTransaction = async (selectedTrx) => {
-  const lateFee = Number(selectedTrx.lateFee || selectedTrx.calculatedFine || 0);
-  const conditionFee = Number(selectedTrx.conditionFee || 0);
-  const totalFee = Number(selectedTrx.totalFee || lateFee + conditionFee);
-  const paymentMethod = selectedTrx.paymentMethod || 'Tunai';
-  const paymentMethodForFees = selectedTrx.paymentMethodForFees || paymentMethod;
-  const notes = selectedTrx.notes || '';
-
-  const itemConditions = Array.isArray(selectedTrx.itemConditions)
-    ? selectedTrx.itemConditions
-    : Object.entries(selectedTrx.itemConditions || {}).map(([productId, condition]) => {
-        const item = (selectedTrx.items || []).find(cartItem => cartItem.product?.id === productId);
-        const productName = item?.product?.name || productId;
-        const rentPrice = Number(item?.product?.rentPrice || 0);
-        let fee = 0;
-        if (condition === 'Kotor/Laundry') fee = Math.max(15000, Math.round(rentPrice * 0.1));
-        if (condition === 'Rusak Ringan') fee = Math.max(25000, Math.round(rentPrice * 0.25));
-        if (condition === 'Rusak Berat') fee = Math.max(50000, Math.round(rentPrice * 0.5));
-        if (condition === 'Hilang') fee = rentPrice;
-
-        return {
-          productId,
-          productName,
-          condition,
-          fee,
-          note: ''
-        };
-      });
-
-  const returnInfo = {
-    returnedAt: new Date().toISOString(),
-    paymentMethod,
-    paymentMethodForFees,
-    notes,
-    lateDays: Number(selectedTrx.calculatedLateDays || 0),
-    lateFee,
-    conditionFee,
-    totalFee,
-    itemConditions,
-    status: 'selesai'
-  };
-
-  const transactionRef = dataDoc('transactions', selectedTrx.id);
-  const productRefs = (selectedTrx.items || [])
-    .filter(item => item.product?.id)
-    .map(item => ({
-      item,
-      ref: dataDoc('products', item.product.id)
-    }));
-  const transactionUpdates = {
-    status: 'selesai',
-    returnDate: formatDateInput(),
-    paymentMethod,
-    paymentMethodForFees,
-    notes,
-    lateFee,
-    conditionFee,
-    totalFee,
-    returnInfo
-  };
+export const saveProduct = async (productData, isEdit) => {
+  const id = isEdit ? productData.id : `P-${Date.now()}`;
+  const productRef = dataDoc('products', id);
+  const stock = normalizeStock(productData);
+  const finalData = normalizeProduct({
+    ...productData,
+    ...stock,
+    id,
+    isActive: productData.isActive ?? productData.status !== 'inactive'
+  });
 
   await runTransaction(getDb(), async (dbTransaction) => {
-    const transactionSnapshot = await dbTransaction.get(transactionRef);
-    if (!transactionSnapshot.exists()) {
-      throw new Error(`Transaksi ${selectedTrx.id} tidak ditemukan.`);
-    }
+    const productSnapshot = await dbTransaction.get(productRef);
+    const before = productSnapshot.exists() ? productSnapshot.data() : null;
 
-    const before = transactionSnapshot.data();
-    if (before.status !== 'disewa') {
-      throw new Error(`Transaksi ${selectedTrx.id} sudah tidak aktif.`);
-    }
-
-    const productSnapshots = await Promise.all(productRefs.map(({ ref }) => dbTransaction.get(ref)));
-    productSnapshots.forEach((snapshot, index) => {
-      const productName = productRefs[index].item.product?.name || productRefs[index].item.product?.id || 'Produk';
-      if (!snapshot.exists()) {
-        throw new Error(`${productName} tidak ditemukan di database.`);
-      }
-    });
-
-    dbTransaction.update(transactionRef, transactionUpdates);
-
-    productRefs.forEach(({ item, ref }, index) => {
-      const productData = productSnapshots[index].data();
-      const qty = getItemQty(item);
-
-      dbTransaction.update(ref, {
-        stock: Number(productData.stock || 0) + qty,
-        stockAvailable: Number(productData.stockAvailable ?? productData.stock ?? 0) + qty
-      });
-    });
-
-    dbTransaction.set(auditDoc('return', selectedTrx.id), auditPayload({
-      action: 'return',
+    dbTransaction.set(productRef, finalData, { merge: true });
+    dbTransaction.set(auditDoc(isEdit ? 'EDIT_PRODUCT' : 'CREATE_PRODUCT', id), auditPayload({
+      action: isEdit ? 'EDIT_PRODUCT' : 'CREATE_PRODUCT',
       before,
-      after: { ...before, ...transactionUpdates },
-      entityId: selectedTrx.id
+      after: finalData,
+      entityId: id,
+      entityType: 'product'
     }));
   });
 };
 
-export const saveProduct = async (productData, isEdit) => {
-  const id = isEdit ? productData.id : `P-${Date.now()}`;
-  const finalData = { ...productData, id };
-  await setDoc(dataDoc('products', id), finalData, { merge: true });
-};
-
 export const deleteProduct = async (id) => {
-  await deleteDoc(dataDoc('products', id));
+  const productRef = dataDoc('products', id);
+
+  await runTransaction(getDb(), async (dbTransaction) => {
+    const productSnapshot = await dbTransaction.get(productRef);
+    if (!productSnapshot.exists()) {
+      throw new Error(`Produk ${id} tidak ditemukan.`);
+    }
+
+    const before = productSnapshot.data();
+    const after = {
+      ...before,
+      deletedAt: new Date().toISOString(),
+      isActive: false,
+      status: 'inactive'
+    };
+
+    dbTransaction.update(productRef, after);
+    dbTransaction.set(auditDoc('DEACTIVATE_PRODUCT', id), auditPayload({
+      action: 'DEACTIVATE_PRODUCT',
+      before,
+      after,
+      entityId: id,
+      entityType: 'product'
+    }));
+  });
 };
 
 export const updateAppUser = async (userData) => {
   await setDoc(dataDoc('users', userData.id), userData, { merge: true });
-};
-
-export const deleteTransaction = async (trx) => {
-  const transactionRef = dataDoc('transactions', trx.id);
-
-  await runTransaction(getDb(), async (dbTransaction) => {
-    const transactionSnapshot = await dbTransaction.get(transactionRef);
-    if (!transactionSnapshot.exists()) {
-      throw new Error(`Transaksi ${trx.id} tidak ditemukan.`);
-    }
-
-    const before = transactionSnapshot.data();
-    const shouldRestoreStock = before.status === 'disewa';
-    const productRefs = shouldRestoreStock
-      ? (before.items || trx.items || [])
-        .filter(item => item.product?.id)
-        .map(item => ({ item, ref: dataDoc('products', item.product.id) }))
-      : [];
-    const productSnapshots = shouldRestoreStock
-      ? await Promise.all(productRefs.map(({ ref }) => dbTransaction.get(ref)))
-      : [];
-
-    productSnapshots.forEach((snapshot, index) => {
-      const productName = productRefs[index].item.product?.name || productRefs[index].item.product?.id || 'Produk';
-      if (!snapshot.exists()) {
-        throw new Error(`${productName} tidak ditemukan di database.`);
-      }
-    });
-
-    if (shouldRestoreStock) {
-      productRefs.forEach(({ item, ref }, index) => {
-        const productData = productSnapshots[index].data();
-        const qty = getItemQty(item);
-
-        dbTransaction.update(ref, {
-          stock: Number(productData.stock || 0) + qty,
-          stockAvailable: Number(productData.stockAvailable ?? productData.stock ?? 0) + qty
-        });
-      });
-    }
-
-    dbTransaction.delete(transactionRef);
-    dbTransaction.set(auditDoc('delete', trx.id), auditPayload({
-      action: 'delete',
-      before,
-      entityId: trx.id
-    }));
-  });
-
-  return {
-    stockRestoreWarnings: []
-  };
 };
 
 export const editTransaction = async (updatedTrx) => {

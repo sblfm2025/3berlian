@@ -5,15 +5,14 @@ import KpiCard from '../components/dashboard/KpiCard';
 import MetricCard from '../components/dashboard/MetricCard';
 import { useDashboardStats } from '../features/dashboard/hooks/useDashboardStats';
 import { formatCurrency, formatDate } from '../utils/format';
+import { getTransactionStatusLabel, isActiveTransaction, isCompletedTransaction } from '../utils/transactionStatus';
 import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 // ==========================================
 // TAMPILAN BERANDA (DASHBOARD)
 // ==========================================
 const getStatusLabel = (status) => {
-  if (status === 'selesai') return 'Selesai';
-  if (status === 'disewa') return 'Disewa';
-  return status || '-';
+  return getTransactionStatusLabel(status);
 };
 
 export default function DashboardPage({ transactions, products, onNavigate }) {
@@ -42,6 +41,23 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
     trend,
     upcomingReturns
   } = useDashboardStats({ transactions, products });
+
+  const categoryDemand = useMemo(() => {
+    const revenueTransactions = transactions.filter(t => t.status !== 'void');
+    return revenueTransactions.reduce((acc, trx) => {
+      (trx.items || []).forEach(item => {
+        const cat = item.product?.category || 'Lainnya';
+        acc[cat] = (acc[cat] || 0) + (item.qty || 0);
+      });
+      return acc;
+    }, {});
+  }, [transactions]);
+
+  const topCategories = useMemo(() => {
+    return Object.entries(categoryDemand)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4);
+  }, [categoryDemand]);
 
   const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', data: [] });
   const handleOpenModal = (title, data) => setModalConfig({ isOpen: true, title, data });
@@ -381,17 +397,54 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
 
         <div className="hidden gap-4 md:grid">
           <div className="pos-card p-5">
-            <p className="text-sm font-semibold text-slate-500">Produk terlaris</p>
+            <p className="text-sm font-semibold text-slate-500">Produk Terlaris</p>
             <h3 className="mt-1 text-lg font-black text-slate-900">Permintaan tertinggi</h3>
             <div className="mt-4 space-y-3">
               {topProducts.length === 0 ? (
                 <p className="text-sm text-slate-500">Belum ada data produk dari transaksi.</p>
-              ) : topProducts.map(([name, count]) => (
-                <div key={name} className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-slate-700">{name}</span>
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">{count} item</span>
-                </div>
-              ))}
+              ) : (() => {
+                const maxCount = Math.max(...topProducts.map(([, count]) => count), 1);
+                return topProducts.map(([name, count]) => {
+                  const share = (count / maxCount) * 100;
+                  return (
+                    <div key={name} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm font-semibold text-slate-700 gap-3">
+                        <span className="truncate max-w-[200px]" title={name}>{name}</span>
+                        <span className="font-bold text-blue-700">{count} disewa</span>
+                      </div>
+                      <div className="metric-bar">
+                        <span style={{ width: `${share}%` }} />
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+
+          <div className="pos-card p-5">
+            <p className="text-sm font-semibold text-slate-500">Kategori Terpopuler</p>
+            <h3 className="mt-1 text-lg font-black text-slate-900">Proporsi permintaan baju adat</h3>
+            <div className="mt-4 space-y-3">
+              {topCategories.length === 0 ? (
+                <p className="text-sm text-slate-500">Belum ada data kategori dari transaksi.</p>
+              ) : (() => {
+                const maxCatCount = Math.max(...topCategories.map(([, count]) => count), 1);
+                return topCategories.map(([cat, count]) => {
+                  const share = (count / maxCatCount) * 100;
+                  return (
+                    <div key={cat} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm font-semibold text-slate-700 gap-3">
+                        <span className="truncate max-w-[200px]">{cat}</span>
+                        <span className="font-bold text-amber-700">{count} item</span>
+                      </div>
+                      <div className="metric-bar">
+                        <span className="!from-amber-600 !to-yellow-400" style={{ width: `${share}%` }} />
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
 
@@ -448,14 +501,14 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
                           <p className="font-bold text-gray-900">{t.id}</p>
                           <p className="text-sm text-gray-600 flex items-center gap-1.5 mt-1"><Users size={14} className="text-gray-400"/> {t.customerName || 'Pelanggan belum tercatat'}</p>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase ${t.status === 'selesai' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase ${isCompletedTransaction(t) ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                           {getStatusLabel(t.status)}
                         </span>
                       </div>
                       <div className="flex justify-between items-end pt-3 border-t border-gray-100">
                         <div className="text-[11px] text-gray-500 space-y-1">
                           <p>Sewa: <span className="font-semibold text-gray-700">{formatDate(t.rentDate || new Date().toISOString())}</span></p>
-                          <p>Batas: <span className={`font-semibold ${t.expectedReturnDate <= today && t.status === 'disewa' ? 'text-red-500' : 'text-gray-700'}`}>{formatDate(t.expectedReturnDate || t.rentDate || new Date().toISOString())}</span></p>
+                          <p>Batas: <span className={`font-semibold ${t.expectedReturnDate <= today && isActiveTransaction(t) ? 'text-red-500' : 'text-gray-700'}`}>{formatDate(t.expectedReturnDate || t.rentDate || new Date().toISOString())}</span></p>
                         </div>
                         <div className="font-black text-amber-600 text-lg">{formatCurrency((t.totalAmount || 0) + (t.lateFee || 0))}</div>
                       </div>

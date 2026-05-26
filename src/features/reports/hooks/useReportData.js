@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { formatMonthInput } from '../../../utils/format';
+import { isActiveTransaction, isCompletedTransaction, normalizeTransactionStatus } from '../../../utils/transactionStatus';
 
 const REPORTS_PER_PAGE = 20;
+const isVoidTransaction = (transaction) => normalizeTransactionStatus(transaction.status) === 'void';
 
 const getLateDays = (trx) => {
   const today = new Date();
@@ -22,7 +24,7 @@ export const useReportData = ({ transactions }) => {
   const reportData = useMemo(() => {
     const monthlyTrx = transactions.filter(t => (t.rentDate || '').startsWith(selectedMonth));
     const filteredTransactions = monthlyTrx
-      .filter(t => statusFilter === 'Semua' || t.status === statusFilter)
+      .filter(t => statusFilter === 'Semua' || normalizeTransactionStatus(t.status) === normalizeTransactionStatus(statusFilter))
       .filter(t => paymentMethodFilter === 'Semua' || (t.paymentMethod || 'Tunai') === paymentMethodFilter)
       .filter(t => {
         if (!searchTerm.trim()) return true;
@@ -30,11 +32,15 @@ export const useReportData = ({ transactions }) => {
         return haystack.includes(searchTerm.toLowerCase());
       });
     const sortedTransactions = filteredTransactions.slice().sort((a, b) => (b.rentDate || '').localeCompare(a.rentDate || ''));
-    const totalSewa = sortedTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
-    const totalDenda = sortedTransactions.reduce((sum, t) => sum + (t.lateFee || 0), 0);
+    const revenueTransactions = sortedTransactions.filter(t => !isVoidTransaction(t));
+    const totalSewa = revenueTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+    const totalDenda = revenueTransactions.reduce((sum, t) => sum + (t.lateFee || 0), 0);
+    const totalDepositHeld = revenueTransactions.reduce((sum, t) => sum + Number(t.depositAmount ?? t.deposit ?? 0), 0);
+    const totalDepositDeducted = revenueTransactions.reduce((sum, t) => sum + Number(t.depositDeducted || t.returnInfo?.depositDeducted || 0), 0);
+    const totalDepositReturned = revenueTransactions.reduce((sum, t) => sum + Number(t.depositReturned || t.returnInfo?.depositReturned || 0), 0);
     const totalRevenue = totalSewa + totalDenda;
 
-    const paymentMix = sortedTransactions.reduce((acc, t) => {
+    const paymentMix = revenueTransactions.reduce((acc, t) => {
       const method = t.paymentMethod || 'Tunai';
       const amount = (t.totalAmount || 0) + (t.lateFee || 0);
 
@@ -47,7 +53,7 @@ export const useReportData = ({ transactions }) => {
     const paymentMixList = Object.entries(paymentMix)
       .sort((a, b) => b[1].revenue - a[1].revenue);
 
-    const topProducts = sortedTransactions.reduce((acc, trx) => {
+    const topProducts = revenueTransactions.reduce((acc, trx) => {
       (trx.items || []).forEach(item => {
         const key = item.product?.name || 'Produk tidak dikenal';
         acc[key] = (acc[key] || 0) + (item.qty || 0);
@@ -59,7 +65,7 @@ export const useReportData = ({ transactions }) => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
 
-    const topCustomers = sortedTransactions.reduce((acc, trx) => {
+    const topCustomers = revenueTransactions.reduce((acc, trx) => {
       const key = trx.customerName || 'Pelanggan belum tercatat';
       const revenue = (trx.totalAmount || 0) + (trx.lateFee || 0);
       acc[key] = (acc[key] || 0) + revenue;
@@ -70,17 +76,18 @@ export const useReportData = ({ transactions }) => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
 
-    const overdueTransactions = sortedTransactions.filter(t => t.status === 'disewa' && getLateDays(t) > 0);
-    const completedCount = sortedTransactions.filter(t => t.status === 'selesai').length;
-    const activeCount = sortedTransactions.filter(t => t.status === 'disewa').length;
+    const overdueTransactions = sortedTransactions.filter(t => isActiveTransaction(t) && getLateDays(t) > 0);
+    const completedCount = sortedTransactions.filter(isCompletedTransaction).length;
+    const activeCount = sortedTransactions.filter(isActiveTransaction).length;
     const customerCount = new Set(sortedTransactions.map(t => t.customerName || 'Pelanggan belum tercatat')).size;
-    const lateTransactions = sortedTransactions.filter(t => (t.lateFee || 0) > 0);
+    const lateTransactions = revenueTransactions.filter(t => (t.lateFee || 0) > 0);
     const averageLateFee = lateTransactions.length
-      ? sortedTransactions.reduce((sum, t) => sum + (t.lateFee || 0), 0) / lateTransactions.length
+      ? revenueTransactions.reduce((sum, t) => sum + (t.lateFee || 0), 0) / lateTransactions.length
       : 0;
     const lateFeeRatio = totalRevenue ? (totalDenda / totalRevenue) * 100 : 0;
     const overdueCount = overdueTransactions.length;
     const topPaymentMethod = paymentMixList[0]?.[0] || 'Tunai';
+    const voidCount = sortedTransactions.filter(isVoidTransaction).length;
 
     return {
       activeCount,
@@ -98,8 +105,12 @@ export const useReportData = ({ transactions }) => {
       topPaymentMethod,
       topProductList,
       totalDenda,
+      totalDepositDeducted,
+      totalDepositHeld,
+      totalDepositReturned,
       totalRevenue,
-      totalSewa
+      totalSewa,
+      voidCount
     };
   }, [paymentMethodFilter, searchTerm, selectedMonth, statusFilter, transactions]);
 

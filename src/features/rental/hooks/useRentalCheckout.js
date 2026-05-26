@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { formatDateInput } from '../../../utils/format';
-import { createInvoiceNumber } from '../../../utils/invoice';
+import { validateRentalPayload } from '../../../validators/rentalValidator';
 
 export const useRentalCheckout = ({
   cart,
@@ -19,6 +19,7 @@ export const useRentalCheckout = ({
   getStockIssue,
   grandTotal,
   onCheckout,
+  onValidationError,
   paymentMethod,
   resetCustomerAfterCheckout,
   returnDateInput,
@@ -31,32 +32,35 @@ export const useRentalCheckout = ({
 
   const handleCheckoutClick = async () => {
     if (isCheckingOut) return undefined;
-    if (cart.length === 0) return alert('Pilih barang terlebih dahulu');
-    if (!customerNameInput.trim()) return alert('Masukkan nama pelanggan');
-    if (!returnDateInput) return alert('Masukkan tanggal pengembalian');
-
-    const stockIssues = getStockIssue();
-    if (stockIssues.length > 0) {
-      const firstIssue = stockIssues[0];
-      return alert(`${firstIssue.item.product.name}: ${firstIssue.reason}`);
-    }
-
     const todayDate = new Date();
     const rentDate = formatDateInput(todayDate);
-    const invoiceNumber = createInvoiceNumber(todayDate);
-    if (new Date(returnDateInput) < new Date(rentDate)) {
-      return alert('Tanggal pengembalian tidak boleh lebih awal dari tanggal sewa');
-    }
+    const validation = validateRentalPayload({
+      cashReceived: finalCashReceived,
+      cart,
+      customer: {
+        address: customerAddressInput,
+        name: customerNameInput,
+        phone: customerPhoneInput
+      },
+      grandTotal,
+      paymentMethod,
+      rentDate,
+      returnDate: returnDateInput
+    });
+    const stockIssues = getStockIssue();
+    const validationErrors = [
+      ...validation.errors,
+      ...stockIssues.map(issue => `${issue.item.product.name}: ${issue.reason}`)
+    ];
 
-    if (paymentMethod === 'Tunai' && finalCashReceived < grandTotal) {
-      return alert('Transaksi Ditolak: Uang tunai yang diterima kurang dari total tagihan!');
+    if (validationErrors.length > 0) {
+      onValidationError?.(validationErrors);
+      return undefined;
     }
 
     setIsCheckingOut(true);
     try {
       await onCheckout({
-        id: invoiceNumber,
-        invoiceNumber,
         customerName: customerNameInput,
         customerPhone: customerPhoneInput,
         customerAddress: customerAddressInput,

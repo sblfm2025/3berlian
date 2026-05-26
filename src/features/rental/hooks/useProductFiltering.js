@@ -7,11 +7,15 @@ export const useProductFiltering = ({ products, transactions, cart }) => {
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [productPage, setProductPage] = useState(1);
 
-  const categories = useMemo(() => {
-    return ['Semua', ...new Set(products.map(product => product.category).filter(Boolean))];
+  const activeProducts = useMemo(() => {
+    return products.filter(product => product.isActive !== false && product.status !== 'inactive');
   }, [products]);
 
-  const availableProducts = useMemo(() => products.filter(product => {
+  const categories = useMemo(() => {
+    return ['Semua', ...new Set(activeProducts.map(product => product.category).filter(Boolean))];
+  }, [activeProducts]);
+
+  const availableProducts = useMemo(() => activeProducts.filter(product => {
     const productText = [
       product.name,
       product.sku,
@@ -22,14 +26,14 @@ export const useProductFiltering = ({ products, transactions, cart }) => {
     const matchesSearch = productText.includes(search.toLowerCase());
     const matchesCategory = selectedCategory === 'Semua' || product.category === selectedCategory;
     return product.stock > 0 && matchesSearch && matchesCategory;
-  }), [products, search, selectedCategory]);
+  }), [activeProducts, search, selectedCategory]);
 
   const categoryCounts = useMemo(() => {
     return categories.filter(category => category !== 'Semua').map(category => ({
       category,
-      count: products.filter(product => product.category === category && product.stock > 0).length
+      count: activeProducts.filter(product => product.category === category && product.stock > 0).length
     }));
-  }, [categories, products]);
+  }, [activeProducts, categories]);
 
   const sortedProducts = useMemo(() => {
     return [...availableProducts].sort((a, b) => {
@@ -60,7 +64,7 @@ export const useProductFiltering = ({ products, transactions, cart }) => {
       return acc;
     }, {});
 
-    return products
+    return activeProducts
       .filter(product => product.stock > 0)
       .sort((a, b) => {
         const aDemand = demand[a.id] || 0;
@@ -69,7 +73,7 @@ export const useProductFiltering = ({ products, transactions, cart }) => {
         return a.name.localeCompare(b.name);
       })
       .slice(0, 5);
-  }, [products, transactions]);
+  }, [activeProducts, transactions]);
 
   const selectCategory = useCallback((category) => {
     setSelectedCategory(category);

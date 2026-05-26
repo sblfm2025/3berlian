@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 
 import { formatDateInput } from '../../../utils/format';
+import { isActiveTransaction, isCompletedTransaction } from '../../../utils/transactionStatus';
+
+const isRevenueTransaction = (transaction) => transaction.status !== 'void';
 
 export const useDashboardStats = ({ transactions, products }) => {
   return useMemo(() => {
@@ -8,15 +11,16 @@ export const useDashboardStats = ({ transactions, products }) => {
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
 
-    const todayTransactions = transactions.filter(t => t.rentDate === today);
-    const completedToday = transactions.filter(t => t.status === 'selesai' && t.rentDate === today);
-    const activeRentals = transactions.filter(t => t.status === 'disewa');
+    const revenueTransactions = transactions.filter(isRevenueTransaction);
+    const todayTransactions = revenueTransactions.filter(t => t.rentDate === today);
+    const completedToday = revenueTransactions.filter(t => isCompletedTransaction(t) && t.rentDate === today);
+    const activeRentals = transactions.filter(isActiveTransaction);
     const overdueRentals = activeRentals.filter(t => t.expectedReturnDate <= today);
     const upcomingReturns = activeRentals.filter(t => t.expectedReturnDate > today && t.expectedReturnDate <= formatDateInput(nextWeek));
     const totalIncomeToday = todayTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
-    const totalRevenue = transactions.reduce((sum, t) => sum + (t.totalAmount || 0) + (t.lateFee || 0), 0);
-    const averageTicket = transactions.length ? Math.round(totalRevenue / transactions.length) : 0;
-    const lowStockProducts = products.filter(p => (p.stock || 0) <= 2);
+    const totalRevenue = revenueTransactions.reduce((sum, t) => sum + (t.totalAmount || 0) + (t.lateFee || 0), 0);
+    const averageTicket = revenueTransactions.length ? Math.round(totalRevenue / revenueTransactions.length) : 0;
+    const lowStockProducts = products.filter(p => p.isActive !== false && p.status !== 'inactive' && (p.stock || 0) <= 2);
     const lowStockCount = lowStockProducts.length;
     const pendingReturnCount = overdueRentals.length + upcomingReturns.length;
     const todayRevenueShare = totalRevenue ? Math.round((totalIncomeToday / totalRevenue) * 100) : 0;
@@ -25,20 +29,20 @@ export const useDashboardStats = ({ transactions, products }) => {
       .sort((a, b) => (b.rentDate || '').localeCompare(a.rentDate || ''))
       .slice(0, 5);
 
-    const paymentMix = transactions.reduce((acc, t) => {
+    const paymentMix = revenueTransactions.reduce((acc, t) => {
       const method = t.paymentMethod || 'Tunai';
       acc[method] = (acc[method] || 0) + 1;
       return acc;
     }, {});
 
-    const paymentRevenueMix = transactions.reduce((acc, t) => {
+    const paymentRevenueMix = revenueTransactions.reduce((acc, t) => {
       const method = t.paymentMethod || 'Tunai';
       const revenue = (t.totalAmount || 0) + (t.lateFee || 0);
       acc[method] = (acc[method] || 0) + revenue;
       return acc;
     }, {});
 
-    const productDemand = transactions.reduce((acc, trx) => {
+    const productDemand = revenueTransactions.reduce((acc, trx) => {
       (trx.items || []).forEach(item => {
         const key = item.product?.name || 'Produk tidak dikenal';
         acc[key] = (acc[key] || 0) + (item.qty || 0);
@@ -50,7 +54,7 @@ export const useDashboardStats = ({ transactions, products }) => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 4);
 
-    const customerCount = new Set(transactions.map(tx => tx.customerName).filter(Boolean)).size;
+    const customerCount = new Set(revenueTransactions.map(tx => tx.customerName).filter(Boolean)).size;
     const activeItemsCount = activeRentals.reduce((sum, trx) => {
       return sum + (trx.items || []).reduce((qtySum, item) => qtySum + (item.qty || 0), 0);
     }, 0);
@@ -67,7 +71,7 @@ export const useDashboardStats = ({ transactions, products }) => {
       day.setDate(day.getDate() - (6 - index));
       const label = day.toLocaleDateString('id-ID', { weekday: 'short' });
       const key = formatDateInput(day);
-      const total = transactions
+      const total = revenueTransactions
         .filter(t => t.rentDate === key)
         .reduce((sum, t) => sum + (t.totalAmount || 0) + (t.lateFee || 0), 0);
 

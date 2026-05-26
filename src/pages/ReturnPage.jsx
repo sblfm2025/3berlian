@@ -1,24 +1,35 @@
-import { useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Package, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Package, Search } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useReturnWorkflow } from '../features/returns/hooks/useReturnWorkflow';
 import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
-// ==========================================
+// Import Subkomponen Modular
+import ReturnTransactionCard from '../features/returns/components/ReturnTransactionCard';
+import ReturnItemChecklist from '../features/returns/components/ReturnItemChecklist';
+import ReturnSummary from '../features/returns/components/ReturnSummary';
+import ReturnConfirmModal from '../features/returns/components/ReturnConfirmModal';
+
 export default function ReturnPage({ transactions, onReturn }) {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const {
     RETURNS_PER_PAGE,
     activeTransactions,
     applyConditionToAll,
     conditionBreakdown,
     conditionFee,
+    depositAmount,
+    depositDeducted,
+    depositReturned,
     dueSoonCount,
     dueTodayCount,
+    feePaidSeparately,
     filter,
     filteredTransactions,
     getLateDays,
     handleConfirm,
     handleSelect,
+    itemConditions,
     isReturning,
     lateFee,
     lateItemCount,
@@ -29,7 +40,9 @@ export default function ReturnPage({ transactions, onReturn }) {
     priorityTransactions,
     resetSelection,
     returnEndNumber,
+    returnModeLabel,
     returnPageCount,
+    returnQtyByProduct,
     returnStartNumber,
     safeReturnPage,
     searchTerm,
@@ -38,10 +51,16 @@ export default function ReturnPage({ transactions, onReturn }) {
     setNotes,
     setPaymentMethod,
     setReturnPage,
+    setUseDepositForFees,
     totalAdditionalFee,
+    totalReturnableQty,
+    totalReturnQty,
+    useDepositForFees,
+    updateReturnQty,
     updateFilter,
     updateSearchTerm
   } = useReturnWorkflow({ transactions, onReturn });
+
   const mobileSearchConfig = useMemo(() => ({
     placeholder: 'Cari nota atau pelanggan',
     value: searchTerm,
@@ -51,6 +70,7 @@ export default function ReturnPage({ transactions, onReturn }) {
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-3">
+      {/* Return Header Banner */}
       <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
         <div className="max-w-2xl">
           <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-white/80">Pengembalian</p>
@@ -80,6 +100,7 @@ export default function ReturnPage({ transactions, onReturn }) {
         </div>
       </div>
 
+      {/* Return Quick Metrics */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
         <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px] sm:tracking-[0.2em]">Saat ini</p>
@@ -104,7 +125,9 @@ export default function ReturnPage({ transactions, onReturn }) {
         </div>
       </div>
 
+      {/* Main Interface (Left list, Right check form) */}
       <div className="grid items-start gap-3 xl:grid-cols-[1.02fr_1.38fr] xl:gap-4">
+        {/* Left List of Transactions */}
         <div className="pos-card p-3 md:p-5">
           <div className="hidden md:block">
             <p className="text-sm font-semibold text-slate-500">Daftar transaksi aktif</p>
@@ -139,6 +162,7 @@ export default function ReturnPage({ transactions, onReturn }) {
             ))}
           </div>
 
+          {/* Priority Alert Box */}
           <div className={`mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 md:mt-4 md:p-4 ${searchTerm ? 'hidden md:block' : ''}`}>
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -205,31 +229,21 @@ export default function ReturnPage({ transactions, onReturn }) {
               const isLate = lateDays > 0;
 
               return (
-                <button
+                <ReturnTransactionCard
                   key={tx.id}
-                  type="button"
-                  onClick={() => handleSelect(tx)}
-                  className={`w-full rounded-2xl border p-3 text-left transition-all sm:rounded-[22px] sm:p-4 ${selectedTrx?.id === tx.id ? 'border-blue-500 bg-blue-50/60 shadow-md' : isLate ? 'border-red-200 bg-red-50/40 hover:border-red-300' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="break-words text-sm font-bold text-slate-900 sm:font-black">{tx.id}</p>
-                      <p className="mt-1 break-words text-xs text-slate-600 sm:text-sm">{tx.customerName || 'Pelanggan belum tercatat'}</p>
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold sm:px-3 sm:text-[11px] ${isLate ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {isLate ? `Terlambat ${lateDays} hari` : 'Tepat waktu'}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-xs text-slate-500 sm:mt-3 sm:text-sm">
-                    <span>{formatDate(tx.rentDate)}</span>
-                    <span>{formatDate(tx.expectedReturnDate)}</span>
-                  </div>
-                </button>
+                  tx={tx}
+                  isLate={isLate}
+                  lateDays={lateDays}
+                  selectedTrx={selectedTrx}
+                  handleSelect={handleSelect}
+                  formatDate={formatDate}
+                />
               );
             })}
           </div>
         </div>
 
+        {/* Right Costumes Check Form */}
         <div className={`pos-card p-3 md:p-5 ${selectedTrx ? '' : 'hidden md:block'} md:min-h-[620px]`}>
           {selectedTrx ? (
             <div className="space-y-3 md:space-y-5">
@@ -247,6 +261,7 @@ export default function ReturnPage({ transactions, onReturn }) {
                 </div>
               </div>
 
+              {/* Rental Dates Summary */}
               <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
                 <div className="rounded-2xl bg-blue-50 p-3 border border-blue-100 sm:rounded-[22px] sm:p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-700 sm:text-[11px] sm:tracking-[0.2em]">Tanggal sewa</p>
@@ -262,6 +277,7 @@ export default function ReturnPage({ transactions, onReturn }) {
                 </div>
               </div>
 
+              {/* Customer Contact Summary */}
               <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -274,102 +290,37 @@ export default function ReturnPage({ transactions, onReturn }) {
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Item yang dikembalikan</h4>
-                    <p className="mt-1 text-xs text-slate-600 sm:text-sm">Setiap item bisa diberi status kondisi berbeda. Gunakan aksi cepat untuk mempercepat proses.</p>
-                  </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700">Checklist</span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => applyConditionToAll('Baik')}
-                    className="rounded-[14px] bg-emerald-100 px-3 py-2 text-[11px] font-bold text-emerald-700"
-                  >
-                    <span className="inline-flex items-center gap-1"><CheckCircle size={14} /> Semua Baik</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyConditionToAll('Kotor/Laundry')}
-                    className="rounded-[14px] bg-amber-100 px-3 py-2 text-[11px] font-bold text-amber-800"
-                  >
-                    <span className="inline-flex items-center gap-1"><AlertCircle size={14} /> Kotor / Laundry</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyConditionToAll('Rusak Ringan')}
-                    className="rounded-[14px] bg-orange-100 px-3 py-2 text-[11px] font-bold text-orange-700"
-                  >
-                    Rusak Ringan
-                  </button>
-                </div>
-                <div className="mt-3 space-y-3">
-                  {conditionBreakdown.map(item => (
-                    <div key={item.product.id} className="rounded-2xl border border-slate-200 bg-white p-3 sm:rounded-[20px] sm:p-4">
-                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                        <div>
-                          <p className="font-bold text-slate-900">{item.qty}x {item.product.name}</p>
-                          <p className="text-sm text-slate-500">Harga sewa: {formatCurrency(item.product.rentPrice || 0)}</p>
-                          <p className="mt-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Biaya kondisi sekarang: {formatCurrency(item.fee)}</p>
-                        </div>
-                        <div className="lg:w-56">
-                          <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Kondisi</label>
-                          <select
-                            value={item.condition}
-                            onChange={(e) => setItemConditions(prev => ({ ...prev, [item.product.id]: e.target.value }))}
-                            className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700"
-                          >
-                            <option value="Baik">Baik</option>
-                            <option value="Kotor/Laundry">Kotor / Laundry</option>
-                            <option value="Rusak Ringan">Rusak Ringan</option>
-                            <option value="Rusak Berat">Rusak Berat</option>
-                            <option value="Hilang">Hilang</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Item Conditions Checklist */}
+              <ReturnItemChecklist
+                conditionBreakdown={conditionBreakdown}
+                returnQtyByProduct={returnQtyByProduct}
+                updateReturnQty={updateReturnQty}
+                itemConditions={itemConditions}
+                setItemConditions={setItemConditions}
+                applyConditionToAll={applyConditionToAll}
+                formatCurrency={formatCurrency}
+              />
 
-              <div className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
-                <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Metode pembayaran biaya tambahan</p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {['Tunai', 'Transfer', 'QRIS'].map(method => (
-                      <button
-                        key={method}
-                        type="button"
-                        onClick={() => setPaymentMethod(method)}
-                        className={`rounded-[14px] px-2 py-2 text-[11px] font-bold border transition-all ${paymentMethod === method ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600'}`}
-                      >
-                        {method}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              {/* Financial & Deposit Summary */}
+              <ReturnSummary
+                depositAmount={depositAmount}
+                useDepositForFees={useDepositForFees}
+                setUseDepositForFees={setUseDepositForFees}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                returnModeLabel={returnModeLabel}
+                lateFee={lateFee}
+                conditionFee={conditionFee}
+                totalAdditionalFee={totalAdditionalFee}
+                depositDeducted={depositDeducted}
+                depositReturned={depositReturned}
+                feePaidSeparately={feePaidSeparately}
+                totalReturnQty={totalReturnQty}
+                totalReturnableQty={totalReturnableQty}
+                formatCurrency={formatCurrency}
+              />
 
-                <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Ringkasan biaya</p>
-                  <div className="mt-3 space-y-2 text-sm">
-                    <div className="flex justify-between text-slate-600">
-                      <span>Denda keterlambatan</span>
-                      <span>{formatCurrency(lateFee)}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600">
-                      <span>Biaya kondisi</span>
-                      <span>{formatCurrency(conditionFee)}</span>
-                    </div>
-                    <div className="flex justify-between pt-2 border-t border-slate-200 font-black text-slate-900">
-                      <span>Total tambahan</span>
-                      <span>{formatCurrency(totalAdditionalFee)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+              {/* Notes Input */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Catatan pengembalian</label>
                 <textarea
@@ -386,13 +337,14 @@ export default function ReturnPage({ transactions, onReturn }) {
                 <p className="mt-1">Biaya tambahan akan dihitung berdasarkan kondisi barang dan keterlambatan.</p>
               </div>
 
+              {/* Submit Button */}
               <button
                 type="button"
-                onClick={handleConfirm}
-                disabled={isReturning}
+                onClick={() => setShowConfirmModal(true)}
+                disabled={isReturning || totalReturnQty <= 0}
                 className="w-full rounded-2xl bg-blue-800 px-4 py-3 text-sm font-semibold text-white shadow-md sm:rounded-[20px] sm:py-4 sm:text-base sm:font-black"
               >
-                {isReturning ? 'Memproses pengembalian...' : 'Konfirmasi Pengembalian'}
+                {isReturning ? 'Memproses pengembalian...' : totalReturnQty <= 0 ? 'Pilih item kembali' : 'Konfirmasi Pengembalian'}
               </button>
             </div>
           ) : (
@@ -404,6 +356,31 @@ export default function ReturnPage({ transactions, onReturn }) {
           )}
         </div>
       </div>
+
+      {/* Confirm Modal Dialog */}
+      <ReturnConfirmModal
+        showConfirmModal={showConfirmModal}
+        setShowConfirmModal={setShowConfirmModal}
+        selectedTrx={selectedTrx}
+        returnModeLabel={returnModeLabel}
+        totalReturnQty={totalReturnQty}
+        conditionBreakdown={conditionBreakdown}
+        returnQtyByProduct={returnQtyByProduct}
+        itemConditions={itemConditions}
+        lateFee={lateFee}
+        conditionFee={conditionFee}
+        totalAdditionalFee={totalAdditionalFee}
+        depositAmount={depositAmount}
+        useDepositForFees={useDepositForFees}
+        depositDeducted={depositDeducted}
+        depositReturned={depositReturned}
+        feePaidSeparately={feePaidSeparately}
+        paymentMethod={paymentMethod}
+        notes={notes}
+        isReturning={isReturning}
+        handleConfirm={handleConfirm}
+        formatCurrency={formatCurrency}
+      />
     </div>
   );
 }

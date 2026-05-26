@@ -3,7 +3,26 @@ import { useState } from 'react';
 import { formatDate, formatNumberDot } from '../../../utils/format';
 import { loadScript } from '../../../utils/browser';
 
-export const useReportExport = ({ getStatusLabel, selectedMonth, sortedTransactions, totalDenda, totalRevenue, totalSewa }) => {
+const isVoidTransaction = (transaction) => transaction.status === 'void';
+
+const getDepositAmount = (transaction) => Number(transaction.depositAmount ?? transaction.deposit ?? 0);
+
+const getDepositReturned = (transaction) => Number(transaction.depositReturned || transaction.returnInfo?.depositReturned || 0);
+
+const getDepositDeducted = (transaction) => Number(transaction.depositDeducted || transaction.returnInfo?.depositDeducted || 0);
+
+export const useReportExport = ({
+  getStatusLabel,
+  onNotify,
+  selectedMonth,
+  sortedTransactions,
+  totalDenda,
+  totalDepositDeducted = 0,
+  totalDepositHeld = 0,
+  totalDepositReturned = 0,
+  totalRevenue,
+  totalSewa
+}) => {
   const [isExporting, setIsExporting] = useState('');
 
   const handleExportExcel = () => {
@@ -15,31 +34,42 @@ export const useReportExport = ({ getStatusLabel, selectedMonth, sortedTransacti
           ['Laporan Transaksi (Rekening Koran)'],
           [`Periode: ${selectedMonth}`],
           [],
-          ['Tanggal', 'No. Nota', 'Pelanggan', 'Status', 'Metode Pembayaran', 'Sewa (Rp)', 'Denda (Rp)', 'Total (Rp)']
+          ['Tanggal', 'No. Nota', 'Pelanggan', 'Status', 'Metode Pembayaran', 'Sewa (Rp)', 'Denda (Rp)', 'Deposit (Rp)', 'Deposit Kembali (Rp)', 'Deposit Dipotong (Rp)', 'Total Omzet (Rp)']
         ];
         sortedTransactions.forEach(t => {
+          const isVoid = isVoidTransaction(t);
+          const rentRevenue = isVoid ? 0 : t.totalAmount || 0;
+          const fineRevenue = isVoid ? 0 : t.lateFee || 0;
+          const remainingQty = t.status === 'partially_returned' && t.remainingItems?.length
+            ? t.remainingItems.reduce((sum, item) => sum + Number(item.qty || 0), 0)
+            : 0;
+          const statusText = getStatusLabel(t.status) + (remainingQty > 0 ? ` (Sisa ${remainingQty} item)` : '');
+
           wsData.push([
             formatDate(t.rentDate),
             t.id,
             t.customerName,
-            getStatusLabel(t.status),
+            statusText,
             t.paymentMethod || 'Tunai',
-            t.totalAmount || 0,
-            t.lateFee || 0,
-            (t.totalAmount || 0) + (t.lateFee || 0)
+            rentRevenue,
+            fineRevenue,
+            isVoid ? 0 : getDepositAmount(t),
+            isVoid ? 0 : getDepositReturned(t),
+            isVoid ? 0 : getDepositDeducted(t),
+            rentRevenue + fineRevenue
           ]);
         });
         wsData.push([]);
-        wsData.push(['', '', '', '', 'TOTAL KESELURUHAN:', totalSewa, totalDenda, totalRevenue]);
+        wsData.push(['', '', '', '', 'TOTAL KESELURUHAN:', totalSewa, totalDenda, totalDepositHeld, totalDepositReturned, totalDepositDeducted, totalRevenue]);
 
         const ws = window.XLSX.utils.aoa_to_sheet(wsData);
-        ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+        ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 16 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 18 }];
         const wb = window.XLSX.utils.book_new();
         window.XLSX.utils.book_append_sheet(wb, ws, 'Laporan');
         window.XLSX.writeFile(wb, `Rekening_Koran_${selectedMonth}.xlsx`);
       } catch (err) {
         console.error(err);
-        alert('Gagal mengekspor file Excel.');
+        onNotify?.({ title: 'Export gagal', message: 'Gagal mengekspor file Excel.', type: 'error' });
       } finally {
         setIsExporting('');
       }
@@ -50,7 +80,7 @@ export const useReportExport = ({ getStatusLabel, selectedMonth, sortedTransacti
         .then(exportData)
         .catch(() => {
           setIsExporting('');
-          alert('Gagal memuat library Excel');
+          onNotify?.({ title: 'Export gagal', message: 'Gagal memuat library Excel.', type: 'error' });
         });
     } else {
       exportData();
@@ -75,19 +105,30 @@ export const useReportExport = ({ getStatusLabel, selectedMonth, sortedTransacti
       doc.setFontSize(10);
       doc.text(`Periode: ${selectedMonth}`, 148, 28, { align: 'center' });
 
-      const tableColumn = ['Tanggal', 'No. Nota', 'Pelanggan', 'Status', 'Metode Pembayaran', 'Sewa (Rp)', 'Denda (Rp)', 'Total (Rp)'];
+      const tableColumn = ['Tanggal', 'No. Nota', 'Pelanggan', 'Status', 'Metode Pembayaran', 'Sewa', 'Denda', 'Deposit', 'Kembali', 'Dipotong', 'Omzet'];
       const tableRows = [];
 
       sortedTransactions.forEach(t => {
-        const grandTotal = (t.totalAmount || 0) + (t.lateFee || 0);
+        const isVoid = isVoidTransaction(t);
+        const rentRevenue = isVoid ? 0 : t.totalAmount || 0;
+        const fineRevenue = isVoid ? 0 : t.lateFee || 0;
+        const grandTotal = rentRevenue + fineRevenue;
+        const remainingQty = t.status === 'partially_returned' && t.remainingItems?.length
+          ? t.remainingItems.reduce((sum, item) => sum + Number(item.qty || 0), 0)
+          : 0;
+        const statusText = getStatusLabel(t.status) + (remainingQty > 0 ? ` (Sisa ${remainingQty} item)` : '');
+
         tableRows.push([
           formatDate(t.rentDate),
           t.id,
           t.customerName,
-          getStatusLabel(t.status),
+          statusText,
           t.paymentMethod || 'Tunai',
-          formatNumberDot(t.totalAmount || 0),
-          formatNumberDot(t.lateFee || 0),
+          formatNumberDot(rentRevenue),
+          formatNumberDot(fineRevenue),
+          formatNumberDot(isVoid ? 0 : getDepositAmount(t)),
+          formatNumberDot(isVoid ? 0 : getDepositReturned(t)),
+          formatNumberDot(isVoid ? 0 : getDepositDeducted(t)),
           formatNumberDot(grandTotal)
         ]);
       });
@@ -96,6 +137,9 @@ export const useReportExport = ({ getStatusLabel, selectedMonth, sortedTransacti
         { content: 'TOTAL KESELURUHAN:', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
         { content: formatNumberDot(totalSewa), styles: { fontStyle: 'bold' } },
         { content: formatNumberDot(totalDenda), styles: { fontStyle: 'bold', textColor: [220, 38, 38] } },
+        { content: formatNumberDot(totalDepositHeld), styles: { fontStyle: 'bold' } },
+        { content: formatNumberDot(totalDepositReturned), styles: { fontStyle: 'bold' } },
+        { content: formatNumberDot(totalDepositDeducted), styles: { fontStyle: 'bold' } },
         { content: formatNumberDot(totalRevenue), styles: { fontStyle: 'bold' } }
       ]);
 
@@ -109,14 +153,17 @@ export const useReportExport = ({ getStatusLabel, selectedMonth, sortedTransacti
         columnStyles: {
           5: { halign: 'right' },
           6: { halign: 'right' },
-          7: { halign: 'right' }
+          7: { halign: 'right' },
+          8: { halign: 'right' },
+          9: { halign: 'right' },
+          10: { halign: 'right' }
         }
       });
 
       doc.save(`Rekening_Koran_${selectedMonth}.pdf`);
     } catch (error) {
       console.error('PDF Data Render Error:', error);
-      alert('Gagal memuat sistem PDF. Pastikan koneksi internet stabil.');
+      onNotify?.({ title: 'Export gagal', message: 'Gagal memuat sistem PDF. Pastikan koneksi internet stabil.', type: 'error' });
     } finally {
       setIsExporting('');
     }

@@ -4,19 +4,17 @@ import { formatCurrency, formatDate, formatNumberDot } from '../utils/format';
 import { useReportData } from '../features/reports/hooks/useReportData';
 import { useReportExport } from '../features/reports/hooks/useReportExport';
 import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
+import { getTransactionStatusLabel, isCompletedTransaction } from '../utils/transactionStatus';
 
 // ==========================================
 const getStatusLabel = (status) => {
-  if (status === 'selesai') return 'Selesai';
-  if (status === 'disewa') return 'Disewa';
-  return status || '-';
+  return getTransactionStatusLabel(status);
 };
 
-export default function ReportsPage({ transactions, onViewReceipt, onDelete, onEdit }) {
+export default function ReportsPage({ transactions, onViewReceipt, onDelete, onEdit, onNotify }) {
   const {
     REPORTS_PER_PAGE,
     activeCount,
-    averageLateFee,
     completedCount,
     customerCount,
     getLateDays,
@@ -39,11 +37,14 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
     sortedTransactions,
     statusFilter,
     topCustomerList,
-    topPaymentMethod,
     topProductList,
     totalDenda,
+    totalDepositDeducted,
+    totalDepositHeld,
+    totalDepositReturned,
     totalRevenue,
     totalSewa,
+    voidCount,
     updatePaymentMethodFilter,
     updateSearchTerm,
     updateSelectedMonth,
@@ -69,17 +70,17 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
     {
       title: 'Total Omzet',
       value: formatCurrency(totalRevenue),
-      description: `Metode utama: ${topPaymentMethod}`
+      description: `Void dikecualikan - ${voidCount} nota void`
     },
     {
-      title: 'Rata-rata Denda',
-      value: formatCurrency(averageLateFee),
-      description: `${completedCount} selesai - ${activeCount} aktif`
+      title: 'Deposit',
+      value: formatCurrency(totalDepositHeld),
+      description: `${formatCurrency(totalDepositReturned)} kembali - ${formatCurrency(totalDepositDeducted)} dipotong`
     },
     {
       title: 'Transaksi Terlambat',
       value: String(overdueCount),
-      description: `${customerCount} pelanggan aktif pada periode ini`
+      description: `${customerCount} pelanggan - ${completedCount} selesai - ${activeCount} aktif`
     }
   ];
 
@@ -87,9 +88,13 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
   const [formData, setFormData] = useState({});
   const { handleExportExcel, handleExportPDF, isExporting } = useReportExport({
     getStatusLabel,
+    onNotify,
     selectedMonth,
     sortedTransactions,
     totalDenda,
+    totalDepositDeducted,
+    totalDepositHeld,
+    totalDepositReturned,
     totalRevenue,
     totalSewa
   });
@@ -145,8 +150,10 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
             className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 sm:rounded-[18px] sm:px-4 sm:py-3 sm:text-sm"
           >
             <option value="Semua">Semua status</option>
-            <option value="disewa">Disewa</option>
-            <option value="selesai">Selesai</option>
+            <option value="rented">Disewa</option>
+            <option value="partially_returned">Sebagian kembali</option>
+            <option value="returned">Selesai</option>
+            <option value="void">Void</option>
           </select>
           <select
             value={paymentMethodFilter}
@@ -385,20 +392,23 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
                 <td colSpan="9" className="p-8 text-center text-slate-500">Tidak ada transaksi di bulan {selectedMonth}.</td>
               </tr>
             ) : paginatedTransactions.map(t => {
-              const grandTotal = (t.totalAmount || 0) + (t.lateFee || 0);
+              const isVoid = t.status === 'void';
+              const rentRevenue = isVoid ? 0 : t.totalAmount || 0;
+              const fineRevenue = isVoid ? 0 : t.lateFee || 0;
+              const grandTotal = rentRevenue + fineRevenue;
               return (
                 <tr key={t.id} className="hover:bg-slate-50">
                   <td className="p-4 text-slate-700">{formatDate(t.rentDate)}</td>
                   <td className="p-4 break-words font-black text-slate-900">{t.id}</td>
                   <td className="p-4 break-words font-bold text-slate-900">{t.customerName}</td>
                   <td className="p-4">
-                    <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${t.status === 'selesai' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>{getStatusLabel(t.status)}</span>
+                    <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${isCompletedTransaction(t) ? 'bg-emerald-100 text-emerald-700' : t.status === 'void' ? 'bg-slate-100 text-slate-600' : 'bg-blue-100 text-blue-700'}`}>{getStatusLabel(t.status)}</span>
                   </td>
                   <td className="p-4">
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700">{t.paymentMethod || 'Tunai'}</span>
                   </td>
-                  <td className="p-4 text-right font-semibold text-slate-700">{formatCurrency(t.totalAmount || 0)}</td>
-                  <td className="p-4 text-right font-semibold text-red-600">{formatCurrency(t.lateFee || 0)}</td>
+                  <td className="p-4 text-right font-semibold text-slate-700">{formatCurrency(rentRevenue)}</td>
+                  <td className="p-4 text-right font-semibold text-red-600">{formatCurrency(fineRevenue)}</td>
                   <td className="p-4 text-right font-black text-slate-900">{formatCurrency(grandTotal)}</td>
                   <td className="p-4">
                     <div className="flex justify-center gap-2">
@@ -420,7 +430,10 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
             Tidak ada transaksi di bulan {selectedMonth}.
           </div>
         ) : paginatedTransactions.map(t => {
-          const grandTotal = (t.totalAmount || 0) + (t.lateFee || 0);
+          const isVoid = t.status === 'void';
+          const rentRevenue = isVoid ? 0 : t.totalAmount || 0;
+          const fineRevenue = isVoid ? 0 : t.lateFee || 0;
+          const grandTotal = rentRevenue + fineRevenue;
           return (
             <div key={t.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
               <div className="flex items-start justify-between gap-3">
@@ -429,16 +442,16 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
                   <p className="mt-1 break-words text-sm font-bold text-slate-900">{t.id}</p>
                   <p className="mt-0.5 break-words text-xs text-slate-600">{t.customerName}</p>
                 </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${t.status === 'selesai' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>{getStatusLabel(t.status)}</span>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${isCompletedTransaction(t) ? 'bg-emerald-100 text-emerald-700' : t.status === 'void' ? 'bg-slate-100 text-slate-600' : 'bg-blue-100 text-blue-700'}`}>{getStatusLabel(t.status)}</span>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <p className="text-slate-500">Sewa</p>
-                  <p className="font-bold text-slate-900">{formatCurrency(t.totalAmount || 0)}</p>
+                  <p className="font-bold text-slate-900">{formatCurrency(rentRevenue)}</p>
                 </div>
                 <div>
                   <p className="text-slate-500">Denda</p>
-                  <p className="font-bold text-red-600">{formatCurrency(t.lateFee || 0)}</p>
+                  <p className="font-bold text-red-600">{formatCurrency(fineRevenue)}</p>
                 </div>
               </div>
               <div className="mt-2.5 rounded-xl bg-slate-50 px-3 py-2 text-xs">
@@ -489,8 +502,10 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
                 <div className="rounded-[24px] bg-white p-4 border border-slate-100">
                   <label className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Status</label>
                   <select value={formData.status} onChange={e => setFormData(prev => ({ ...prev, status: e.target.value }))} className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800">
-                    <option value="disewa">Disewa</option>
-                    <option value="selesai">Selesai</option>
+                    <option value="rented">Disewa</option>
+                    <option value="partially_returned">Sebagian kembali</option>
+                    <option value="returned">Selesai</option>
+                    <option value="void">Void</option>
                   </select>
                 </div>
               </div>

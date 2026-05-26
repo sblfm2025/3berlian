@@ -6,6 +6,7 @@ export const useCustomerSelection = ({
   cart,
   customers,
   depositAmountInput,
+  onCustomerWarning,
   openCheckout,
   products,
   setCart,
@@ -91,7 +92,7 @@ export const useCustomerSelection = ({
 
   const applyLastTransaction = () => {
     if (!lastCompletedTransaction) {
-      alert('Belum ada transaksi sebelumnya untuk diulang.');
+      onCustomerWarning?.('Belum ada transaksi sebelumnya untuk diulang.');
       return;
     }
 
@@ -103,7 +104,7 @@ export const useCustomerSelection = ({
       .filter(Boolean);
 
     if (restoredItems.length === 0) {
-      alert('Produk dari transaksi terakhir tidak tersedia untuk diulang.');
+      onCustomerWarning?.('Produk dari transaksi terakhir tidak tersedia untuk diulang.');
       return;
     }
 

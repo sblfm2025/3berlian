@@ -6,7 +6,11 @@ import { loadScript } from '../../utils/browser';
 // ==========================================
 export default function ReceiptModal({ receiptData, onClose }) {
   const [isExporting, setIsExporting] = useState('');
+  const [printerWidth, setPrinterWidth] = useState('80mm');
+
   if (!receiptData) return null;
+
+  const is58 = printerWidth === '58mm';
 
   const handlePrint = () => {
     let printContent = `
@@ -89,7 +93,7 @@ export default function ReceiptModal({ receiptData, onClose }) {
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
             @page { margin: 0; }
-            body { font-family: monospace; color: black; background: white; width: 80mm; padding: 10px; margin: 0 auto; }
+            body { font-family: monospace; color: black; background: white; width: ${printerWidth}; padding: ${is58 ? '4px' : '10px'}; margin: 0 auto; font-size: ${is58 ? '9px' : '11px'}; }
           </style>
         </head>
         <body>
@@ -107,6 +111,7 @@ export default function ReceiptModal({ receiptData, onClose }) {
     try {
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
       
+      const widthNum = is58 ? 58 : 80;
       let pdfHeight = 115 + (receiptData.items.length * 12);
       if (receiptData.customerPhone) pdfHeight += 4;
       if (receiptData.customerAddress) pdfHeight += 8;
@@ -114,16 +119,16 @@ export default function ReceiptModal({ receiptData, onClose }) {
       if (receiptData.paymentMethod === 'Tunai') pdfHeight += 8;
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, Math.max(150, pdfHeight)] });
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [widthNum, Math.max(150, pdfHeight)] });
       
       let y = 10;
-      const left = 5;
-      const right = 75;
-      const center = 40;
+      const left = is58 ? 3 : 5;
+      const right = is58 ? 55 : 75;
+      const center = is58 ? 29 : 40;
 
-      doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.text("3 BERLIAN", center, y, { align: "center" }); y += 4;
-      doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.text("SANGGAR SENI & RENTAL BAJU ADAT", center, y, { align: "center" }); y += 4;
-      doc.setFontSize(7); doc.text("BTN Tiga Berlian, Watang Sawitto", center, y, { align: "center" }); y += 3;
+      doc.setFontSize(is58 ? 12 : 14); doc.setFont("helvetica", "bold"); doc.text("3 BERLIAN", center, y, { align: "center" }); y += 4;
+      doc.setFontSize(is58 ? 6.5 : 8); doc.setFont("helvetica", "normal"); doc.text("SANGGAR SENI & RENTAL BAJU ADAT", center, y, { align: "center" }); y += 4;
+      doc.setFontSize(is58 ? 6 : 7); doc.text("BTN Tiga Berlian, Watang Sawitto", center, y, { align: "center" }); y += 3;
       doc.text("Kabupaten Pinrang - Telp: 0813-4353-1375", center, y, { align: "center" }); y += 5;
 
       const drawDashedLine = (yPos) => {
@@ -165,9 +170,9 @@ export default function ReceiptModal({ receiptData, onClose }) {
         doc.text("Diskon:", left, y); doc.text(`-${formatCurrency(receiptData.discountAmount)}`, right, y, { align: "right" }); y += 4;
       }
 
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(is58 ? 8 : 9);
       doc.text("TOTAL:", left, y); doc.text(formatCurrency(receiptData.totalAmount), right, y, { align: "right" }); y += 5;
-      doc.setFont("helvetica", "normal"); doc.setFontSize(7);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(is58 ? 6 : 7);
 
       drawDashedLine(y); y += 4;
       
@@ -180,23 +185,22 @@ export default function ReceiptModal({ receiptData, onClose }) {
       drawDashedLine(y); y += 4;
 
       doc.text("Batas Pengembalian:", center, y, { align: "center" }); y += 4;
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(is58 ? 8 : 9);
       const returnDateText = formatDate(receiptData.expectedReturnDate);
       const textWidth = doc.getTextWidth(returnDateText);
       doc.rect(center - (textWidth/2) - 2, y - 3.5, textWidth + 4, 5);
       doc.text(returnDateText, center, y, { align: "center" }); y += 6;
       
-      doc.setFont("helvetica", "italic"); doc.setFontSize(6);
+      doc.setFont("helvetica", "italic"); doc.setFontSize(is58 ? 5.5 : 6);
       doc.text("Catatan: Keterlambatan pengembalian", center, y, { align: "center" }); y += 3;
       doc.text("akan dikenakan denda per hari.", center, y, { align: "center" }); y += 5;
       
-      doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(is58 ? 7 : 8);
       doc.text("*** TERIMA KASIH ***", center, y, { align: "center" });
 
       doc.save(`Nota-${receiptData.id}.pdf`);
     } catch (error) {
       console.error(error);
-      alert("Gagal menyiapkan PDF. Pastikan koneksi internet stabil.");
     } finally {
       setIsExporting('');
     }
@@ -227,10 +231,27 @@ export default function ReceiptModal({ receiptData, onClose }) {
           <h3 className="font-bold flex items-center gap-2"><Printer size={18}/> Nota Transaksi</h3>
           <button onClick={onClose} className="text-blue-100 hover:text-white bg-blue-800 shadow-sm p-1.5 rounded-full transition-colors active:scale-95"><X size={18}/></button>
         </div>
+
+        {/* Selektor Printer Termal */}
+        <div className="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center gap-3">
+          <span className="text-xs font-bold text-slate-500">Ukuran Printer Termal:</span>
+          <div className="flex gap-1.5">
+            {['58mm', '80mm'].map(size => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => setPrinterWidth(size)}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${printerWidth === size ? 'bg-blue-700 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
         
         {/* Tampilan Visual (Preview) Nota UI Saja */}
         <div className="overflow-y-auto p-6 bg-gray-200 flex justify-center w-full shadow-inner">
-          <div className="bg-white p-6 w-full max-w-[300px] shadow-sm text-black font-mono leading-tight">
+          <div className={`bg-white p-6 w-full shadow-sm text-black font-mono leading-tight transition-all duration-300 ${is58 ? 'max-w-[240px] text-[9px]' : 'max-w-[320px] text-[11px]'}`}>
             <div className="text-center mb-4 border-b border-black pb-4 border-dashed">
               <h2 className="font-bold text-[18px] mb-1">3 BERLIAN</h2>
               <p className="text-[11px] font-semibold">SANGGAR SENI & RENTAL BAJU ADAT</p>
