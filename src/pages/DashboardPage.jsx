@@ -134,18 +134,6 @@ export default function DashboardPage({ transactions, products, onNavigate }) {
       </div>
 
       <div className="rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="bg-[#1688d8] px-5 py-4 text-white md:px-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-blue-50/85">Menu operasional</p>
-              <h3 className="mt-1 text-lg font-black">Akses cepat POS 3 Berlian</h3>
-            </div>
-            <div className="hidden rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-slate-500 shadow-sm md:flex md:min-w-[280px] md:items-center">
-              Cari menu, nota, atau pelanggan
-            </div>
-          </div>
-        </div>
-
         <div className="divide-y divide-slate-100">
           {menuGroups.map(group => (
             <section key={group.title} className="px-5 py-5 md:px-6">
