@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Package, Plus, Minus, Search, CheckCircle, AlertCircle, X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate, formatDateInput, formatNumberDot } from '../utils/format';
 import { useCustomerSelection } from '../features/rental/hooks/useCustomerSelection';
@@ -7,6 +7,7 @@ import { PRODUCTS_PER_PAGE, useProductFiltering } from '../features/rental/hooks
 import { useRentalCart } from '../features/rental/hooks/useRentalCart';
 import { useRentalCheckout } from '../features/rental/hooks/useRentalCheckout';
 import { getCustomerMissingFields } from '../features/rental/utils/rentalValidation';
+import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 // ==========================================
 export default function RentPage({ products, customers, transactions = [], onCheckout }) {
@@ -42,6 +43,12 @@ export default function RentPage({ products, customers, transactions = [], onChe
     sortedProducts,
     updateSearch
   } = useProductFiltering({ products, transactions, cart });
+  const mobileSearchConfig = useMemo(() => ({
+    placeholder: 'Cari kostum, kategori, ukuran',
+    value: search,
+    onChange: updateSearch
+  }), [search, updateSearch]);
+  useMobileSearchRegistration(mobileSearchConfig);
 
   const {
     cashPresets,
@@ -289,7 +296,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
                 <p className="text-sm font-semibold text-slate-500">Katalog produk</p>
                 <h3 className="mt-1 text-lg font-black text-slate-900">Pilih kostum untuk transaksi</h3>
               </div>
-              <div className="relative flex-1 max-w-xl">
+              <div className="relative hidden flex-1 max-w-xl md:block">
                 <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"

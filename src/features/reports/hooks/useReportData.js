@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { formatMonthInput } from '../../../utils/format';
 
@@ -112,33 +112,33 @@ export const useReportData = ({ transactions }) => {
   const reportStartNumber = reportData.sortedTransactions.length === 0 ? 0 : ((safeReportPage - 1) * REPORTS_PER_PAGE) + 1;
   const reportEndNumber = Math.min(safeReportPage * REPORTS_PER_PAGE, reportData.sortedTransactions.length);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSelectedMonth(formatMonthInput());
     setStatusFilter('Semua');
     setPaymentMethodFilter('Semua');
     setSearchTerm('');
     setReportPage(1);
-  };
+  }, []);
 
-  const updateSelectedMonth = (nextMonth) => {
+  const updateSelectedMonth = useCallback((nextMonth) => {
     setSelectedMonth(nextMonth);
     setReportPage(1);
-  };
+  }, []);
 
-  const updateStatusFilter = (nextStatus) => {
+  const updateStatusFilter = useCallback((nextStatus) => {
     setStatusFilter(nextStatus);
     setReportPage(1);
-  };
+  }, []);
 
-  const updatePaymentMethodFilter = (nextMethod) => {
+  const updatePaymentMethodFilter = useCallback((nextMethod) => {
     setPaymentMethodFilter(nextMethod);
     setReportPage(1);
-  };
+  }, []);
 
-  const updateSearchTerm = (nextSearch) => {
+  const updateSearchTerm = useCallback((nextSearch) => {
     setSearchTerm(nextSearch);
     setReportPage(1);
-  };
+  }, []);
 
   return {
     REPORTS_PER_PAGE,

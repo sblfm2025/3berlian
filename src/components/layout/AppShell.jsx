@@ -1,5 +1,6 @@
 import MobileBottomNav from './MobileBottomNav';
 import MobileHeader from './MobileHeader';
+import MobileSearchProvider from './MobileSearchProvider';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
@@ -26,25 +27,27 @@ export default function AppShell({
         user={user}
       />
 
-      <MobileHeader currentPage={currentPage} onLogout={onLogout} />
+      <MobileSearchProvider>
+        <MobileHeader currentPage={currentPage} onLogout={onLogout} />
 
-      <main className="flex-1 min-h-0 flex flex-col overflow-hidden bg-transparent md:h-screen">
-        <Topbar
-          currentDateLabel={currentDateLabel}
-          currentPage={currentPage}
-          firebaseUser={firebaseUser}
-          user={user}
+        <main className="flex-1 min-h-0 flex flex-col overflow-hidden bg-transparent md:h-screen">
+          <Topbar
+            currentDateLabel={currentDateLabel}
+            currentPage={currentPage}
+            firebaseUser={firebaseUser}
+            user={user}
+          />
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 md:pb-8 relative">
+            {children}
+          </div>
+        </main>
+
+        <MobileBottomNav
+          currentView={currentView}
+          navItems={mobileNavItems}
+          onNavigate={onNavigate}
         />
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 md:pb-8 relative">
-          {children}
-        </div>
-      </main>
-
-      <MobileBottomNav
-        currentView={currentView}
-        navItems={mobileNavItems}
-        onNavigate={onNavigate}
-      />
+      </MobileSearchProvider>
     </div>
   );
 }

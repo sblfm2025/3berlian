@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Package, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useReturnWorkflow } from '../features/returns/hooks/useReturnWorkflow';
+import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 // ==========================================
 export default function ReturnPage({ transactions, onReturn }) {
@@ -39,6 +41,12 @@ export default function ReturnPage({ transactions, onReturn }) {
     updateFilter,
     updateSearchTerm
   } = useReturnWorkflow({ transactions, onReturn });
+  const mobileSearchConfig = useMemo(() => ({
+    placeholder: 'Cari nota atau pelanggan',
+    value: searchTerm,
+    onChange: updateSearchTerm
+  }), [searchTerm, updateSearchTerm]);
+  useMobileSearchRegistration(mobileSearchConfig);
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-4">
@@ -102,7 +110,7 @@ export default function ReturnPage({ transactions, onReturn }) {
             <h3 className="mt-1 text-lg font-black text-slate-900">Cari nota atau pelanggan</h3>
           </div>
 
-          <div className="mt-4 relative">
+          <div className="mt-4 hidden md:block relative">
             <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"

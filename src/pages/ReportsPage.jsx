@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Search, Calendar, ChevronLeft, ChevronRight, Cloud, Edit, Trash2, X, Printer, FileSpreadsheet, FileDown } from 'lucide-react';
 import { formatCurrency, formatDate, formatNumberDot } from '../utils/format';
 import { useReportData } from '../features/reports/hooks/useReportData';
 import { useReportExport } from '../features/reports/hooks/useReportExport';
+import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 // ==========================================
 const getStatusLabel = (status) => {
@@ -48,6 +49,12 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
     updateSelectedMonth,
     updateStatusFilter
   } = useReportData({ transactions });
+  const mobileSearchConfig = useMemo(() => ({
+    placeholder: 'Cari nota, pelanggan, telepon',
+    value: searchTerm,
+    onChange: updateSearchTerm
+  }), [searchTerm, updateSearchTerm]);
+  useMobileSearchRegistration(mobileSearchConfig);
   const summaryCards = [
     {
       title: 'Pendapatan Sewa',
@@ -165,7 +172,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
         </div>
       </div>
 
-      <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <div className="hidden rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm md:block">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Pencarian cepat</p>

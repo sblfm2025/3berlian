@@ -3,6 +3,7 @@ import { Package, Plus, Search, Cloud, Edit, Trash2, X, ChevronLeft, ChevronRigh
 import { formatCurrency, formatNumberDot } from '../utils/format';
 import { normalizeProduct } from '../utils/product';
 import { compressImage } from '../utils/browser';
+import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -32,6 +33,15 @@ export default function ProductsPage({ products, onSave, onDelete }) {
   const [categoryFilter, setCategoryFilter] = useState('Semua');
   const [statusFilter, setStatusFilter] = useState('Semua');
   const [productPage, setProductPage] = useState(1);
+  const mobileSearchConfig = useMemo(() => ({
+    placeholder: 'Cari nama, kategori, ukuran',
+    value: searchTerm,
+    onChange: (value) => {
+      setSearchTerm(value);
+      setProductPage(1);
+    }
+  }), [searchTerm]);
+  useMobileSearchRegistration(mobileSearchConfig);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -191,7 +201,7 @@ export default function ProductsPage({ products, onSave, onDelete }) {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+          <div className="relative hidden flex-1 md:block">
             <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"

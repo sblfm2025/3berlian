@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { formatCurrency, formatDate, formatNumberDot } from '../utils/format';
+import { useMobileSearchRegistration } from '../components/layout/useMobileSearch';
 
 const CUSTOMERS_PER_PAGE = 20;
 
@@ -17,6 +18,15 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
     identityNumber: '',
     depositAmount: ''
   });
+  const mobileSearchConfig = useMemo(() => ({
+    placeholder: 'Cari pelanggan atau nomor HP',
+    value: searchTerm,
+    onChange: (value) => {
+      setSearchTerm(value);
+      setCustomerPage(1);
+    }
+  }), [searchTerm]);
+  useMobileSearchRegistration(mobileSearchConfig);
 
   const enrichedCustomers = useMemo(() => {
     return customers.map(customer => {
@@ -162,7 +172,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
             </div>
           </div>
 
-          <div className="mt-4 relative">
+          <div className="mt-4 hidden md:block relative">
             <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"

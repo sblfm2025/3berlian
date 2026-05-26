@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, BarChart3, Cloud, Key, Mail, PackageCheck, RotateCcw, Shirt, ShoppingBag, UserCog } from 'lucide-react';
+import { AlertCircle, BarChart3, Cloud, Key, Mail, RotateCcw, Shirt, ShoppingBag, UserCog } from 'lucide-react';
 
 export default function LoginScreen({
   appUsers,
@@ -59,17 +59,17 @@ export default function LoginScreen({
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(135deg,_#e9f6fb_0%,_#d8edf4_45%,_#f8fafc_100%)] flex items-center justify-center p-4 md:p-8 font-sans">
-      <div className="grid w-full max-w-5xl items-center gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[linear-gradient(135deg,_#e9f6fb_0%,_#d8edf4_45%,_#f8fafc_100%)] p-3 font-sans sm:p-4 md:p-8">
+      <div className="grid w-full max-w-[390px] items-center gap-6 lg:max-w-5xl lg:grid-cols-[0.95fr_1.05fr]">
         <section className="overflow-hidden rounded-[30px] bg-white shadow-[0_30px_90px_-42px_rgba(13,71,161,0.65)]">
-          <div className="relative bg-[#1688d8] px-6 pb-14 pt-7 text-white">
+          <div className="relative overflow-hidden bg-[#1688d8] px-5 pb-12 pt-6 text-white sm:px-6 sm:pt-7">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-white shadow-lg">
-                  <img src="/app-logo-192.png" alt="Logo 3 Berlian" className="h-10 w-10 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-white shadow-lg sm:h-14 sm:w-14 sm:rounded-[20px]">
+                  <img src="/app-logo-192.png" alt="Logo 3 Berlian" className="h-9 w-9 object-contain sm:h-10 sm:w-10" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                 </div>
                 <div>
-                  <h1 className="text-xl font-black text-white">3 Berlian POS</h1>
+                  <h1 className="text-lg font-black text-white sm:text-xl">3 Berlian POS</h1>
                   <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.22em] text-blue-50">Rental Kostum</p>
                 </div>
               </div>
@@ -78,26 +78,26 @@ export default function LoginScreen({
               </div>
             </div>
 
-            <div className="mt-8 flex items-end justify-center gap-5">
-              <div className="flex h-32 w-28 rotate-[-5deg] flex-col justify-end rounded-[28px] bg-blue-950/30 p-4 shadow-inner">
-                <Shirt size={46} className="mx-auto text-amber-300" />
-                <div className="mt-4 h-2 rounded-full bg-white/30" />
-                <div className="mt-2 h-2 w-16 rounded-full bg-white/20" />
-              </div>
-              <div className="mb-3 flex h-24 w-24 rotate-[7deg] items-center justify-center rounded-full bg-amber-300 text-blue-900 shadow-xl">
-                <PackageCheck size={48} strokeWidth={2.2} />
-              </div>
+            <div className="relative mx-auto mt-4 h-[clamp(128px,34vw,190px)] max-w-sm">
+              <img
+                src="/kartun3berlian.png"
+                alt="Ilustrasi 3 Berlian POS"
+                className="absolute left-1/2 top-1/2 h-[120%] w-auto max-w-none -translate-x-1/2 -translate-y-[46%] object-contain drop-shadow-[0_24px_34px_rgba(8,47,111,0.28)]"
+                decoding="async"
+                loading="eager"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
             </div>
             <div className="absolute inset-x-0 bottom-[-1px] h-12 rounded-t-[50%] bg-white" />
           </div>
 
-          <div className="px-6 pb-7 pt-2">
-            <div className="mx-auto mb-5 grid max-w-sm grid-cols-4 gap-3 rounded-[24px] border border-slate-100 bg-white p-4 shadow-[0_20px_50px_-36px_rgba(15,23,42,0.45)]">
+          <div className="px-5 pb-6 pt-2 sm:px-6 sm:pb-7">
+            <div className="mx-auto mb-5 grid max-w-sm grid-cols-4 gap-2 rounded-[24px] border border-slate-100 bg-white p-3 shadow-[0_20px_50px_-36px_rgba(15,23,42,0.45)] sm:gap-3 sm:p-4">
               {quickMenus.map((item) => {
                 const Icon = item.icon;
                 return (
                   <div key={item.label} className="text-center">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-700 sm:h-14 sm:w-14">
                       <Icon size={24} />
                     </div>
                     <p className="mt-2 text-[11px] font-bold text-slate-700">{item.label}</p>

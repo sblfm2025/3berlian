@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { getConditionFee, getDailyFine, getLateDays } from '../utils/returnCalculations';
 
@@ -134,15 +134,15 @@ export const useReturnWorkflow = ({ transactions, onReturn }) => {
     setSelectedTrx(null);
   };
 
-  const updateFilter = (nextFilter) => {
+  const updateFilter = useCallback((nextFilter) => {
     setFilter(nextFilter);
     setReturnPage(1);
-  };
+  }, []);
 
-  const updateSearchTerm = (nextSearch) => {
+  const updateSearchTerm = useCallback((nextSearch) => {
     setSearchTerm(nextSearch);
     setReturnPage(1);
-  };
+  }, []);
 
   return {
     RETURNS_PER_PAGE,

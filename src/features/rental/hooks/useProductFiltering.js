@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -71,15 +71,15 @@ export const useProductFiltering = ({ products, transactions, cart }) => {
       .slice(0, 5);
   }, [products, transactions]);
 
-  const selectCategory = (category) => {
+  const selectCategory = useCallback((category) => {
     setSelectedCategory(category);
     setProductPage(1);
-  };
+  }, []);
 
-  const updateSearch = (value) => {
+  const updateSearch = useCallback((value) => {
     setSearch(value);
     setProductPage(1);
-  };
+  }, []);
 
   return {
     availableProducts,

@@ -14,37 +14,44 @@ export const pageMeta = {
   dashboard: {
     eyebrow: 'Beranda',
     title: 'Ringkasan toko',
-    subtitle: 'Pantau omzet, sewa aktif, dan tugas penting hari ini.'
+    subtitle: 'Pantau omzet, sewa aktif, dan tugas penting hari ini.',
+    searchPlaceholder: 'Cari menu atau ringkasan'
   },
   rent: {
     eyebrow: 'Sewa',
     title: 'Terminal penyewaan',
-    subtitle: 'Pilih produk, lengkapi pelanggan, dan proses pembayaran dengan alur yang rapi.'
+    subtitle: 'Pilih produk, lengkapi pelanggan, dan proses pembayaran dengan alur yang rapi.',
+    searchPlaceholder: 'Cari kostum, kategori, ukuran'
   },
   return: {
     eyebrow: 'Pengembalian',
     title: 'Pengembalian kostum',
-    subtitle: 'Pilih nota, cek kondisi barang, lalu selesaikan pengembalian.'
+    subtitle: 'Pilih nota, cek kondisi barang, lalu selesaikan pengembalian.',
+    searchPlaceholder: 'Cari nota atau pelanggan'
   },
   products: {
     eyebrow: 'Produk',
     title: 'Inventaris kostum',
-    subtitle: 'Pantau stok, kategori, harga, dan status operasional barang sewa.'
+    subtitle: 'Pantau stok, kategori, harga, dan status operasional barang sewa.',
+    searchPlaceholder: 'Cari produk, kategori, ukuran'
   },
   customers: {
     eyebrow: 'Pelanggan',
     title: 'Data pelanggan',
-    subtitle: 'Lihat riwayat kunjungan, deposit, dan detail pelanggan aktif.'
+    subtitle: 'Lihat riwayat kunjungan, deposit, dan detail pelanggan aktif.',
+    searchPlaceholder: 'Cari pelanggan atau nomor HP'
   },
   users: {
     eyebrow: 'Pengguna',
     title: 'Manajemen akun',
-    subtitle: 'Kelola akses kasir dan admin dengan cepat.'
+    subtitle: 'Kelola akses kasir dan admin dengan cepat.',
+    searchPlaceholder: 'Cari pengguna'
   },
   reports: {
     eyebrow: 'Laporan',
     title: 'Rekap bisnis',
-    subtitle: 'Filter transaksi, lihat omzet, dan unduh laporan operasional.'
+    subtitle: 'Filter transaksi, lihat omzet, dan unduh laporan operasional.',
+    searchPlaceholder: 'Cari nota, pelanggan, telepon'
   }
 };
 
