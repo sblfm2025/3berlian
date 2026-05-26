@@ -1,153 +1,44 @@
-import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Package, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/format';
-
-const RETURNS_PER_PAGE = 12;
+import { useReturnWorkflow } from '../features/returns/hooks/useReturnWorkflow';
 
 // ==========================================
 export default function ReturnPage({ transactions, onReturn }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTrx, setSelectedTrx] = useState(null);
-  const [filter, setFilter] = useState('Semua');
-  const [paymentMethod, setPaymentMethod] = useState('Tunai');
-  const [notes, setNotes] = useState('');
-  const [itemConditions, setItemConditions] = useState({});
-
-  const getLateDays = (trx) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expected = new Date(trx.expectedReturnDate);
-    expected.setHours(0, 0, 0, 0);
-    return today > expected ? Math.ceil((today - expected) / (1000 * 60 * 60 * 24)) : 0;
-  };
-
-  const getDailyFine = (trx) => {
-    return trx.items.reduce((sum, item) => sum + (item.product.dailyLateFee || 50000) * item.qty, 0);
-  };
-
-  const getConditionFee = (condition, item) => {
-    const rentPrice = item.product.rentPrice || 0;
-
-    switch (condition) {
-      case 'Kotor/Laundry':
-        return Math.max(15000, Math.round(rentPrice * 0.1));
-      case 'Rusak Ringan':
-        return Math.max(25000, Math.round(rentPrice * 0.25));
-      case 'Rusak Berat':
-        return Math.max(50000, Math.round(rentPrice * 0.5));
-      case 'Hilang':
-        return rentPrice;
-      default:
-        return 0;
-    }
-  };
-
-  const activeTransactions = transactions.filter(tx => tx.status === 'disewa');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dueSoonLimit = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
-
-  const dueTodayCount = activeTransactions.filter(tx => {
-    const expected = new Date(tx.expectedReturnDate);
-    expected.setHours(0, 0, 0, 0);
-    return expected.getTime() === today.getTime();
-  }).length;
-
-  const dueSoonCount = activeTransactions.filter(tx => {
-    const expected = new Date(tx.expectedReturnDate);
-    expected.setHours(0, 0, 0, 0);
-    return expected.getTime() > today.getTime() && expected.getTime() <= dueSoonLimit.getTime();
-  }).length;
-
-  const filteredTransactions = activeTransactions.filter(tx => {
-    const haystack = `${tx.id} ${tx.customerName || ''}`.toLowerCase();
-    const matchesSearch = haystack.includes(searchTerm.toLowerCase());
-    const lateDays = getLateDays(tx);
-
-    if (!matchesSearch) return false;
-    if (filter === 'Terlambat') return lateDays > 0;
-    if (filter === 'Tepat Waktu') return lateDays === 0;
-    return true;
-  });
-  const returnPageCount = Math.max(1, Math.ceil(filteredTransactions.length / RETURNS_PER_PAGE));
-  const [returnPage, setReturnPage] = useState(1);
-  const safeReturnPage = Math.min(returnPage, returnPageCount);
-  const paginatedTransactions = filteredTransactions.slice(
-    (safeReturnPage - 1) * RETURNS_PER_PAGE,
-    safeReturnPage * RETURNS_PER_PAGE
-  );
-  const returnStartNumber = filteredTransactions.length === 0 ? 0 : ((safeReturnPage - 1) * RETURNS_PER_PAGE) + 1;
-  const returnEndNumber = Math.min(safeReturnPage * RETURNS_PER_PAGE, filteredTransactions.length);
-
-  const handleSelect = (trx) => {
-    const lateDays = getLateDays(trx);
-    const initialConditions = trx.items.reduce((acc, item) => {
-      acc[item.product.id] = 'Baik';
-      return acc;
-    }, {});
-
-    setItemConditions(initialConditions);
-    setPaymentMethod('Tunai');
-    setNotes('');
-    setSelectedTrx({
-      ...trx,
-      customerName: trx.customerName || 'Pelanggan belum tercatat',
-      calculatedLateDays: lateDays,
-      calculatedFine: lateDays * getDailyFine(trx),
-      conditionFee: 0,
-      finalFee: lateDays * getDailyFine(trx)
-    });
-  };
-
-  const applyConditionToAll = (condition) => {
-    if (!selectedTrx) return;
-
-    setItemConditions(selectedTrx.items.reduce((acc, item) => {
-      acc[item.product.id] = condition;
-      return acc;
-    }, {}));
-  };
-
-  const conditionFee = selectedTrx
-    ? selectedTrx.items.reduce((sum, item) => sum + getConditionFee(itemConditions[item.product.id] || 'Baik', item), 0)
-    : 0;
-
-  const lateFee = selectedTrx?.calculatedFine || 0;
-  const totalAdditionalFee = lateFee + conditionFee;
-  const lateItemCount = selectedTrx ? selectedTrx.items.filter(item => itemConditions[item.product.id] !== 'Baik').length : 0;
-  const conditionBreakdown = selectedTrx
-    ? selectedTrx.items.map(item => ({
-        ...item,
-        condition: itemConditions[item.product.id] || 'Baik',
-        fee: getConditionFee(itemConditions[item.product.id] || 'Baik', item)
-      }))
-    : [];
-
-  const handleConfirm = () => {
-    if (!selectedTrx) return;
-
-    onReturn({
-      ...selectedTrx,
-      paymentMethod,
-      notes,
-      itemConditions,
-      conditionFee,
-      lateFee,
-      totalFee: totalAdditionalFee,
-      paymentMethodForFees: paymentMethod
-    });
-
-    setSelectedTrx(null);
-  };
-
-  const overdueCount = activeTransactions.filter(tx => getLateDays(tx) > 0).length;
-  const priorityTransactions = [...activeTransactions]
-    .map(tx => ({ tx, lateDays: getLateDays(tx) }))
-    .sort((a, b) => {
-      if (a.lateDays !== b.lateDays) return b.lateDays - a.lateDays;
-      return new Date(a.tx.expectedReturnDate) - new Date(b.tx.expectedReturnDate);
-    })
-    .slice(0, 4);
+  const {
+    RETURNS_PER_PAGE,
+    activeTransactions,
+    applyConditionToAll,
+    conditionBreakdown,
+    conditionFee,
+    dueSoonCount,
+    dueTodayCount,
+    filter,
+    filteredTransactions,
+    getLateDays,
+    handleConfirm,
+    handleSelect,
+    lateFee,
+    lateItemCount,
+    notes,
+    overdueCount,
+    paginatedTransactions,
+    paymentMethod,
+    priorityTransactions,
+    resetSelection,
+    returnEndNumber,
+    returnPageCount,
+    returnStartNumber,
+    safeReturnPage,
+    searchTerm,
+    selectedTrx,
+    setItemConditions,
+    setNotes,
+    setPaymentMethod,
+    setReturnPage,
+    totalAdditionalFee,
+    updateFilter,
+    updateSearchTerm
+  } = useReturnWorkflow({ transactions, onReturn });
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-4">
@@ -194,10 +85,7 @@ export default function ReturnPage({ transactions, onReturn }) {
           <button
             type="button"
             onClick={() => {
-              setSelectedTrx(null);
-              setItemConditions({});
-              setPaymentMethod('Tunai');
-              setNotes('');
+              resetSelection();
             }}
             disabled={!selectedTrx}
             className="mt-2 rounded-[16px] bg-slate-900 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
@@ -221,8 +109,7 @@ export default function ReturnPage({ transactions, onReturn }) {
               placeholder="Cari ID nota / nama pelanggan"
               value={searchTerm}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setReturnPage(1);
+                updateSearchTerm(e.target.value);
               }}
               className="w-full rounded-[18px] border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm font-medium text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50"
             />
@@ -234,8 +121,7 @@ export default function ReturnPage({ transactions, onReturn }) {
                 key={option}
                 type="button"
                 onClick={() => {
-                  setFilter(option);
-                  setReturnPage(1);
+                  updateFilter(option);
                 }}
                 className={`rounded-full px-4 py-2 text-sm font-bold transition-all ${filter === option ? 'bg-blue-700 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}
               >

@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Search, Calendar, ChevronLeft, ChevronRight, Cloud, Edit, Trash2, X, Printer, FileSpreadsheet, FileDown } from 'lucide-react';
-import { formatCurrency, formatDate, formatMonthInput, formatNumberDot } from '../utils/format';
-import { loadScript } from '../utils/browser';
-
-const REPORTS_PER_PAGE = 20;
+import { formatCurrency, formatDate, formatNumberDot } from '../utils/format';
+import { useReportData } from '../features/reports/hooks/useReportData';
+import { useReportExport } from '../features/reports/hooks/useReportExport';
 
 // ==========================================
 const getStatusLabel = (status) => {
@@ -13,93 +12,42 @@ const getStatusLabel = (status) => {
 };
 
 export default function ReportsPage({ transactions, onViewReceipt, onDelete, onEdit }) {
-  const [selectedMonth, setSelectedMonth] = useState(formatMonthInput());
-  const [statusFilter, setStatusFilter] = useState('Semua');
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState('Semua');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isExporting, setIsExporting] = useState('');
-  const [reportPage, setReportPage] = useState(1);
-
-  const monthlyTrx = transactions.filter(t => (t.rentDate || '').startsWith(selectedMonth));
-  const filteredTransactions = monthlyTrx
-    .filter(t => statusFilter === 'Semua' || t.status === statusFilter)
-    .filter(t => paymentMethodFilter === 'Semua' || (t.paymentMethod || 'Tunai') === paymentMethodFilter)
-    .filter(t => {
-      if (!searchTerm.trim()) return true;
-      const haystack = `${t.id || ''} ${t.customerName || ''} ${t.customerPhone || ''}`.toLowerCase();
-      return haystack.includes(searchTerm.toLowerCase());
-    });
-  const sortedTransactions = filteredTransactions.slice().sort((a, b) => (b.rentDate || '').localeCompare(a.rentDate || ''));
-  const reportPageCount = Math.max(1, Math.ceil(sortedTransactions.length / REPORTS_PER_PAGE));
-  const safeReportPage = Math.min(reportPage, reportPageCount);
-  const paginatedTransactions = sortedTransactions.slice(
-    (safeReportPage - 1) * REPORTS_PER_PAGE,
-    safeReportPage * REPORTS_PER_PAGE
-  );
-  const reportStartNumber = sortedTransactions.length === 0 ? 0 : ((safeReportPage - 1) * REPORTS_PER_PAGE) + 1;
-  const reportEndNumber = Math.min(safeReportPage * REPORTS_PER_PAGE, sortedTransactions.length);
-
-  const totalSewa = sortedTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
-  const totalDenda = sortedTransactions.reduce((sum, t) => sum + (t.lateFee || 0), 0);
-  const totalRevenue = totalSewa + totalDenda;
-
-  const getLateDays = (trx) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expected = new Date(trx.expectedReturnDate);
-    expected.setHours(0, 0, 0, 0);
-    return today > expected ? Math.ceil((today - expected) / (1000 * 60 * 60 * 24)) : 0;
-  };
-
-  const paymentMix = sortedTransactions.reduce((acc, t) => {
-    const method = t.paymentMethod || 'Tunai';
-    const amount = (t.totalAmount || 0) + (t.lateFee || 0);
-
-    if (!acc[method]) acc[method] = { count: 0, revenue: 0 };
-    acc[method].count += 1;
-    acc[method].revenue += amount;
-    return acc;
-  }, {});
-
-  const paymentMixList = Object.entries(paymentMix)
-    .sort((a, b) => b[1].revenue - a[1].revenue);
-
-  const topProducts = sortedTransactions.reduce((acc, trx) => {
-    (trx.items || []).forEach(item => {
-      const key = item.product?.name || 'Produk tidak dikenal';
-      acc[key] = (acc[key] || 0) + (item.qty || 0);
-    });
-    return acc;
-  }, {});
-
-  const topProductList = Object.entries(topProducts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  const topCustomers = sortedTransactions.reduce((acc, trx) => {
-    const key = trx.customerName || 'Pelanggan belum tercatat';
-    const revenue = (trx.totalAmount || 0) + (trx.lateFee || 0);
-    acc[key] = (acc[key] || 0) + revenue;
-    return acc;
-  }, {});
-
-  const topCustomerList = Object.entries(topCustomers)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  const overdueTransactions = sortedTransactions.filter(t => t.status === 'disewa' && getLateDays(t) > 0);
-
-  const completedCount = sortedTransactions.filter(t => t.status === 'selesai').length;
-  const activeCount = sortedTransactions.filter(t => t.status === 'disewa').length;
-  const customerCount = new Set(sortedTransactions.map(t => t.customerName || 'Pelanggan belum tercatat')).size;
-  const averageLateFee = sortedTransactions.filter(t => (t.lateFee || 0) > 0).length
-    ? sortedTransactions.reduce((sum, t) => sum + (t.lateFee || 0), 0) / sortedTransactions.filter(t => (t.lateFee || 0) > 0).length
-    : 0;
-  const lateFeeRatio = totalRevenue ? (totalDenda / totalRevenue) * 100 : 0;
-  const overdueCount = sortedTransactions.filter(t => t.status === 'disewa' && getLateDays(t) > 0).length;
-  const topPaymentMethod = paymentMixList[0]?.[0] || 'Tunai';
-
-  const hasTransactions = sortedTransactions.length > 0;
+  const {
+    REPORTS_PER_PAGE,
+    activeCount,
+    averageLateFee,
+    completedCount,
+    customerCount,
+    getLateDays,
+    hasTransactions,
+    lateFeeRatio,
+    overdueCount,
+    overdueTransactions,
+    paginatedTransactions,
+    paymentMethodFilter,
+    paymentMix,
+    paymentMixList,
+    reportEndNumber,
+    reportPageCount,
+    reportStartNumber,
+    resetFilters,
+    safeReportPage,
+    searchTerm,
+    selectedMonth,
+    setReportPage,
+    sortedTransactions,
+    statusFilter,
+    topCustomerList,
+    topPaymentMethod,
+    topProductList,
+    totalDenda,
+    totalRevenue,
+    totalSewa,
+    updatePaymentMethodFilter,
+    updateSearchTerm,
+    updateSelectedMonth,
+    updateStatusFilter
+  } = useReportData({ transactions });
   const summaryCards = [
     {
       title: 'Pendapatan Sewa',
@@ -130,122 +78,14 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
 
   const [editingTrx, setEditingTrx] = useState(null);
   const [formData, setFormData] = useState({});
-
-  const handleExportExcel = () => {
-    setIsExporting('excel');
-    const exportData = () => {
-      try {
-        const wsData = [
-          ['SANGGAR SENI 3 BERLIAN'],
-          ['Laporan Transaksi (Rekening Koran)'],
-          [`Periode: ${selectedMonth}`],
-          [],
-          ['Tanggal', 'No. Nota', 'Pelanggan', 'Status', 'Metode Pembayaran', 'Sewa (Rp)', 'Denda (Rp)', 'Total (Rp)']
-        ];
-        sortedTransactions.forEach(t => {
-          wsData.push([
-            formatDate(t.rentDate),
-            t.id,
-            t.customerName,
-            getStatusLabel(t.status),
-            t.paymentMethod || 'Tunai',
-            t.totalAmount || 0,
-            t.lateFee || 0,
-            (t.totalAmount || 0) + (t.lateFee || 0)
-          ]);
-        });
-        wsData.push([]);
-        wsData.push(['', '', '', '', 'TOTAL KESELURUHAN:', totalSewa, totalDenda, totalRevenue]);
-
-        const ws = window.XLSX.utils.aoa_to_sheet(wsData);
-        ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-        const wb = window.XLSX.utils.book_new();
-        window.XLSX.utils.book_append_sheet(wb, ws, 'Laporan');
-        window.XLSX.writeFile(wb, `Rekening_Koran_${selectedMonth}.xlsx`);
-      } catch (err) {
-        console.error(err);
-        alert('Gagal mengekspor file Excel.');
-      } finally {
-        setIsExporting('');
-      }
-    };
-
-    if (!window.XLSX) {
-      loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')
-        .then(exportData)
-        .catch(() => {
-          setIsExporting('');
-          alert('Gagal memuat library Excel');
-        });
-    } else {
-      exportData();
-    }
-  };
-
-  const handleExportPDF = async () => {
-    setIsExporting('pdf');
-    try {
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('l', 'mm', 'a4');
-
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('SANGGAR SENI 3 BERLIAN', 148, 15, { align: 'center' });
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Laporan Transaksi (Rekening Koran)', 148, 22, { align: 'center' });
-      doc.setFontSize(10);
-      doc.text(`Periode: ${selectedMonth}`, 148, 28, { align: 'center' });
-
-      const tableColumn = ['Tanggal', 'No. Nota', 'Pelanggan', 'Status', 'Metode Pembayaran', 'Sewa (Rp)', 'Denda (Rp)', 'Total (Rp)'];
-      const tableRows = [];
-
-      sortedTransactions.forEach(t => {
-        const grandTotal = (t.totalAmount || 0) + (t.lateFee || 0);
-        tableRows.push([
-          formatDate(t.rentDate),
-          t.id,
-          t.customerName,
-          getStatusLabel(t.status),
-          t.paymentMethod || 'Tunai',
-          formatNumberDot(t.totalAmount || 0),
-          formatNumberDot(t.lateFee || 0),
-          formatNumberDot(grandTotal)
-        ]);
-      });
-
-      tableRows.push([
-        { content: 'TOTAL KESELURUHAN:', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: formatNumberDot(totalSewa), styles: { fontStyle: 'bold' } },
-        { content: formatNumberDot(totalDenda), styles: { fontStyle: 'bold', textColor: [220, 38, 38] } },
-        { content: formatNumberDot(totalRevenue), styles: { fontStyle: 'bold' } }
-      ]);
-
-      doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 35,
-        theme: 'grid',
-        headStyles: { fillColor: [30, 58, 138] },
-        styles: { fontSize: 9, cellPadding: 3 },
-        columnStyles: {
-          5: { halign: 'right' },
-          6: { halign: 'right' },
-          7: { halign: 'right' }
-        }
-      });
-
-      doc.save(`Rekening_Koran_${selectedMonth}.pdf`);
-    } catch (error) {
-      console.error('PDF Data Render Error:', error);
-      alert('Gagal memuat sistem PDF. Pastikan koneksi internet stabil.');
-    } finally {
-      setIsExporting('');
-    }
-  };
+  const { handleExportExcel, handleExportPDF, isExporting } = useReportExport({
+    getStatusLabel,
+    selectedMonth,
+    sortedTransactions,
+    totalDenda,
+    totalRevenue,
+    totalSewa
+  });
 
   const openEditModal = (trx) => {
     setEditingTrx(trx);
@@ -285,8 +125,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
               type="month"
               value={selectedMonth}
               onChange={e => {
-                setSelectedMonth(e.target.value);
-                setReportPage(1);
+                updateSelectedMonth(e.target.value);
               }}
               className="border-none bg-transparent text-sm font-bold text-slate-800 focus:outline-none"
             />
@@ -294,8 +133,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
           <select
             value={statusFilter}
             onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setReportPage(1);
+              updateStatusFilter(e.target.value);
             }}
             className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
           >
@@ -306,8 +144,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
           <select
             value={paymentMethodFilter}
             onChange={(e) => {
-              setPaymentMethodFilter(e.target.value);
-              setReportPage(1);
+              updatePaymentMethodFilter(e.target.value);
             }}
             className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
           >
@@ -319,11 +156,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
           <button
             type="button"
             onClick={() => {
-              setSelectedMonth(formatMonthInput());
-              setStatusFilter('Semua');
-              setPaymentMethodFilter('Semua');
-              setSearchTerm('');
-              setReportPage(1);
+              resetFilters();
             }}
             className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700"
           >
@@ -345,8 +178,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
                 type="text"
                 value={searchTerm}
                 onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setReportPage(1);
+                  updateSearchTerm(e.target.value);
                 }}
                 placeholder="Cari transaksi"
                 className="w-full rounded-[18px] border border-slate-200 bg-slate-50 pl-9 pr-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50"
@@ -356,8 +188,7 @@ export default function ReportsPage({ transactions, onViewReceipt, onDelete, onE
               <button
                 type="button"
                 onClick={() => {
-                  setSearchTerm('');
-                  setReportPage(1);
+                  updateSearchTerm('');
                 }}
                 className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700"
               >
