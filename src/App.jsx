@@ -15,6 +15,7 @@ import ReturnPage from './pages/ReturnPage';
 
 // Import hooks
 import { useAppAuth } from './hooks/useAppAuth';
+import { useAppMonitoring } from './hooks/useAppMonitoring';
 import { useRealtimeData } from './hooks/useRealtimeData';
 import { usePwaInstall } from './hooks/usePwaInstall';
 
@@ -92,6 +93,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [voidTransactionDialog, setVoidTransactionDialog] = useState({ isOpen: false, transaction: null, isLoading: false });
   const appHistoryReady = useRef(false);
+  useAppMonitoring();
 
   const notify = ({ message, title, type = 'info' }) => {
     setToast({ id: Date.now(), message, title, type });

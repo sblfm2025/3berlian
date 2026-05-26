@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "node ./scripts/build-safe.mjs",
     "lint": "eslint .",
+    "backup": "node ./scripts/backup-project.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

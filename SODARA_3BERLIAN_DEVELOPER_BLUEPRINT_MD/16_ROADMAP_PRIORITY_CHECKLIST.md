@@ -118,7 +118,7 @@ Checklist:
 - [x] Pagination.
 - [x] Firestore indexing.
 - [x] Image optimization.
-- [ ] Monitoring.
-- [ ] Backup/export.
-- [ ] Multi branch preparation.
-- [ ] API integration preparation.
+- [x] Monitoring.
+- [x] Backup/export.
+- [x] Multi branch preparation.
+- [x] API integration preparation.
