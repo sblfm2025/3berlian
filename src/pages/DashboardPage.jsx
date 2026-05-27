@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeftRight, Package, ShoppingBag, X, ShieldAlert, Truck, Sparkles, Info } from 'lucide-react';
+import { ArrowLeftRight, Package, ShoppingBag, X, ShieldAlert, Truck, Sparkles, Info, UserCog, Users, FileText } from 'lucide-react';
 
 import KpiCard from '../components/dashboard/KpiCard';
 import { useDashboardStats } from '../features/dashboard/hooks/useDashboardStats';
@@ -42,6 +42,25 @@ export default function DashboardPage({ transactions, products, user, onNavigate
     onChange: setDashboardSearch
   }), [dashboardSearch]);
   useMobileSearchRegistration(mobileSearchConfig);
+
+  const menuItems = useMemo(() => {
+    const allItems = [
+      { id: 'rent', label: 'Sewa Kostum', icon: ShoppingBag, color: 'bg-blue-50 text-blue-700 group-hover:bg-blue-700 group-hover:text-white', roles: ['admin', 'cashier'] },
+      { id: 'return', label: 'Pengembalian', icon: ArrowLeftRight, color: 'bg-amber-50 text-amber-700 group-hover:bg-amber-500 group-hover:text-white', roles: ['admin', 'cashier'] },
+      { id: 'products', label: 'Produk', icon: Package, color: 'bg-sky-50 text-sky-700 group-hover:bg-sky-600 group-hover:text-white', roles: ['admin'] },
+      { id: 'customers', label: 'Pelanggan', icon: Users, color: 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white', roles: ['admin', 'cashier'] },
+      { id: 'users', label: 'Pengguna', icon: UserCog, color: 'bg-indigo-50 text-indigo-700 group-hover:bg-indigo-600 group-hover:text-white', roles: ['admin'] },
+      { id: 'reports', label: 'Laporan', icon: FileText, color: 'bg-violet-50 text-violet-700 group-hover:bg-violet-600 group-hover:text-white', roles: ['admin'] }
+    ];
+    const userRole = user?.role || 'cashier';
+    return allItems.filter(item => item.roles.includes(userRole));
+  }, [user]);
+
+  const filteredMenus = useMemo(() => {
+    const keyword = dashboardSearch.trim().toLowerCase();
+    if (!keyword) return menuItems;
+    return menuItems.filter(item => item.label.toLowerCase().includes(keyword));
+  }, [dashboardSearch, menuItems]);
 
   // Periksa stok laundry dan maintenance makro untuk Dashboard Gudang
   const warehouseStats = useMemo(() => {
@@ -97,20 +116,6 @@ export default function DashboardPage({ transactions, products, user, onNavigate
 
   return (
     <div className="mx-auto max-w-7xl space-y-4">
-      {/* BANNER UTAMA */}
-      <div className="rounded-[18px] border border-emerald-100 bg-emerald-950 p-3 text-white shadow-sm md:p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/80 sm:text-xs sm:tracking-[0.18em]">POS & Analitik</p>
-          <h2 className="mt-1.5 text-lg font-bold sm:text-xl">Selamat bekerja, {user?.name || user?.username || 'Kasir'}!</h2>
-          <p className="mt-1 text-xs text-white/90">
-            Semua modul sewa, booking kostum adat, dan operasional sanggar berjalan lancar.
-          </p>
-        </div>
-        <span className="rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-bold capitalize">
-          Role: {user?.role || 'kasir'}
-        </span>
-      </div>
-
       {/* TABS MULTI-ROLE (Hanya untuk Admin) */}
       {isAdmin && (
         <div className="flex border-b border-slate-200 bg-white p-1 rounded-2xl shadow-sm gap-1">
@@ -143,66 +148,62 @@ export default function DashboardPage({ transactions, products, user, onNavigate
       {/* ======================================================== */}
       {(activeTab === 'kasir' || !isAdmin) && (
         <div className="space-y-4">
+          {/* GRID MENU OPERASIONAL (OPSI A) */}
+          <div className="rounded-[18px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-2xl">
+            <div className="grid grid-cols-3 gap-x-2 gap-y-5 sm:grid-cols-3 md:grid-cols-6">
+              {filteredMenus.map(item => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onNavigate(item.id)}
+                    className="group flex flex-col items-center rounded-[20px] px-1 py-1 text-center transition hover:bg-slate-50 min-h-[44px]"
+                  >
+                    <span className={`flex h-14 w-14 items-center justify-center rounded-full shadow-sm transition ${item.color}`}>
+                      <Icon size={24} strokeWidth={2.4} />
+                    </span>
+                    <span className="mt-2 text-xs font-bold leading-tight text-slate-700">{item.label}</span>
+                  </button>
+                );
+              })}
+              {filteredMenus.length === 0 && (
+                <div className="col-span-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-xs font-semibold text-slate-500 sm:col-span-3 md:col-span-6">
+                  Menu tidak ditemukan.
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {statCards.map(card => (
               <KpiCard key={card.title} {...card} />
             ))}
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[1fr_0.90fr]">
-            {/* PINTASAN MODUL */}
-            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm md:p-4 space-y-3 sm:rounded-2xl">
-              <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-sm sm:tracking-[0.18em]">Pusat Pintasan Cepat</h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => onNavigate('rent')}
-                  className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-emerald-250 hover:bg-emerald-50/50 transition flex items-center gap-3.5 min-h-[44px]"
-                >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
-                    <ShoppingBag size={20} />
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">Sewa Kostum Adat</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Terminal Kasir POS Cepat</p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('booking')}
-                  className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-amber-200 hover:bg-amber-50/50 transition flex items-center gap-3.5 min-h-[44px]"
-                >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-800">
-                    <ArrowLeftRight size={20} className="rotate-90" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">Jadwal Booking</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Kalender & Deteksi Bentrok</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* UPCOMING & OVERDUE */}
-            <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm md:p-4 space-y-3 sm:rounded-2xl">
-              <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-sm sm:tracking-[0.18em]">Jadwal Pengembalian Terdekat</h3>
-              <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
-                {upcomingReturns.length === 0 ? (
-                  <div className="text-center text-xs font-bold text-slate-400 py-6">
-                    Tidak ada pengembalian kostum terjadwal untuk hari ini.
-                  </div>
-                ) : upcomingReturns.slice(0, 5).map(trx => (
-                  <div key={trx.id} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs font-bold">
-                    <div>
-                      <p className="text-slate-900">{trx.customerName}</p>
-                      <p className="text-slate-400 mt-0.5">Nota: {trx.id}</p>
+          {/* UPCOMING & OVERDUE */}
+          <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm md:p-4 space-y-3 sm:rounded-2xl">
+            <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-sm sm:tracking-[0.18em]">Jadwal Pengembalian Terdekat</h3>
+            <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+              {upcomingReturns.length === 0 ? (
+                <div className="text-center text-xs font-bold text-slate-400 py-6">
+                  Tidak ada pengembalian kostum terjadwal untuk hari ini.
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {upcomingReturns.slice(0, 6).map(trx => (
+                    <div key={trx.id} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs font-bold">
+                      <div>
+                        <p className="text-slate-900">{trx.customerName}</p>
+                        <p className="text-slate-400 mt-0.5">Nota: {trx.id}</p>
+                      </div>
+                      <span className="text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                        {trx.items?.length || 0} unit
+                      </span>
                     </div>
-                    <span className="text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                      {trx.items?.length || 0} unit
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
