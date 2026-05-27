@@ -8,6 +8,8 @@
     "build": "node ./scripts/build-safe.mjs",
     "lint": "eslint .",
     "qa:rental": "node ./scripts/qa-rental-core.mjs",
+    "qa:blueprint": "node ./scripts/qa-blueprint-coverage.mjs",
+    "qa:all": "npm run qa:rental && npm run qa:blueprint && npm run lint && npm run build && npm run ui:audit",
     "backup": "node ./scripts/backup-project.mjs",
     "ui:audit": "node ./scripts/ui-audit-cdp.mjs",
     "preview": "vite preview"

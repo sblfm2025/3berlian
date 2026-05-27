@@ -62,6 +62,7 @@ Tanggal eksekusi: 2026-05-27
 - [x] `npm run lint` sukses setelah Sprint 1/2.
 - [x] `npm run lint` sukses setelah Sprint 3/4.
 - [x] `npm run qa:rental` sukses untuk regression core rental/receipt.
+- [x] `npm run qa:blueprint` sukses untuk coverage syarat utama blueprint POS/Update 5.
 - [x] `npm run build` sukses.
 - [x] `git diff --check` sukses sebelum dokumentasi hasil ini dibuat.
 - [x] `npm run ui:audit` sukses setelah hardening varian dan desktop cleanup.
@@ -72,6 +73,7 @@ Tanggal eksekusi: 2026-05-27
 - `2db8ce7 feat(pos): compact mobile pos and return flow`
 - `830be55 feat(pos): compact booking and customer mobile views`
 - `a040ac9 fix(pos): preserve cart variant quantity updates`
+- `dc2b38e fix(rental): normalize legacy transaction statuses`
 
 ## QA Manual yang Masih Perlu Dilakukan
 

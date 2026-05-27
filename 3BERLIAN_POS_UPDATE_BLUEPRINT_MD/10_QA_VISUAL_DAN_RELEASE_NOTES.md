@@ -29,6 +29,8 @@ POS core cleanup menindaklanjuti blueprint `3BERLIAN_POS_UPDATE_BLUEPRINT_MD` de
 ## Hasil Test Otomatis
 
 - [x] `npm run lint` sukses.
+- [x] `npm run qa:rental` sukses.
+- [x] `npm run qa:blueprint` sukses.
 - [x] `npm run build` sukses.
 - [x] `git diff --check` sukses.
 - [x] `npm run ui:audit` sukses terhadap preview build `http://127.0.0.1:4173`.
@@ -93,5 +95,6 @@ Rollback aman dilakukan dengan mengembalikan commit POS core cleanup:
 - `2db8ce7 feat(pos): compact mobile pos and return flow`
 - `830be55 feat(pos): compact booking and customer mobile views`
 - `e255992 docs: add pos core cleanup blueprint results`
+- `dc2b38e fix(rental): normalize legacy transaction statuses`
 
 Jika sudah ada commit QA/release notes tambahan, rollback dokumentasi dapat dilakukan terpisah tanpa memengaruhi kode aplikasi.

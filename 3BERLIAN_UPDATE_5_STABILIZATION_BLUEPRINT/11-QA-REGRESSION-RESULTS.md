@@ -11,6 +11,7 @@ Update 5 sudah melewati QA otomatis dasar untuk scope POS kasir, checkout, QR no
 - [x] `npm install --legacy-peer-deps` sukses dan tidak mengubah package yang sudah ada.
 - [x] `npm run lint` sukses.
 - [x] `npm run qa:rental` sukses untuk kalkulasi payment, validasi Mixed, QR payload, dan parser scan nota.
+- [x] `npm run qa:blueprint` sukses untuk coverage syarat utama POS/Update 5.
 - [x] `npm run build` sukses.
 - [x] `git diff --check` sukses.
 - [x] Preview build bisa dibuka di `http://127.0.0.1:4173` dengan HTTP 200.
