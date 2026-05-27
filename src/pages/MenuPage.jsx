@@ -1,4 +1,4 @@
-import { Barcode, CalendarDays, FileText, Mic2, Music2, Package, Sparkles, UserCog, Users } from 'lucide-react';
+import { Barcode, CalendarDays, FileText, Mic2, Music2, Package, Sparkles, UserCog, Users, BookOpen } from 'lucide-react';
 
 const futureModules = [
   {
@@ -35,7 +35,8 @@ export default function MenuPage({ onNavigate, role }) {
     { title: 'Stock Opname', description: 'Audit fisik rak, scan unit kostum, dan rekonsiliasi selisih stok.', icon: Barcode, target: 'opname', roles: ['admin'] },
     { title: 'Pelanggan', description: 'Lihat data pelanggan, riwayat kunjungan, deposit, dan identitas.', icon: Users, target: 'customers', roles: ['admin', 'cashier'] },
     { title: 'Laporan', description: 'Rekap transaksi, omzet, pembayaran, dan export laporan.', icon: FileText, target: 'reports', roles: ['admin'] },
-    { title: 'Pengguna', description: 'Kelola akses admin dan kasir.', icon: UserCog, target: 'users', roles: ['admin'] }
+    { title: 'Pengguna', description: 'Kelola akses admin dan kasir.', icon: UserCog, target: 'users', roles: ['admin'] },
+    { title: 'Dokumen', description: 'Panduan lengkap fitur, alur operasional, dan arsitektur aplikasi.', icon: BookOpen, target: 'documentation', roles: ['admin', 'cashier'] }
   ].filter(item => item.roles.includes(role));
 
   return (

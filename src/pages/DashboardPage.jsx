@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeftRight, Package, ShoppingBag, X, ShieldAlert, Truck, Sparkles, Info, UserCog, Users, FileText, BookOpen } from 'lucide-react';
+import { ArrowLeftRight, Package, ShoppingBag, X, ShieldAlert, Truck, Sparkles, Info, UserCog, Users, FileText } from 'lucide-react';
 
 import KpiCard from '../components/dashboard/KpiCard';
 import { useDashboardStats } from '../features/dashboard/hooks/useDashboardStats';
@@ -50,7 +50,6 @@ export default function DashboardPage({ transactions, products, user, onNavigate
       { id: 'products', label: 'Produk', icon: Package, color: 'bg-sky-50 text-sky-700 group-hover:bg-sky-600 group-hover:text-white', roles: ['admin'] },
       { id: 'customers', label: 'Pelanggan', icon: Users, color: 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white', roles: ['admin', 'cashier'] },
       { id: 'users', label: 'Pengguna', icon: UserCog, color: 'bg-indigo-50 text-indigo-700 group-hover:bg-indigo-600 group-hover:text-white', roles: ['admin'] },
-      { id: 'documentation', label: 'Dokumen', icon: BookOpen, color: 'bg-rose-50 text-rose-700 group-hover:bg-rose-600 group-hover:text-white', roles: ['admin', 'cashier'] },
       { id: 'reports', label: 'Laporan', icon: FileText, color: 'bg-violet-50 text-violet-700 group-hover:bg-violet-600 group-hover:text-white', roles: ['admin'] }
     ];
     const userRole = user?.role || 'cashier';
