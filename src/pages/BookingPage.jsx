@@ -14,6 +14,7 @@ export default function BookingPage({
   onNotify
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [quickFilterBaseDate] = useState(() => new Date());
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDateStr, setSelectedDateStr] = useState(() => new Date().toISOString().split('T')[0]);
   const [cancelDialog, setCancelDialog] = useState({ isOpen: false, bookingId: '', reason: '' });
@@ -113,6 +114,11 @@ export default function BookingPage({
 
   const handleSelectDate = (y, m, d) => {
     setSelectedDateStr(`${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+  };
+
+  const jumpToDate = (date) => {
+    setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
+    setSelectedDateStr(date.toISOString().split('T')[0]);
   };
 
   const handleOpenModal = () => {
@@ -215,6 +221,20 @@ export default function BookingPage({
     return getEventsForDate(y, m, d);
   }, [selectedDateStr, getEventsForDate]);
 
+  const quickDateFilters = useMemo(() => {
+    const today = new Date(quickFilterBaseDate);
+    const tomorrow = new Date(quickFilterBaseDate);
+    tomorrow.setDate(today.getDate() + 1);
+    const week = new Date(quickFilterBaseDate);
+    week.setDate(today.getDate() + 6);
+
+    return [
+      { label: 'Hari ini', date: today },
+      { label: 'Besok', date: tomorrow },
+      { label: 'Minggu ini', date: week }
+    ];
+  }, [quickFilterBaseDate]);
+
   return (
     <div className="max-w-7xl mx-auto space-y-3 sm:space-y-5">
       {/* Toolbar halaman; judul utama sudah ada di AppShell */}
@@ -232,6 +252,29 @@ export default function BookingPage({
         >
           <Plus size={18} strokeWidth={3} />
           Buat Booking Baru
+        </button>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {quickDateFilters.map(item => (
+          <button
+            key={item.label}
+            type="button"
+            onClick={() => jumpToDate(item.date)}
+            className="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-bold text-blue-700 shadow-sm ring-1 ring-blue-100"
+          >
+            {item.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => {
+            const nextBooking = bookings.find(book => [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING].includes(book.status));
+            if (nextBooking?.startDate) jumpToDate(new Date(nextBooking.startDate));
+          }}
+          className="shrink-0 rounded-full bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 shadow-sm ring-1 ring-amber-100"
+        >
+          Ada booking
         </button>
       </div>
 
@@ -283,7 +326,7 @@ export default function BookingPage({
                   key={idx}
                   type="button"
                   onClick={() => handleSelectDate(item.year, item.month, item.day)}
-                  className={`min-h-[64px] rounded-xl p-1.5 text-left border flex flex-col justify-between transition-all group sm:min-h-[75px] sm:rounded-[18px] sm:p-2 ${
+                  className={`min-h-[44px] rounded-xl p-1 text-left border flex flex-col justify-between transition-all group sm:min-h-[75px] sm:rounded-[18px] sm:p-2 ${
                     !item.isCurrentMonth ? 'bg-slate-50/50 border-slate-100 text-slate-400' : 'bg-white border-slate-200 hover:border-blue-400 text-slate-900'
                   } ${isSelected ? 'ring-4 ring-blue-100 border-blue-600 bg-blue-50/30' : ''}`}
                 >
@@ -292,7 +335,14 @@ export default function BookingPage({
                   </span>
 
                   {hasEvents && (
-                    <div className="space-y-0.5 mt-1.5 w-full">
+                    <div className="mt-0.5 flex gap-0.5 sm:hidden">
+                      {dayBook.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
+                      {rentals.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />}
+                    </div>
+                  )}
+
+                  {hasEvents && (
+                    <div className="mt-1.5 hidden w-full space-y-0.5 sm:block">
                       {rentals.length > 0 && (
                         <div className="bg-blue-100 text-blue-800 text-[9px] font-semibold px-1.5 py-0.5 rounded-[6px] truncate leading-normal">
                           {rentals.length} Disewa

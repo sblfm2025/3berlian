@@ -51,6 +51,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
   const [activeDetailTab, setActiveDetailTab] = useState('profile'); // profile, fitting, risk
   const [deleteConfirmCustomer, setDeleteConfirmCustomer] = useState(null); // untuk modal konfirmasi soft delete
   const [draftRiskNote, setDraftRiskNote] = useState('');
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   const [draftCustomer, setDraftCustomer] = useState({
     address: '',
@@ -381,18 +382,25 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
   return (
     <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
       {/* Ringkasan pelanggan; judul utama sudah ada di AppShell */}
-      <div className="brand-gradient rounded-[24px] p-4 text-white shadow-soft md:p-5 relative overflow-hidden">
+      <div className="brand-gradient rounded-[22px] p-3 text-white shadow-soft md:p-5 relative overflow-hidden">
         {/* Tenun Watermark */}
         <div className="absolute inset-0 bg-tenun opacity-[0.035] pointer-events-none" />
 
-        <div className="relative max-w-2xl">
-          <p className="text-xs md:text-sm font-bold uppercase tracking-[0.18em] text-gold-400">Ringkasan pelanggan</p>
-          <p className="mt-2 text-sm font-semibold leading-relaxed text-white/90 sm:text-base">
+        <button
+          type="button"
+          onClick={() => setIsSummaryOpen(open => !open)}
+          className="relative flex w-full items-center justify-between gap-3 text-left md:block"
+        >
+          <div className="max-w-2xl">
+            <p className="text-xs md:text-sm font-bold uppercase tracking-[0.18em] text-gold-400">Ringkasan pelanggan</p>
+            <p className="mt-1 text-sm font-semibold leading-relaxed text-white/90 sm:text-base md:mt-2">
             {totalCustomerCount} profil aktif dengan {attentionCustomers} perlu perhatian dan {blockedCustomers} diblokir.
-          </p>
-        </div>
+            </p>
+          </div>
+          <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold md:hidden">{isSummaryOpen ? 'Tutup' : 'Buka'}</span>
+        </button>
 
-        <div className="mt-4 relative grid gap-2 grid-cols-2 sm:grid-cols-4">
+        <div className={`mt-3 relative grid gap-2 grid-cols-2 sm:grid-cols-4 md:mt-4 ${isSummaryOpen ? 'grid' : 'hidden md:grid'}`}>
           <div className="rounded-[20px] bg-white/10 border border-white/20 p-3 backdrop-blur-sm">
             <p className="text-[10px] uppercase tracking-[0.12em] text-gold-300 font-bold sm:tracking-[0.18em]">Total Pelanggan</p>
             <p className="mt-1 text-base font-bold sm:text-xl text-white">{totalCustomerCount}</p>
@@ -515,8 +523,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                       </div>
                     </div>
 
-                    {/* Informasi Cepat Deposit & Keterlambatan */}
-                    <div className="mt-3 grid gap-2 grid-cols-3 text-[10px] font-bold">
+                    <div className="mt-3 hidden gap-2 grid-cols-3 text-[10px] font-bold sm:grid">
                       <div className="rounded-lg bg-slate-50 border border-slate-100 p-1.5 text-center">
                         <span className="text-slate-400 block text-[8px] uppercase tracking-wider">Deposit Jaminan</span>
                         <span className="text-slate-800">{formatCurrency(customer.depositAmount)}</span>
@@ -542,7 +549,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                         onClick={() => openEditCustomer(customer)}
                         className="flex-1 py-2 text-center rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-100 text-[11px] font-bold hover:bg-emerald-100 transition-colors"
                       >
-                        Ubah Profil &amp; Fitting
+                        Ubah
                       </button>
                       <button
                         type="button"
@@ -553,7 +560,7 @@ export default function CustomersPage({ customers, transactions, onUpdateCustome
                         }}
                         className="py-2 px-4 rounded-xl bg-slate-800 text-white text-[11px] font-bold hover:bg-slate-900 transition-colors"
                       >
-                        Detail &amp; Riwayat
+                        Detail
                       </button>
                     </div>
                   </div>
