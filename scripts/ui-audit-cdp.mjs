@@ -170,12 +170,20 @@ const fillByPlaceholder = async (placeholder, value) => evaluate(`
   })()
 `);
 
+const pageExpectations = {
+  Sewa: 'Pemindaian QR/Barcode Kostum|Katalog produk|Mulai transaksi',
+  Kembali: 'Daftar transaksi aktif|Pilih nota terlebih dahulu|Prioritas nota',
+  Produk: 'Produk|Inventaris|Stok',
+  Laporan: 'LAPORAN|Rekap bisnis|PENDAPATAN SEWA'
+};
+
 const audit = {
   url: appUrl,
   loginLoaded: false,
   initialized: false,
   loggedIn: false,
   layoutChecks: [],
+  pageChecks: [],
   screens: [],
   notes: []
 };
@@ -227,9 +235,17 @@ try {
   audit.layoutChecks.push(await captureLayoutCheck('desktop-after-login'));
 
   if (audit.loggedIn) {
-    for (const pageName of ['Sewa', 'Kembali', 'Produk', 'Laporan']) {
-      await clickByText(pageName);
+    for (const [pageName, expectedPattern] of Object.entries(pageExpectations)) {
+      const clicked = await clickByText(pageName);
       await sleep(1000);
+      const pageText = await evaluate('document.body.innerText');
+      const matched = new RegExp(expectedPattern, 'i').test(pageText || '');
+      audit.pageChecks.push({
+        clicked,
+        expectedPattern,
+        label: pageName,
+        matched
+      });
       audit.screens.push(await screenshot(`ui-audit-${pageName.toLowerCase()}`));
       audit.layoutChecks.push(await captureLayoutCheck(`desktop-${pageName.toLowerCase()}`));
     }
@@ -248,10 +264,16 @@ try {
   const overflowLabels = audit.layoutChecks
     .filter(check => check.horizontalOverflow)
     .map(check => `${check.label} (${check.scrollWidth}/${check.viewportWidth})`);
+  const failedPageChecks = audit.pageChecks
+    .filter(check => !check.clicked || !check.matched)
+    .map(check => `${check.label} (clicked=${check.clicked}, matched=${check.matched})`);
   if (overflowLabels.length > 0) {
     audit.notes.push(`Horizontal overflow terdeteksi: ${overflowLabels.join(', ')}`);
   }
-  audit.passed = overflowLabels.length === 0;
+  if (failedPageChecks.length > 0) {
+    audit.notes.push(`Page check gagal: ${failedPageChecks.join(', ')}`);
+  }
+  audit.passed = audit.loggedIn && overflowLabels.length === 0 && failedPageChecks.length === 0;
 } finally {
   writeFileSync(`${outDir}/ui-audit-result.json`, JSON.stringify(audit, null, 2));
   ws.close();

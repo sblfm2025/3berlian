@@ -41,6 +41,7 @@ assert.ok(files.transactionRepository.includes('normalizeRentalItems'), 'Transak
 assert.ok(files.transactionStatus.includes("completed"), 'Mapper status lama harus membaca completed.');
 assert.ok(files.transactionStatus.includes("CANCELLED"), 'Mapper status lama harus membaca CANCELLED.');
 assert.ok(files.uiAudit.includes('layoutChecks'), 'UI audit harus punya layoutChecks.');
+assert.ok(files.uiAudit.includes('pageChecks'), 'UI audit harus punya pageChecks.');
 assert.ok(files.uiAudit.includes('horizontalOverflow'), 'UI audit harus mendeteksi horizontal overflow.');
 assert.ok(!/alert\s*\(/.test(files.rentPage + files.returnPage + files.checkoutPanel), 'Scope POS/return tidak boleh memakai alert browser.');
 
