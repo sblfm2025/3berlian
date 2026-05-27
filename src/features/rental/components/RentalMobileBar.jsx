@@ -51,7 +51,10 @@ export default function RentalMobileBar({
   };
 
   return (
-    <div className="md:hidden fixed bottom-[76px] left-3 right-3 z-40 rounded-2xl bg-slate-950 px-3 py-3 text-white shadow-[0_18px_50px_rgba(15,23,42,0.28)] flex gap-3 items-center justify-between">
+    <div
+      style={{ bottom: 'calc(92px + env(safe-area-inset-bottom))' }}
+      className="md:hidden fixed left-3 right-3 z-40 rounded-2xl bg-slate-950 px-3 py-3 text-white shadow-[0_18px_50px_rgba(15,23,42,0.28)] flex gap-3 items-center justify-between"
+    >
       {/* Tombol Kembali (Hanya tampil dari step 2 ke atas) */}
       {activeStep > 1 ? (
         <button
