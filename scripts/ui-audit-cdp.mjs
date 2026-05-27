@@ -164,7 +164,7 @@ try {
   await cdp('Page.enable');
   await cdp('Runtime.enable');
   await evaluate(`window.location.href = ${JSON.stringify(appUrl)}`);
-  await waitForText('Masuk ke Sistem|Sistem belum berhasil memuat data|Inisialisasi Sistem', 20000);
+  await waitForText('Masuk ke Sistem|Sistem belum berhasil memuat data|Data akun masih kosong', 20000);
   audit.screens.push(await screenshot('ui-audit-login'));
   await sleep(14000);
 
@@ -173,7 +173,7 @@ try {
 
   if (bodyText.includes('Sistem belum berhasil memuat data')) {
     audit.notes.push('Firebase tidak selesai memuat data pada layar login.');
-    const demoStarted = await clickByText('Gunakan Mode Demo Lokal');
+    const demoStarted = await clickByText('Gunakan Data Contoh');
     if (demoStarted) {
       audit.notes.push('Mode demo lokal dipakai untuk melanjutkan uji login.');
       await sleep(1000);
@@ -181,18 +181,18 @@ try {
     }
   }
 
-  if (bodyText.includes('Inisialisasi Sistem')) {
-    audit.initialized = await clickByText('Inisialisasi Sistem');
+  if (bodyText.includes('Data akun masih kosong')) {
+    audit.initialized = await clickByText('Siapkan Akun Awal');
     await sleep(5000);
     bodyText = await evaluate('document.body.innerText');
   }
 
   if (bodyText.includes('Username')) {
     await fillByPlaceholder('Masukkan username', 'admin');
-    await fillByPlaceholder('••••••••', '12345');
+    await fillByPlaceholder('Masukkan password', '12345');
     await clickByText('Masuk ke Sistem');
-    bodyText = await waitForText('Dashboard kasir|Username atau password salah|Sistem belum berhasil', 10000);
-    audit.loggedIn = bodyText.includes('Dashboard kasir');
+    bodyText = await waitForText('Ringkasan toko|Username atau password salah|Sistem belum berhasil', 15000);
+    audit.loggedIn = bodyText.includes('Ringkasan toko');
   }
 
   audit.screens.push(await screenshot('ui-audit-after-login'));

@@ -8,6 +8,7 @@
     "build": "node ./scripts/build-safe.mjs",
     "lint": "eslint .",
     "backup": "node ./scripts/backup-project.mjs",
+    "ui:audit": "node ./scripts/ui-audit-cdp.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
