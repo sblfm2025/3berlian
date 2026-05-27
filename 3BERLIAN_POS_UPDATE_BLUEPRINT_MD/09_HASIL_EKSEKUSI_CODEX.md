@@ -25,6 +25,7 @@ Tanggal eksekusi: 2026-05-27
 - [x] Scanner POS menjadi lebih ringkas saat cart/search aktif.
 - [x] Sticky cart mobile dipindah ke atas bottom navigation.
 - [x] Tombol utama mobile tetap minimal 44px.
+- [x] Kontrol qty cart menjaga varian item yang sama saat produk memiliki banyak ukuran/warna.
 
 ### Sprint 2 - Pengembalian Fast Mode
 

@@ -8,6 +8,26 @@ const getSizeOptions = (product = {}) => {
   return [product.size || 'All Size'];
 };
 
+const getCartItemVariant = (item = {}) => {
+  const matchingVariant = item.product?.variants?.find(variant => (
+    (item.variantId && (variant.id === item.variantId || variant.variantId === item.variantId)) ||
+    (
+      String(variant.size || 'All Size') === String(item.size || 'All Size') &&
+      String(variant.color || '') === String(item.color || '')
+    )
+  ));
+
+  return {
+    ...(matchingVariant || {}),
+    id: item.variantId || matchingVariant?.id || matchingVariant?.variantId || '',
+    size: item.size || matchingVariant?.size || item.product?.size || 'All Size',
+    color: item.color || matchingVariant?.color || item.product?.color || '',
+    rentPrice: Number(item.rentPrice ?? matchingVariant?.rentPrice ?? item.product?.rentPrice ?? 0),
+    deposit: Number(item.deposit ?? matchingVariant?.deposit ?? item.product?.deposit ?? 0),
+    stockAvailable: Number(matchingVariant?.stockAvailable ?? matchingVariant?.availableStock ?? item.product?.stock ?? item.product?.availableStock ?? 0)
+  };
+};
+
 export default function RentalCart({ cart, removeCartItem, updateCartItem, updateCartQty, formatCurrency }) {
   return (
     <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
@@ -24,6 +44,8 @@ export default function RentalCart({ cart, removeCartItem, updateCartItem, updat
           {cart.map(item => {
             const itemId = item.cartItemId || item.productId || item.product?.id;
             const canUpdateQty = Boolean(item.product);
+            const hasProductVariants = Array.isArray(item.product?.variants) && item.product.variants.length > 1;
+            const itemVariant = getCartItemVariant(item);
 
             return (
             <div key={itemId} className="rounded-2xl bg-slate-50 px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3">
@@ -45,15 +67,21 @@ export default function RentalCart({ cart, removeCartItem, updateCartItem, updat
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <label className="block">
                   <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Ukuran</span>
-                  <select
-                    value={item.size || item.product?.size || 'All Size'}
-                    onChange={event => updateCartItem(itemId, { size: event.target.value })}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700"
-                  >
-                    {getSizeOptions(item.product).map(size => (
-                      <option key={size} value={size}>{size}</option>
-                    ))}
-                  </select>
+                  {hasProductVariants ? (
+                    <div className="mt-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+                      {item.size || 'All Size'}{item.color ? ` - ${item.color}` : ''}
+                    </div>
+                  ) : (
+                    <select
+                      value={item.size || item.product?.size || 'All Size'}
+                      onChange={event => updateCartItem(itemId, { size: event.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700"
+                    >
+                      {getSizeOptions(item.product).map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  )}
                 </label>
                 <label className="block">
                   <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Deposit/item</span>
@@ -79,11 +107,11 @@ export default function RentalCart({ cart, removeCartItem, updateCartItem, updat
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => updateCartQty(item.product, -1)} disabled={!canUpdateQty} className="rounded-xl bg-white p-2 text-blue-700 shadow-sm disabled:opacity-40">
+                  <button type="button" onClick={() => updateCartQty(item.product, -1, itemVariant)} disabled={!canUpdateQty} className="rounded-xl bg-white p-2 text-blue-700 shadow-sm disabled:opacity-40">
                     <Minus size={14} strokeWidth={3} />
                   </button>
                   <span className="w-7 text-center text-sm font-bold text-slate-900">{item.qty}</span>
-                  <button type="button" onClick={() => updateCartQty(item.product, 1)} disabled={!canUpdateQty} className="rounded-xl bg-blue-700 p-2 text-white shadow-sm disabled:opacity-40">
+                  <button type="button" onClick={() => updateCartQty(item.product, 1, itemVariant)} disabled={!canUpdateQty} className="rounded-xl bg-blue-700 p-2 text-white shadow-sm disabled:opacity-40">
                     <Plus size={14} strokeWidth={3} />
                   </button>
                 </div>

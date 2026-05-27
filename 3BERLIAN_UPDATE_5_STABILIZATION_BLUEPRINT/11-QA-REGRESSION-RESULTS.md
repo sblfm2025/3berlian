@@ -28,6 +28,7 @@ Update 5 sudah melewati QA otomatis dasar untuk scope POS kasir, checkout, QR no
 - [x] Status payment otomatis menjadi `paid` saat pembayaran cukup.
 - [x] Variant picker POS ditambahkan sebelum produk multi-varian masuk cart.
 - [x] Qty awal dari variant picker masuk cart sesuai jumlah dipilih.
+- [x] Tombol plus/minus cart menjaga varian yang sama untuk item multi-varian.
 - [x] Metode `Mixed` memakai validasi total pembayaran gabungan dan tidak lagi jatuh ke jalur non-tunai penuh.
 - [x] Preview nota menampilkan QR pengembalian di modal sebelum cetak.
 
