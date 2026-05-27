@@ -61,6 +61,7 @@ Tanggal eksekusi: 2026-05-27
 
 - [x] `npm run lint` sukses setelah Sprint 1/2.
 - [x] `npm run lint` sukses setelah Sprint 3/4.
+- [x] `npm run qa:rental` sukses untuk regression core rental/receipt.
 - [x] `npm run build` sukses.
 - [x] `git diff --check` sukses sebelum dokumentasi hasil ini dibuat.
 - [x] `npm run ui:audit` sukses setelah hardening varian dan desktop cleanup.

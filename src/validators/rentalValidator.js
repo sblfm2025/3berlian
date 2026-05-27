@@ -1,4 +1,4 @@
-import { canRentProduct, getRentableStock } from '../utils/stock';
+import { canRentProduct, getRentableStock } from '../utils/stock.js';
 
 const phonePattern = /^[0-9+\-\s()]{7,20}$/;
 

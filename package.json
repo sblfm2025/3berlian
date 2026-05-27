@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "node ./scripts/build-safe.mjs",
     "lint": "eslint .",
+    "qa:rental": "node ./scripts/qa-rental-core.mjs",
     "backup": "node ./scripts/backup-project.mjs",
     "ui:audit": "node ./scripts/ui-audit-cdp.mjs",
     "preview": "vite preview"
