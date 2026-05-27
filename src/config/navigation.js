@@ -1,4 +1,4 @@
-import { ArrowLeftRight, FileText, Home, Menu, Package, ShoppingBag, UserCog, Users, Calendar, Barcode } from 'lucide-react';
+import { ArrowLeftRight, FileText, Home, Menu, Package, ShoppingBag, UserCog, Users, Calendar, Barcode, BookOpen } from 'lucide-react';
 
 export const navItems = [
   { id: 'dashboard', label: 'Beranda', icon: Home, roles: ['admin', 'cashier'], group: 'Utama' },
@@ -9,6 +9,7 @@ export const navItems = [
   { id: 'opname', label: 'Stock Opname', icon: Barcode, roles: ['admin'], group: 'Data Master' },
   { id: 'customers', label: 'Pelanggan', icon: Users, roles: ['admin', 'cashier'], group: 'Data Master' },
   { id: 'users', label: 'Pengguna', icon: UserCog, roles: ['admin'], group: 'Data Master' },
+  { id: 'documentation', label: 'Dokumen', icon: BookOpen, roles: ['admin', 'cashier'], group: 'Sistem' },
   { id: 'reports', label: 'Laporan', icon: FileText, roles: ['admin'], group: 'Analitik' },
   { id: 'menu', label: 'Menu', icon: Menu, roles: ['admin', 'cashier'], group: 'Sistem' },
 ];
@@ -61,6 +62,12 @@ export const pageMeta = {
     title: 'Manajemen akun',
     subtitle: 'Kelola akses kasir dan admin dengan cepat.',
     searchPlaceholder: 'Cari pengguna'
+  },
+  documentation: {
+    eyebrow: 'Bantuan',
+    title: 'Dokumentasi Sistem',
+    subtitle: 'Panduan operasional, fitur, dan dukungan sistem 3 Berlian POS.',
+    searchPlaceholder: 'Cari panduan'
   },
   reports: {
     eyebrow: 'Laporan',

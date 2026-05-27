@@ -43,7 +43,14 @@ export default function AppShell({
             user={user}
           />
           <div className={`flex-1 overflow-y-auto p-4 md:p-8 md:pb-8 relative ${isKeyboardVisible ? 'pb-4' : 'pb-28'}`}>
-            {children}
+            <div className="min-h-full flex flex-col justify-between">
+              <div className="flex-grow">
+                {children}
+              </div>
+              <footer className="mt-8 text-center text-xs font-bold text-slate-400 pb-2">
+                Developed by MAROA Project
+              </footer>
+            </div>
           </div>
         </main>
 

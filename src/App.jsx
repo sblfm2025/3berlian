@@ -38,6 +38,7 @@ const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const MenuPage = lazy(() => import('./pages/MenuPage'));
 const BookingPage = lazy(() => import('./pages/BookingPage'));
 const StockOpnamePage = lazy(() => import('./pages/StockOpnamePage'));
+const DocsPage = lazy(() => import('./pages/DocsPage'));
 
 const isKnownAppView = (view) => Object.prototype.hasOwnProperty.call(pageMeta, view);
 
@@ -547,6 +548,7 @@ export default function App() {
     booking: appDataStatus.products && appDataStatus.bookings,
     users: appDataStatus.users,
     reports: appDataStatus.transactions,
+    documentation: true,
     menu: true
   };
   const isCurrentViewReady = Boolean(viewReady[currentView]);
@@ -643,6 +645,9 @@ export default function App() {
             )}
             {isCurrentViewReady && currentView === 'menu' && (
               <MenuPage onNavigate={navigateToView} role={user.role} />
+            )}
+            {isCurrentViewReady && currentView === 'documentation' && (
+              <DocsPage />
             )}
           </Suspense>
       </AppShell>
