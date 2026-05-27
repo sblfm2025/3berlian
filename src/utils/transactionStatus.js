@@ -1,4 +1,4 @@
-import { getRentalStatusLabel } from '../domains/rental/rentalStatus';
+import { getRentalStatusLabel } from '../domains/rental/rentalStatus.js';
 
 export const ACTIVE_TRANSACTION_STATUSES = [
   'rented',
@@ -13,6 +13,7 @@ export const ACTIVE_TRANSACTION_STATUSES = [
 export const COMPLETED_TRANSACTION_STATUSES = [
   'returned',
   'selesai',
+  'completed',
   'COMPLETED'
 ];
 
@@ -22,8 +23,9 @@ export const isCompletedTransaction = (transaction) => COMPLETED_TRANSACTION_STA
 
 export const normalizeTransactionStatus = (status) => {
   if (status === 'disewa') return 'rented';
-  if (status === 'selesai') return 'returned';
-  return status || 'ACTIVE_RENTAL';
+  if (status === 'selesai' || status === 'completed' || status === 'COMPLETED') return 'returned';
+  if (status === 'CANCELLED' || status === 'cancelled') return 'void';
+  return status || 'rented';
 };
 
 export const getTransactionStatusLabel = (status) => {

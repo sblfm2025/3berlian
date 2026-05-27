@@ -23,6 +23,7 @@ Update 5 sudah melewati QA otomatis dasar untuk scope POS kasir, checkout, QR no
 - [x] QR generator menghasilkan `data:image/png;base64`.
 - [x] Parser scan nota membaca `3BTRX:{transactionId}` sebagai `transactionId`.
 - [x] Parser scan nota membaca invoice manual sebagai `invoiceNumber`.
+- [x] Mapper status lama membaca `disewa`, `completed`, dan `CANCELLED`.
 - [x] Kalkulasi payment memasukkan deposit ke total.
 - [x] Diskon mengurangi total.
 - [x] Cash menghitung kembalian.

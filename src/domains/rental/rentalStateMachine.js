@@ -1,4 +1,4 @@
-import { RENTAL_STATUS } from './rentalStatus';
+import { RENTAL_STATUS } from './rentalStatus.js';
 
 // Peta transisi status yang valid
 const VALID_TRANSITIONS = {
@@ -50,14 +50,14 @@ export const canTransitionTo = (fromStatus, toStatus) => {
   let normalizedFrom = fromStatus || RENTAL_STATUS.DRAFT;
   if (normalizedFrom === 'rented' || normalizedFrom === 'disewa') normalizedFrom = RENTAL_STATUS.ACTIVE_RENTAL;
   if (normalizedFrom === 'partially_returned') normalizedFrom = RENTAL_STATUS.RETURNED_PARTIAL;
-  if (normalizedFrom === 'returned' || normalizedFrom === 'selesai') normalizedFrom = RENTAL_STATUS.COMPLETED;
-  if (normalizedFrom === 'void') normalizedFrom = RENTAL_STATUS.CANCELLED;
+  if (normalizedFrom === 'returned' || normalizedFrom === 'selesai' || normalizedFrom === 'completed') normalizedFrom = RENTAL_STATUS.COMPLETED;
+  if (normalizedFrom === 'void' || normalizedFrom === 'cancelled') normalizedFrom = RENTAL_STATUS.CANCELLED;
 
   let normalizedTo = toStatus;
   if (normalizedTo === 'rented' || normalizedTo === 'disewa') normalizedTo = RENTAL_STATUS.ACTIVE_RENTAL;
   if (normalizedTo === 'partially_returned') normalizedTo = RENTAL_STATUS.RETURNED_PARTIAL;
-  if (normalizedTo === 'returned' || normalizedTo === 'selesai') normalizedTo = RENTAL_STATUS.COMPLETED;
-  if (normalizedTo === 'void') normalizedTo = RENTAL_STATUS.CANCELLED;
+  if (normalizedTo === 'returned' || normalizedTo === 'selesai' || normalizedTo === 'completed') normalizedTo = RENTAL_STATUS.COMPLETED;
+  if (normalizedTo === 'void' || normalizedTo === 'cancelled') normalizedTo = RENTAL_STATUS.CANCELLED;
 
   if (normalizedFrom === normalizedTo) return true;
 

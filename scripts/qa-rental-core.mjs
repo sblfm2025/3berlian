@@ -4,6 +4,7 @@ import { getReceiptQrPayload } from '../src/features/receipt/receiptQr.js';
 import { parseReceiptScan, isReturnableStatus } from '../src/features/returns/utils/receiptScan.js';
 import { calculatePaymentTotals } from '../src/features/rental/utils/rentalCalculations.js';
 import { validateRentalPayload } from '../src/validators/rentalValidator.js';
+import { isActiveTransaction, isCompletedTransaction, normalizeTransactionStatus } from '../src/utils/transactionStatus.js';
 
 const sampleCart = [
   {
@@ -109,5 +110,12 @@ assert.deepEqual(parseReceiptScan('3BTRX:TRX-001'), { type: 'transactionId', val
 assert.deepEqual(parseReceiptScan('INV-2026-001'), { type: 'invoiceNumber', value: 'INV-2026-001' });
 assert.equal(isReturnableStatus('rented'), true);
 assert.equal(isReturnableStatus('returned'), false);
+assert.equal(isActiveTransaction({ status: 'disewa' }), true);
+assert.equal(isCompletedTransaction({ status: 'completed' }), true);
+assert.equal(normalizeTransactionStatus('disewa'), 'rented');
+assert.equal(normalizeTransactionStatus('completed'), 'returned');
+assert.equal(normalizeTransactionStatus('COMPLETED'), 'returned');
+assert.equal(normalizeTransactionStatus('CANCELLED'), 'void');
+assert.equal(normalizeTransactionStatus(undefined), 'rented');
 
 console.log('Rental core QA passed.');
