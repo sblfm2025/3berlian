@@ -50,17 +50,26 @@ Tanggal eksekusi: 2026-05-27
 - [x] Detail metrik deposit disembunyikan di mobile agar list lebih cepat dipindai.
 - [x] Tombol aksi di card pelanggan dipersingkat menjadi `Ubah` dan `Detail`.
 
+### Sprint 5 - Desktop Cleanup
+
+- [x] Workspace POS desktop diberi max width lebih lega sesuai blueprint.
+- [x] Panel kanan checkout tetap sticky di desktop.
+- [x] Panel kanan POS saat cart kosong diberi instruksi mulai transaksi.
+- [x] Empty state return desktop sudah memberi arahan scan/cari/pilih nota.
+
 ## Verifikasi Otomatis
 
 - [x] `npm run lint` sukses setelah Sprint 1/2.
 - [x] `npm run lint` sukses setelah Sprint 3/4.
 - [x] `npm run build` sukses.
 - [x] `git diff --check` sukses sebelum dokumentasi hasil ini dibuat.
+- [x] `npm run ui:audit` sukses setelah hardening varian dan desktop cleanup.
 
 ## Commit
 
 - `2db8ce7 feat(pos): compact mobile pos and return flow`
 - `830be55 feat(pos): compact booking and customer mobile views`
+- `a040ac9 fix(pos): preserve cart variant quantity updates`
 
 ## QA Manual yang Masih Perlu Dilakukan
 

@@ -104,6 +104,32 @@ export default function CheckoutPanel({
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3 md:space-y-4 md:p-5">
+          {cart.length === 0 && (
+            <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-700 sm:text-[11px] sm:tracking-[0.18em]">Mulai transaksi</p>
+              <h4 className="mt-2 text-base font-bold text-slate-900">Scan atau pilih kostum dari katalog</h4>
+              <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-600">
+                Panel ini akan terisi otomatis setelah item pertama masuk keranjang.
+              </p>
+              <div className="mt-4 grid gap-2">
+                {[
+                  { label: 'Keranjang belum berisi item', ok: false },
+                  { label: customerNameInput.trim() ? 'Pelanggan sudah dipilih' : 'Pelanggan bisa diisi nanti', ok: customerNameInput.trim().length > 0 },
+                  { label: returnDateInput ? 'Tanggal kembali siap' : 'Tanggal kembali mengikuti default', ok: Boolean(returnDateInput) },
+                  { label: 'Pembayaran aktif setelah ada item', ok: false }
+                ].map(item => {
+                  const Icon = item.ok ? CheckCircle : AlertCircle;
+                  return (
+                    <div key={item.label} className="flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2">
+                      <Icon size={16} className={item.ok ? 'text-emerald-600' : 'text-blue-700'} />
+                      <p className="text-xs font-semibold text-slate-700">{item.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="rounded-2xl bg-white p-3 border border-slate-100 shadow-sm sm:p-5 sm:rounded-[24px]">
             <div className="flex items-center justify-between gap-3">
               <div>

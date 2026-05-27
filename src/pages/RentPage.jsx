@@ -275,7 +275,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
   }, [setCart, setCustomerNameInput, setCustomerPhoneInput, setCustomerAddressInput, setDepositAmountInput, onNotify]);
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col gap-3">
+    <div className="mx-auto flex w-full max-w-[1560px] flex-col gap-3">
       {/* Status POS; judul utama sudah ada di AppShell */}
       <div className="brand-gradient hidden rounded-[24px] p-4 text-white shadow-soft md:block md:p-5">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
