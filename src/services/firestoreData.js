@@ -32,110 +32,42 @@ const auditPayload = ({ action, after = null, before = null, entityId, entityTyp
 
 export const listenToAppData = ({ onProducts, onCustomers, onTransactions, onBookings, onUsers, onFinancialRecords, onError }) => {
   const unsubscribers = [];
-  const started = {
-    products: false,
-    customers: false,
-    transactions: false,
-    bookings: false,
-    financialRecords: false
-  };
 
-  const startFinancialRecords = () => {
-    if (started.financialRecords) return;
-    started.financialRecords = true;
-
-    const unsubscribe = onSnapshot(
-      query(dataCollection('financialRecords'), orderBy('createdAt', 'desc'), limit(300)),
-      (snap) => onFinancialRecords?.(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
-      (error) => onError?.('financialRecords', error)
-    );
-    unsubscribers.push(unsubscribe);
-  };
-
-  const startBookings = () => {
-    if (started.bookings) return;
-    started.bookings = true;
-
-    const unsubscribe = onSnapshot(
-      query(dataCollection('bookings'), orderBy('createdAt', 'desc'), limit(150)),
-      (snap) => {
-        onBookings(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
-        startFinancialRecords();
-      },
-      (error) => {
-        onError?.('bookings', error);
-        startFinancialRecords();
-      }
-    );
-    unsubscribers.push(unsubscribe);
-  };
-
-  const startTransactions = () => {
-    if (started.transactions) return;
-    started.transactions = true;
-
-    const unsubscribe = onSnapshot(
-      query(dataCollection('transactions'), orderBy('rentDate', 'desc'), limit(100)),
-      (snap) => {
-        onTransactions(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
-        startBookings();
-      },
-      (error) => {
-        onError?.('transactions', error);
-        startBookings();
-      }
-    );
-    unsubscribers.push(unsubscribe);
-  };
-
-  const startCustomers = () => {
-    if (started.customers) return;
-    started.customers = true;
-
-    const unsubscribe = onSnapshot(
-      dataCollection('customers'),
-      (snap) => {
-        onCustomers(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
-        startTransactions();
-      },
-      (error) => {
-        onError?.('customers', error);
-        startTransactions();
-      }
-    );
-    unsubscribers.push(unsubscribe);
-  };
-
-  const startProducts = () => {
-    if (started.products) return;
-    started.products = true;
-
-    const unsubscribe = onSnapshot(
-      dataCollection('products'),
-      (snap) => {
-        onProducts(snap.docs.map(docSnap => normalizeProduct({ id: docSnap.id, ...docSnap.data() })));
-        startCustomers();
-      },
-      (error) => {
-        onError?.('products', error);
-        startCustomers();
-      }
-    );
-    unsubscribers.push(unsubscribe);
-  };
-
-  const unsubUsers = onSnapshot(
+  unsubscribers.push(onSnapshot(
     dataCollection('users'),
-    (snap) => {
-      onUsers(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
-      startProducts();
-    },
-    (error) => {
-      onError?.('users', error);
-      startProducts();
-    }
-  );
-  unsubscribers.push(unsubUsers);
+    (snap) => onUsers(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
+    (error) => onError?.('users', error)
+  ));
+
+  unsubscribers.push(onSnapshot(
+    dataCollection('products'),
+    (snap) => onProducts(snap.docs.map(docSnap => normalizeProduct({ id: docSnap.id, ...docSnap.data() }))),
+    (error) => onError?.('products', error)
+  ));
+
+  unsubscribers.push(onSnapshot(
+    dataCollection('customers'),
+    (snap) => onCustomers(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
+    (error) => onError?.('customers', error)
+  ));
+
+  unsubscribers.push(onSnapshot(
+    query(dataCollection('transactions'), orderBy('rentDate', 'desc'), limit(100)),
+    (snap) => onTransactions(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
+    (error) => onError?.('transactions', error)
+  ));
+
+  unsubscribers.push(onSnapshot(
+    query(dataCollection('bookings'), orderBy('createdAt', 'desc'), limit(150)),
+    (snap) => onBookings(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
+    (error) => onError?.('bookings', error)
+  ));
+
+  unsubscribers.push(onSnapshot(
+    query(dataCollection('financialRecords'), orderBy('createdAt', 'desc'), limit(300)),
+    (snap) => onFinancialRecords?.(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))),
+    (error) => onError?.('financialRecords', error)
+  ));
 
   return () => {
     unsubscribers.forEach(unsubscribe => unsubscribe());

@@ -237,8 +237,9 @@ try {
   if (audit.loggedIn) {
     for (const [pageName, expectedPattern] of Object.entries(pageExpectations)) {
       const clicked = await clickByText(pageName);
-      await sleep(1000);
-      const pageText = await evaluate('document.body.innerText');
+      const pageText = clicked
+        ? await waitForText(expectedPattern, 8000)
+        : await evaluate('document.body.innerText');
       const matched = new RegExp(expectedPattern, 'i').test(pageText || '');
       audit.pageChecks.push({
         clicked,
@@ -281,3 +282,6 @@ try {
 }
 
 console.log(JSON.stringify(audit, null, 2));
+if (!audit.passed) {
+  process.exitCode = 1;
+}

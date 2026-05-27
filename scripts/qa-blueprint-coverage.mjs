@@ -15,6 +15,7 @@ const files = {
   receiptModal: read('src/components/receipt/ReceiptModal.jsx'),
   transactionRepository: read('src/repositories/transactionRepository.js'),
   transactionStatus: read('src/utils/transactionStatus.js'),
+  firestoreData: read('src/services/firestoreData.js'),
   uiAudit: read('scripts/ui-audit-cdp.mjs')
 };
 
@@ -40,6 +41,8 @@ assert.ok(files.transactionRepository.includes('operationToken'), 'Checkout haru
 assert.ok(files.transactionRepository.includes('normalizeRentalItems'), 'Transaksi harus menyimpan snapshot item rental.');
 assert.ok(files.transactionStatus.includes("completed"), 'Mapper status lama harus membaca completed.');
 assert.ok(files.transactionStatus.includes("CANCELLED"), 'Mapper status lama harus membaca CANCELLED.');
+assert.ok(!files.firestoreData.includes('startProducts'), 'Listener Firestore operasional tidak boleh berjalan berantai dari users ke products.');
+assert.ok(files.firestoreData.match(/onSnapshot/g)?.length >= 6, 'Listener Firestore operasional harus memasang koleksi utama secara langsung.');
 assert.ok(files.uiAudit.includes('layoutChecks'), 'UI audit harus punya layoutChecks.');
 assert.ok(files.uiAudit.includes('pageChecks'), 'UI audit harus punya pageChecks.');
 assert.ok(files.uiAudit.includes('horizontalOverflow'), 'UI audit harus mendeteksi horizontal overflow.');

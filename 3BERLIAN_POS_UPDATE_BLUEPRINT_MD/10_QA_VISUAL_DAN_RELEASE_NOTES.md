@@ -69,6 +69,7 @@ Audit CDP otomatis juga menyimpan screenshot di `.sixth/`:
 - Pada screenshot 22 detik, dashboard tampil normal dengan data.
 - `npm run ui:audit` berhasil login, membuka Sewa/Kembali/Produk/Laporan, dan mengambil screenshot mobile lewat Chrome DevTools Protocol.
 - Hasil audit CDP sekarang menyertakan `passed`, `layoutChecks`, dan `pageChecks` pada `.sixth/ui-audit-result.json`.
+- Jalur listener Firestore operasional sudah diparalelkan; aplikasi tidak lagi menunggu users -> products -> customers -> transactions -> bookings -> financialRecords secara berantai.
 - Smoke visual ini memverifikasi app shell, responsive layout, dan loading state, tetapi belum menggantikan QA klik manual untuk transaksi nyata.
 
 ## QA Manual Lanjutan

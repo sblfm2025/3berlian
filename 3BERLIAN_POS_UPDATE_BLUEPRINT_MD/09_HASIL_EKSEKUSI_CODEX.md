@@ -57,6 +57,13 @@ Tanggal eksekusi: 2026-05-27
 - [x] Panel kanan POS saat cart kosong diberi instruksi mulai transaksi.
 - [x] Empty state return desktop sudah memberi arahan scan/cari/pilih nota.
 
+### Audit Loading Firebase
+
+- [x] Jalur load data operasional diaudit dari `useRealtimeData` ke `listenToAppData`.
+- [x] Penyebab lambat utama ditemukan: listener Firestore berjalan berantai dari users, products, customers, transactions, bookings, lalu financialRecords.
+- [x] Listener operasional diubah menjadi paralel agar data kecil tidak menunggu antrean koleksi lain.
+- [x] Loading gate tetap menunggu semua koleksi selesai atau error, tetapi waktu tunggu tidak lagi dijumlahkan antar listener.
+
 ## Verifikasi Otomatis
 
 - [x] `npm run lint` sukses setelah Sprint 1/2.
