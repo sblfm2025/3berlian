@@ -21,7 +21,7 @@ export default function ReturnItemChecklist({
         <button
           type="button"
           onClick={() => applyConditionToAll('Baik')}
-          className="rounded-[14px] bg-emerald-100 px-3 py-2 text-[11px] font-bold text-emerald-700"
+          className="min-h-[44px] rounded-[14px] bg-emerald-700 px-4 py-2 text-xs font-bold text-white"
         >
           <span className="inline-flex items-center gap-1"><CheckCircle size={14} /> Semua Baik</span>
         </button>
@@ -38,6 +38,20 @@ export default function ReturnItemChecklist({
           className="rounded-[14px] bg-orange-100 px-3 py-2 text-[11px] font-bold text-orange-700"
         >
           Rusak Ringan
+        </button>
+        <button
+          type="button"
+          onClick={() => applyConditionToAll('Rusak Berat')}
+          className="rounded-[14px] bg-red-100 px-3 py-2 text-[11px] font-bold text-red-700"
+        >
+          Rusak Berat
+        </button>
+        <button
+          type="button"
+          onClick={() => applyConditionToAll('Hilang')}
+          className="rounded-[14px] bg-slate-900 px-3 py-2 text-[11px] font-bold text-white"
+        >
+          Hilang
         </button>
       </div>
       <div className="mt-3 space-y-3">

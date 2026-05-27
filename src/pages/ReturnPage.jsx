@@ -299,12 +299,12 @@ export default function ReturnPage({ transactions, onReturn }) {
               <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-amber-800">{priorityTransactions.length} fokus</span>
             </div>
             <div className="mt-3 space-y-2">
-              {priorityTransactions.map(({ tx, lateDays }) => (
+            {priorityTransactions.slice(0, 3).map(({ tx, lateDays }) => (
                 <div key={tx.id} className="rounded-[18px] bg-white px-3 py-2">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-bold text-slate-900">{tx.id}</p>
                     <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${lateDays > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {lateDays > 0 ? `Terlambat ${lateDays}` : 'Mendekati batas'}
+                      {lateDays > 0 ? `Terlambat ${lateDays} hari` : 'Mendekati batas'}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-slate-600">{tx.customerName || 'Pelanggan belum tercatat'} - {formatDate(tx.expectedReturnDate)}</p>
@@ -373,12 +373,12 @@ export default function ReturnPage({ transactions, onReturn }) {
         {/* Right Costumes Check Form */}
         <div className={`pos-card p-3 md:p-5 ${selectedTrx ? 'block' : 'hidden md:block'} md:min-h-[620px]`}>
           {selectedTrx ? (
-            <div className="space-y-3 md:space-y-5">
+            <div className="space-y-3 md:space-y-5 md:sticky md:top-4">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-slate-500">Detail pengembalian</p>
+                  <p className="text-sm font-semibold text-slate-500">Ringkasan nota</p>
                   <h3 className="mt-1 text-sm font-bold text-slate-900 sm:text-base">{selectedTrx.id}</h3>
-                  <p className="mt-1 text-sm text-slate-600">{selectedTrx.customerName}</p>
+                  <p className="mt-1 text-sm text-slate-600">{selectedTrx.customerName} - {selectedTrx.items.length} item</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${selectedTrx.calculatedLateDays > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
@@ -388,7 +388,6 @@ export default function ReturnPage({ transactions, onReturn }) {
                 </div>
               </div>
 
-              {/* Rental Dates Summary */}
               <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
                 <div className="rounded-2xl bg-emerald-50 p-3 border border-emerald-100 sm:rounded-[22px] sm:p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-800 sm:text-[11px] sm:tracking-[0.18em]">Tanggal sewa</p>
@@ -403,6 +402,18 @@ export default function ReturnPage({ transactions, onReturn }) {
                   <p className="mt-1.5 text-sm font-semibold text-slate-900 sm:mt-2 sm:font-bold">{lateItemCount} item</p>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  applyConditionToAll('Baik');
+                  setShowConfirmModal(true);
+                }}
+                disabled={isReturning || totalReturnQty <= 0}
+                className="w-full rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Semua Baik & Selesaikan
+              </button>
 
               {/* Customer Contact Summary */}
               <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 sm:rounded-[22px] sm:p-4">
@@ -437,6 +448,8 @@ export default function ReturnPage({ transactions, onReturn }) {
                 setPaymentMethod={setPaymentMethod}
                 returnModeLabel={returnModeLabel}
                 lateFee={lateFee}
+                lateDays={selectedTrx.calculatedLateDays || 0}
+                dailyFine={selectedTrx.calculatedLateDays > 0 ? Math.round(lateFee / selectedTrx.calculatedLateDays) : 0}
                 conditionFee={conditionFee}
                 totalAdditionalFee={totalAdditionalFee}
                 depositDeducted={depositDeducted}
@@ -483,7 +496,7 @@ export default function ReturnPage({ transactions, onReturn }) {
             <div className="hidden min-h-[520px] flex-col items-center justify-center rounded-[18px] border border-dashed border-slate-200 bg-slate-50/50 text-center p-5 md:flex">
               <Package size={40} className="text-slate-300" />
               <p className="mt-4 text-base font-bold text-slate-800">Pilih nota terlebih dahulu</p>
-              <p className="mt-2 text-sm text-slate-500">Transaksi aktif akan muncul di panel kiri untuk diproses.</p>
+              <p className="mt-2 text-sm text-slate-500">Scan nota, cari pelanggan, atau pilih transaksi aktif di panel kiri.</p>
             </div>
           )}
         </div>

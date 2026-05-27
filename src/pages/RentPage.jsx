@@ -305,18 +305,20 @@ export default function RentPage({ products, customers, transactions = [], onChe
 
       {/* POS Quick Metrics */}
       {/* PANEL SCANNER BARCODE/QR SECARA OFFLINE */}
-      <div className="rounded-[24px] border border-slate-200 bg-white p-4.5 shadow-sm space-y-3">
+      <div className={`rounded-[20px] border border-slate-200 bg-white shadow-sm ${cart.length > 0 || search ? 'p-3' : 'p-4.5'} space-y-3`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-blue-900 flex items-center gap-1.5"><QrCode size={18} className="text-amber-500 animate-pulse" /> Pemindaian QR/Barcode Kostum</h3>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">Tembak scanner QR hardware Anda atau ketik manual kode unit fisik untuk checkout cepat.</p>
+            {cart.length === 0 && !search && (
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">Tembak scanner QR hardware Anda atau ketik manual kode unit fisik untuk checkout cepat.</p>
+            )}
           </div>
           <form onSubmit={handleQrScanSubmit} className="flex gap-2 max-w-md w-full shrink-0">
             <input
               type="text"
               value={qrScanInput}
               onChange={(e) => setQrScanInput(e.target.value)}
-              placeholder="Fokus kursor & scan QR (e.g. BUGIS-L-001)..."
+              placeholder="Scan / ketik kode unit"
               className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-800 placeholder-slate-400 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-50 transition"
             />
             <button
@@ -471,7 +473,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
       </div>
 
       {/* Main POS Interface (Catalog Left, Checkout Panel Right) */}
-      <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
+      <div className="flex flex-col xl:flex-row gap-4 xl:items-start pb-28 md:pb-0">
         <div className={`${activeStep === 1 ? 'block' : 'hidden'} md:block flex-1`}>
           <ProductCatalog
             search={search}

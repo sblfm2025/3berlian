@@ -51,22 +51,22 @@ export default function RentalMobileBar({
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] flex gap-3 items-center justify-between">
+    <div className="md:hidden fixed bottom-[76px] left-3 right-3 z-40 rounded-2xl bg-slate-950 px-3 py-3 text-white shadow-[0_18px_50px_rgba(15,23,42,0.28)] flex gap-3 items-center justify-between">
       {/* Tombol Kembali (Hanya tampil dari step 2 ke atas) */}
       {activeStep > 1 ? (
         <button
           type="button"
           onClick={handlePrevStep}
-          className="min-h-[44px] min-w-[44px] rounded-xl border-2 border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition"
+          className="min-h-[44px] min-w-[44px] rounded-xl border border-white/15 bg-white/10 flex items-center justify-center text-white transition"
           aria-label="Kembali ke langkah sebelumnya"
         >
           <ArrowLeft size={18} />
         </button>
       ) : (
         <div className="min-w-0 flex-1 pr-2">
-          <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700">Total Sewa</p>
-          <p className="text-base font-bold text-slate-900 truncate mt-0.5">{formatCurrency(grandTotal)}</p>
-          <p className="text-[10px] text-slate-500 truncate mt-0.5">{totalItems} item kostum dipilih</p>
+          <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-white/65">Keranjang</p>
+          <p className="text-base font-bold text-white truncate mt-0.5">{totalItems} item - {formatCurrency(grandTotal)}</p>
+          <p className="text-[10px] text-white/60 truncate mt-0.5">Total berjalan siap dilanjutkan</p>
         </div>
       )}
 
@@ -77,8 +77,8 @@ export default function RentalMobileBar({
         disabled={isNextDisabled()}
         className={`flex-1 min-h-[44px] rounded-xl px-4 text-xs font-semibold uppercase tracking-[0.08em] text-white shadow-md flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed ${
           activeStep === 4
-            ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-100'
-            : 'bg-emerald-900 hover:bg-emerald-950 shadow-emerald-100'
+            ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-950/20'
+            : 'bg-blue-600 hover:bg-blue-700 shadow-blue-950/20'
         }`}
       >
         {activeStep === 4 ? <CreditCard size={15} /> : <ChevronRight size={15} />}

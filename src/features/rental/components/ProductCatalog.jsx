@@ -1,5 +1,7 @@
-import { Search, ChevronLeft, ChevronRight, Package } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Package, SlidersHorizontal } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import ProductCard from './ProductCard';
+import ProductFilterDrawer from './ProductFilterDrawer';
 
 export default function ProductCatalog({
   search,
@@ -26,6 +28,15 @@ export default function ProductCatalog({
   formatCurrency,
   formatDate
 }) {
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [filterSearch, setFilterSearch] = useState('');
+  const primaryCategories = useMemo(() => {
+    const preferred = ['Semua', 'Bugis', 'Jilbab', 'Aksesoris', 'Anak', 'Lainnya'];
+    const byPreferred = preferred.filter(category => categories.includes(category));
+    const fallback = categories.filter(category => !byPreferred.includes(category)).slice(0, Math.max(0, 6 - byPreferred.length));
+    return [...byPreferred, ...fallback].slice(0, 6);
+  }, [categories]);
+
   return (
     <div className="flex-1 flex flex-col gap-4">
       <div className={`pos-card sticky top-0 z-20 p-4 md:static md:p-5 ${search ? 'hidden md:block' : ''}`}>
@@ -49,7 +60,7 @@ export default function ProductCatalog({
         </div>
 
         <div className="mt-3 flex flex-nowrap gap-2 overflow-x-auto pb-1 md:mt-4 md:flex-wrap md:overflow-visible">
-          {categories.map(category => (
+          {primaryCategories.map(category => (
             <button
               key={category}
               type="button"
@@ -61,6 +72,16 @@ export default function ProductCatalog({
               {category}
             </button>
           ))}
+          {categories.length > primaryCategories.length && (
+            <button
+              type="button"
+              onClick={() => setIsFilterDrawerOpen(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-700 sm:px-4 sm:py-2 sm:text-sm"
+            >
+              <SlidersHorizontal size={14} />
+              Filter
+            </button>
+          )}
         </div>
 
         <div className="mt-4 hidden rounded-[22px] border border-slate-200 bg-slate-50 p-4 md:block">
@@ -225,6 +246,17 @@ export default function ProductCatalog({
           </button>
         </div>
       )}
+
+      <ProductFilterDrawer
+        categories={categories}
+        categoryCounts={categoryCounts}
+        filterSearch={filterSearch}
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+        onSelect={selectCategory}
+        selectedCategory={selectedCategory}
+        setFilterSearch={setFilterSearch}
+      />
     </div>
   );
 }
