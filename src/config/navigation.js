@@ -9,7 +9,7 @@ export const navItems = [
   { id: 'opname', label: 'Stock Opname', icon: Barcode, roles: ['admin'], group: 'Data Master' },
   { id: 'customers', label: 'Pelanggan', icon: Users, roles: ['admin', 'cashier'], group: 'Data Master' },
   { id: 'users', label: 'Pengguna', icon: UserCog, roles: ['admin'], group: 'Data Master' },
-  { id: 'documentation', label: 'Dokumen', icon: BookOpen, roles: ['admin', 'cashier'], group: 'Sistem' },
+  { id: 'documentation', label: 'Tentang Aplikasi', icon: BookOpen, roles: ['admin', 'cashier'], group: 'Sistem' },
   { id: 'reports', label: 'Laporan', icon: FileText, roles: ['admin'], group: 'Analitik' },
   { id: 'menu', label: 'Menu', icon: Menu, roles: ['admin', 'cashier'], group: 'Sistem' },
 ];
@@ -64,8 +64,8 @@ export const pageMeta = {
     searchPlaceholder: 'Cari pengguna'
   },
   documentation: {
-    eyebrow: 'Bantuan',
-    title: 'Dokumentasi Sistem',
+    eyebrow: 'Tentang',
+    title: 'Tentang Aplikasi',
     subtitle: 'Panduan operasional, fitur, dan dukungan sistem 3 Berlian POS.',
     searchPlaceholder: 'Cari panduan'
   },
