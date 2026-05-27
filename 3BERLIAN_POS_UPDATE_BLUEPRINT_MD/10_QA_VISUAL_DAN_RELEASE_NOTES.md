@@ -32,6 +32,7 @@ POS core cleanup menindaklanjuti blueprint `3BERLIAN_POS_UPDATE_BLUEPRINT_MD` de
 - [x] `npm run build` sukses.
 - [x] `git diff --check` sukses.
 - [x] `npm run ui:audit` sukses terhadap preview build `http://127.0.0.1:4173`.
+- [x] `npm run ui:audit` menyimpan `layoutChecks` untuk deteksi horizontal overflow desktop/mobile.
 - [x] Preview build aktif di `http://127.0.0.1:4173`.
 - [x] Screenshot mobile 360x800 dibuat.
 - [x] Screenshot mobile 390x844 dibuat.
@@ -64,6 +65,7 @@ Audit CDP otomatis juga menyimpan screenshot di `.sixth/`:
 - Pada screenshot awal 6 detik, dashboard masih menampilkan skeleton loading karena data Firebase belum selesai dimuat.
 - Pada screenshot 22 detik, dashboard tampil normal dengan data.
 - `npm run ui:audit` berhasil login, membuka Sewa/Kembali/Produk/Laporan, dan mengambil screenshot mobile lewat Chrome DevTools Protocol.
+- Hasil audit CDP sekarang menyertakan `passed` dan `layoutChecks` pada `.sixth/ui-audit-result.json`.
 - Smoke visual ini memverifikasi app shell, responsive layout, dan loading state, tetapi belum menggantikan QA klik manual untuk transaksi nyata.
 
 ## QA Manual Lanjutan

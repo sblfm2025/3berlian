@@ -121,6 +121,25 @@ const screenshot = async (name) => {
   }
 };
 
+const captureLayoutCheck = async (label) => evaluate(`
+  (() => {
+    const documentElement = document.documentElement;
+    const body = document.body;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const scrollWidth = Math.max(documentElement.scrollWidth, body?.scrollWidth || 0);
+    const scrollHeight = Math.max(documentElement.scrollHeight, body?.scrollHeight || 0);
+    return {
+      label: ${JSON.stringify(label)},
+      viewportWidth,
+      viewportHeight,
+      scrollWidth,
+      scrollHeight,
+      horizontalOverflow: scrollWidth > viewportWidth + 4
+    };
+  })()
+`);
+
 const waitForText = async (pattern, timeout = 15000) => {
   const started = Date.now();
   while (Date.now() - started < timeout) {
@@ -156,6 +175,7 @@ const audit = {
   loginLoaded: false,
   initialized: false,
   loggedIn: false,
+  layoutChecks: [],
   screens: [],
   notes: []
 };
@@ -163,6 +183,12 @@ const audit = {
 try {
   await cdp('Page.enable');
   await cdp('Runtime.enable');
+  await cdp('Emulation.setDeviceMetricsOverride', {
+    width: 1366,
+    height: 768,
+    deviceScaleFactor: 1,
+    mobile: false
+  });
   await evaluate(`window.location.href = ${JSON.stringify(appUrl)}`);
   await waitForText('Masuk ke Sistem|Sistem belum berhasil memuat data|Data akun masih kosong', 20000);
   audit.screens.push(await screenshot('ui-audit-login'));
@@ -170,8 +196,9 @@ try {
 
   let bodyText = await evaluate('document.body.innerText');
   audit.loginLoaded = bodyText.includes('Masuk ke Sistem');
+  audit.loggedIn = bodyText.includes('Ringkasan toko');
 
-  if (bodyText.includes('Sistem belum berhasil memuat data')) {
+  if (!audit.loggedIn && bodyText.includes('Sistem belum berhasil memuat data')) {
     audit.notes.push('Firebase tidak selesai memuat data pada layar login.');
     const demoStarted = await clickByText('Gunakan Data Contoh');
     if (demoStarted) {
@@ -181,13 +208,14 @@ try {
     }
   }
 
-  if (bodyText.includes('Data akun masih kosong')) {
+  if (!audit.loggedIn && bodyText.includes('Data akun masih kosong')) {
     audit.initialized = await clickByText('Siapkan Akun Awal');
     await sleep(5000);
     bodyText = await evaluate('document.body.innerText');
+    audit.loggedIn = bodyText.includes('Ringkasan toko');
   }
 
-  if (bodyText.includes('Username')) {
+  if (!audit.loggedIn && bodyText.includes('Username')) {
     await fillByPlaceholder('Masukkan username', 'admin');
     await fillByPlaceholder('Masukkan password', '12345');
     await clickByText('Masuk ke Sistem');
@@ -196,12 +224,14 @@ try {
   }
 
   audit.screens.push(await screenshot('ui-audit-after-login'));
+  audit.layoutChecks.push(await captureLayoutCheck('desktop-after-login'));
 
   if (audit.loggedIn) {
     for (const pageName of ['Sewa', 'Kembali', 'Produk', 'Laporan']) {
       await clickByText(pageName);
       await sleep(1000);
       audit.screens.push(await screenshot(`ui-audit-${pageName.toLowerCase()}`));
+      audit.layoutChecks.push(await captureLayoutCheck(`desktop-${pageName.toLowerCase()}`));
     }
   }
 
@@ -213,7 +243,15 @@ try {
   });
   await sleep(800);
   audit.screens.push(await screenshot('ui-audit-mobile'));
+  audit.layoutChecks.push(await captureLayoutCheck('mobile-390'));
   audit.finalText = await evaluate('document.body.innerText');
+  const overflowLabels = audit.layoutChecks
+    .filter(check => check.horizontalOverflow)
+    .map(check => `${check.label} (${check.scrollWidth}/${check.viewportWidth})`);
+  if (overflowLabels.length > 0) {
+    audit.notes.push(`Horizontal overflow terdeteksi: ${overflowLabels.join(', ')}`);
+  }
+  audit.passed = overflowLabels.length === 0;
 } finally {
   writeFileSync(`${outDir}/ui-audit-result.json`, JSON.stringify(audit, null, 2));
   ws.close();
