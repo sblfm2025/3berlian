@@ -75,6 +75,7 @@ export const useRentalCheckout = ({
     setCheckoutErrors([]);
     setIsCheckingOut(true);
     try {
+      const needsPaidAmount = paymentMethod === 'Tunai' || paymentMethod === 'Mixed';
       const bookingId = localStorage.getItem('checkout_active_booking_id') || null;
       const operationToken = `checkout_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
       await onCheckout({
@@ -92,9 +93,9 @@ export const useRentalCheckout = ({
         discountAmount,
         totalAmount: grandTotal,
         paymentMethod,
-        cashReceived: paymentMethod === 'Tunai' ? finalCashReceived : 0,
-        change: paymentMethod === 'Tunai' ? changeAmount : 0,
-        paymentStatus: finalCashReceived >= grandTotal || paymentMethod !== 'Tunai' ? 'paid' : finalCashReceived > 0 ? 'partial' : 'unpaid',
+        cashReceived: needsPaidAmount ? finalCashReceived : 0,
+        change: needsPaidAmount ? changeAmount : 0,
+        paymentStatus: finalCashReceived >= grandTotal || !needsPaidAmount ? 'paid' : finalCashReceived > 0 ? 'partial' : 'unpaid',
         status: 'rented',
         lateFee: 0,
         bookingId,

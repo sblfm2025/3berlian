@@ -180,13 +180,13 @@ export default function RentPage({ products, customers, transactions = [], onChe
   const flowSteps = [
     { label: 'Produk', done: cart.length > 0 },
     { label: 'Pelanggan', done: customerNameInput.trim().length > 0 && customerProfileReady },
-    { label: 'Pembayaran', done: paymentMethod !== 'Tunai' || finalCashReceived >= grandTotal }
+    { label: 'Pembayaran', done: (paymentMethod !== 'Tunai' && paymentMethod !== 'Mixed') || finalCashReceived >= grandTotal }
   ];
   const incompleteFlowCount = flowSteps.filter(step => !step.done).length;
 
   const paymentSummaryLabel = totalItems === 0
     ? 'Tambah barang untuk mulai transaksi'
-    : paymentMethod === 'Tunai'
+    : paymentMethod === 'Tunai' || paymentMethod === 'Mixed'
       ? finalCashReceived >= grandTotal
         ? 'Uang diterima cukup'
         : 'Uang diterima masih kurang'
@@ -198,7 +198,7 @@ export default function RentPage({ products, customers, transactions = [], onChe
     { label: 'Data pelanggan lengkap', ok: customerProfileReady },
     { label: 'Tanggal kembali valid', ok: Boolean(returnDateInput && new Date(returnDateInput) >= new Date(currentDate)) },
     { label: 'Stok aman', ok: getStockIssue().length === 0 },
-    { label: 'Pembayaran cukup', ok: paymentMethod !== 'Tunai' || grandTotal === 0 || finalCashReceived >= grandTotal }
+    { label: 'Pembayaran cukup', ok: (paymentMethod !== 'Tunai' && paymentMethod !== 'Mixed') || grandTotal === 0 || finalCashReceived >= grandTotal }
   ];
 
   const { checkoutErrors, handleCheckoutClick, isCheckingOut } = useRentalCheckout({

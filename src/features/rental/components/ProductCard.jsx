@@ -1,6 +1,14 @@
 import { Package, Plus, Minus } from 'lucide-react';
 
-export default function ProductCard({ product, cartItem, isSelected, updateCartQty, formatCurrency }) {
+export default function ProductCard({ product, cartItem, isSelected, updateCartQty, onAddProduct, formatCurrency }) {
+  const handleAdd = () => {
+    if (onAddProduct) {
+      onAddProduct(product);
+      return;
+    }
+    updateCartQty(product, 1);
+  };
+  const hasMultipleVariants = Array.isArray(product.variants) && product.variants.length > 1;
   const stockStatus = product.stock <= 0 ? 'habis' : product.stock <= 2 ? 'menipis' : 'normal';
   const stockBadgeClass = stockStatus === 'habis'
     ? 'bg-red-500 text-white'
@@ -22,7 +30,7 @@ export default function ProductCard({ product, cartItem, isSelected, updateCartQ
     <article
       className={`flex min-h-[88px] items-center gap-2.5 rounded-2xl border bg-white p-2.5 shadow-sm transition-all sm:block sm:min-h-0 sm:overflow-hidden sm:p-0 sm:rounded-[24px] ${isSelected ? 'border-blue-500 shadow-[0_18px_42px_-30px_rgba(30,64,175,0.55)]' : stockStatus === 'habis' ? 'border-red-200' : stockStatus === 'menipis' ? 'border-amber-200' : 'border-slate-100 hover:border-slate-200'}`}
     >
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-36 sm:w-full sm:rounded-none" onClick={() => !isSelected && updateCartQty(product, 1)}>
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-36 sm:w-full sm:rounded-none" onClick={() => !isSelected && handleAdd()}>
         {product.photo ? (
           <img src={product.photo} alt={product.name} className="h-full w-full object-cover" onError={(event) => { event.target.onerror = null; event.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Y2EzYWYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48bGluZSB4MT0iMyIgeTE9IjMiIHgyPSIyMSIgeTI9IjIxIj48L2xpbmU+PHBhdGggZD0iTTEwLjUgMTAuNVYxMGg0djMuNW0tMiAyaC00djRMNSA4bDEuNS0xLjUiPjwvcGF0aD48L3N2Zz4='; }} />
         ) : (
@@ -59,7 +67,7 @@ export default function ProductCard({ product, cartItem, isSelected, updateCartQ
             <p className="hidden text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:block">Harga sewa</p>
             <p className="break-words text-sm font-bold text-amber-600 sm:mt-1 sm:text-base">{formatCurrency(product.rentPrice)}</p>
           </div>
-          {isSelected ? (
+          {isSelected && !hasMultipleVariants ? (
             <div className="flex shrink-0 items-center gap-1.5 rounded-[14px] border border-blue-100 bg-blue-50 px-1.5 py-1 sm:gap-2 sm:rounded-[18px] sm:px-2 sm:py-1.5">
               <button type="button" onClick={() => updateCartQty(product, -1)} className="min-h-10 min-w-10 rounded-lg bg-white p-1.5 text-blue-700 shadow-sm hover:bg-blue-100 sm:rounded-xl sm:p-2">
                 <Minus size={14} strokeWidth={3} />
@@ -72,12 +80,12 @@ export default function ProductCard({ product, cartItem, isSelected, updateCartQ
           ) : (
             <button
               type="button"
-              onClick={() => updateCartQty(product, 1)}
+              onClick={handleAdd}
               className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white transition-all hover:bg-blue-800 sm:w-auto sm:gap-2 sm:rounded-[16px] sm:px-4 sm:py-2 sm:text-sm sm:font-bold"
               aria-label={`Tambah ${product.name}`}
             >
               <Plus size={16} strokeWidth={3} />
-              <span className="hidden sm:inline">Tambah</span>
+              <span className="hidden sm:inline">{isSelected && hasMultipleVariants ? 'Varian' : 'Tambah'}</span>
             </button>
           )}
         </div>

@@ -2,6 +2,7 @@ import { Search, ChevronLeft, ChevronRight, Package, SlidersHorizontal } from 'l
 import { useMemo, useState } from 'react';
 import ProductCard from './ProductCard';
 import ProductFilterDrawer from './ProductFilterDrawer';
+import VariantPickerModal from './VariantPickerModal';
 
 export default function ProductCatalog({
   search,
@@ -30,12 +31,26 @@ export default function ProductCatalog({
 }) {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState('');
+  const [variantProduct, setVariantProduct] = useState(null);
   const primaryCategories = useMemo(() => {
     const preferred = ['Semua', 'Bugis', 'Jilbab', 'Aksesoris', 'Anak', 'Lainnya'];
     const byPreferred = preferred.filter(category => categories.includes(category));
     const fallback = categories.filter(category => !byPreferred.includes(category)).slice(0, Math.max(0, 6 - byPreferred.length));
     return [...byPreferred, ...fallback].slice(0, 6);
   }, [categories]);
+  const handleAddProduct = (product) => {
+    if (Array.isArray(product.variants) && product.variants.length > 1) {
+      setVariantProduct(product);
+      return;
+    }
+    updateCartQty(product, 1);
+  };
+
+  const handleConfirmVariant = ({ variant, qty }) => {
+    if (!variantProduct) return;
+    updateCartQty(variantProduct, qty, variant);
+    setVariantProduct(null);
+  };
 
   return (
     <div className="flex-1 flex flex-col gap-4">
@@ -99,7 +114,7 @@ export default function ProductCatalog({
                 <button
                   key={product.id}
                   type="button"
-                  onClick={() => updateCartQty(product, 1)}
+                  onClick={() => handleAddProduct(product)}
                   className="rounded-[18px] border border-slate-200 bg-white px-3 py-2 text-left shadow-sm"
                 >
                   <p className="text-sm font-bold text-slate-900">{product.name}</p>
@@ -209,7 +224,13 @@ export default function ProductCatalog({
             <p className="mt-1 text-sm">Coba ubah kata kunci atau kategori.</p>
           </div>
         ) : paginatedProducts.map(product => {
-          const cartItem = cart.find(item => item.product.id === product.id);
+          const productCartItems = cart.filter(item => item.product.id === product.id);
+          const cartItem = productCartItems.length > 0
+            ? {
+              ...productCartItems[0],
+              qty: productCartItems.reduce((sum, item) => sum + Number(item.qty || 0), 0)
+            }
+            : null;
           const isSelected = Boolean(cartItem);
 
           return (
@@ -219,6 +240,7 @@ export default function ProductCatalog({
               cartItem={cartItem}
               isSelected={isSelected}
               updateCartQty={updateCartQty}
+              onAddProduct={handleAddProduct}
               formatCurrency={formatCurrency}
             />
           );
@@ -257,6 +279,16 @@ export default function ProductCatalog({
         selectedCategory={selectedCategory}
         setFilterSearch={setFilterSearch}
       />
+      {variantProduct && (
+        <VariantPickerModal
+          key={variantProduct.id}
+          product={variantProduct}
+          open={Boolean(variantProduct)}
+          onClose={() => setVariantProduct(null)}
+          onConfirm={handleConfirmVariant}
+          formatCurrency={formatCurrency}
+        />
+      )}
     </div>
   );
 }

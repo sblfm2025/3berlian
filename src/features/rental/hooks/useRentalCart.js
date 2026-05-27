@@ -16,9 +16,11 @@ const getProductVariants = (product = {}) => {
   }];
 };
 
-const buildCartItem = (product, variant = {}) => {
+const buildCartItem = (product, variant = {}, qty = 1) => {
   const size = variant.size || product.size || 'All Size';
   const color = variant.color || product.color || '';
+  const safeQty = Math.max(1, Number(qty || 1));
+  const rentPrice = Number(variant.rentPrice ?? product.rentPrice ?? 0);
 
   return {
     cartItemId: `${product.id}-${size}-${color || 'default'}`,
@@ -29,11 +31,11 @@ const buildCartItem = (product, variant = {}) => {
     size,
     color,
     variantId: variant.id || variant.variantId || '',
-    qty: 1,
-    rentPrice: Number(variant.rentPrice ?? product.rentPrice ?? 0),
+    qty: safeQty,
+    rentPrice,
     deposit: Number(variant.deposit ?? product.deposit ?? 0),
     discount: 0,
-    subtotal: Number(variant.rentPrice ?? product.rentPrice ?? 0),
+    subtotal: rentPrice * safeQty,
     note: ''
   };
 };
@@ -56,10 +58,12 @@ export const useRentalCart = ({ products, onCartWarning, onEmptyCart }) => {
 
   const updateCartQty = useCallback((product, delta, variant) => {
     setCart(currentCart => {
-      const nextCartItem = buildCartItem(product, variant || getProductVariants(product)[0]);
+      const selectedVariant = variant || getProductVariants(product)[0];
+      const initialQty = Math.max(1, Number(delta || 1));
+      const nextCartItem = buildCartItem(product, selectedVariant, initialQty);
       const existing = currentCart.find(item => (item.cartItemId || item.product.id) === nextCartItem.cartItemId);
 
-      const stockAvailable = getRentableStock(product);
+      const stockAvailable = Number(selectedVariant.stockAvailable ?? selectedVariant.availableStock ?? getRentableStock(product));
 
       if (stockAvailable <= 0 && delta > 0) {
         onCartWarning?.(`Produk ${product.name} sedang habis.`);
@@ -67,6 +71,10 @@ export const useRentalCart = ({ products, onCartWarning, onEmptyCart }) => {
       }
 
       if (!existing && delta > 0) {
+        if (initialQty > stockAvailable) {
+          onCartWarning?.(`Stok ${product.name} tersisa ${stockAvailable} unit.`);
+          return currentCart;
+        }
         return [...currentCart, nextCartItem];
       }
 
@@ -74,7 +82,7 @@ export const useRentalCart = ({ products, onCartWarning, onEmptyCart }) => {
 
       const nextQty = existing.qty + delta;
       if (nextQty <= 0) {
-        const nextCart = currentCart.filter(item => item.product.id !== product.id);
+        const nextCart = currentCart.filter(item => (item.cartItemId || item.product.id) !== nextCartItem.cartItemId);
         if (nextCart.length === 0) onEmptyCart?.();
         return nextCart;
       }

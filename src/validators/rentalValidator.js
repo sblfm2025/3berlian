@@ -37,8 +37,8 @@ export const validateRentalPayload = ({
     errors.push('Tanggal kembali tidak boleh lebih awal dari tanggal sewa.');
   }
 
-  if (paymentMethod === 'Tunai' && Number(cashReceived || 0) < Number(grandTotal || 0)) {
-    errors.push('Uang tunai yang diterima masih kurang.');
+  if ((paymentMethod === 'Tunai' || paymentMethod === 'Mixed') && Number(cashReceived || 0) < Number(grandTotal || 0)) {
+    errors.push(paymentMethod === 'Mixed' ? 'Total pembayaran gabungan masih kurang.' : 'Uang tunai yang diterima masih kurang.');
   }
 
   return {

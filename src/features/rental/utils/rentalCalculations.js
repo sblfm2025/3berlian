@@ -29,8 +29,9 @@ export const calculatePaymentTotals = ({ cart, discountType, discountValue, depo
   const depositAmount = Number(depositAmountInput) || calculateCartDepositTotal(cart);
   const grandTotal = Math.max(0, subTotal + depositAmount - discountAmount);
   const finalCashReceived = Number(cashReceived) || 0;
-  const changeAmount = paymentMethod === 'Tunai' ? Math.max(0, finalCashReceived - grandTotal) : 0;
-  const remainingAmount = paymentMethod === 'Tunai' ? Math.max(0, grandTotal - finalCashReceived) : 0;
+  const needsPaidAmount = paymentMethod === 'Tunai' || paymentMethod === 'Mixed';
+  const changeAmount = needsPaidAmount ? Math.max(0, finalCashReceived - grandTotal) : 0;
+  const remainingAmount = needsPaidAmount ? Math.max(0, grandTotal - finalCashReceived) : 0;
   const paymentStatus = remainingAmount === 0 ? 'paid' : finalCashReceived > 0 ? 'partial' : 'unpaid';
 
   return {

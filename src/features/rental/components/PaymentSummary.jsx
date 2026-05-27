@@ -40,8 +40,8 @@ export default function PaymentSummary({
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          {['Tunai', 'Transfer', 'QRIS'].map(method => (
+        <div className="grid grid-cols-4 gap-2">
+          {['Tunai', 'Transfer', 'QRIS', 'Mixed'].map(method => (
             <button
               key={method}
               type="button"
@@ -53,9 +53,14 @@ export default function PaymentSummary({
           ))}
         </div>
 
-        {paymentMethod === 'Tunai' && (
+        {(paymentMethod === 'Tunai' || paymentMethod === 'Mixed') && (
           <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-4">
-            <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 sm:text-[11px] sm:tracking-[0.18em]">Uang diterima</label>
+            <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 sm:text-[11px] sm:tracking-[0.18em]">
+              {paymentMethod === 'Mixed' ? 'Total dibayar' : 'Uang diterima'}
+            </label>
+            {paymentMethod === 'Mixed' && (
+              <p className="mt-1 text-xs font-semibold text-amber-800">Catat total gabungan tunai, transfer, dan QRIS.</p>
+            )}
             <div className="mt-3 flex gap-2">
               <input
                 type="text"

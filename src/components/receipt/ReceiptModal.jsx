@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Cloud, X, Printer, Download, MessageCircle } from 'lucide-react';
 import { formatCurrency, formatDate, formatNumberDot } from '../../utils/format';
 import { loadScript } from '../../utils/browser';
@@ -8,25 +8,50 @@ import { createReceiptQrDataUrl, getReceiptQrPayload } from '../../features/rece
 export default function ReceiptModal({ receiptData, onClose }) {
   const [isExporting, setIsExporting] = useState('');
   const [printerWidth, setPrinterWidth] = useState('80mm');
-
-  if (!receiptData) return null;
+  const [qrPreview, setQrPreview] = useState({ key: '', url: '' });
 
   const is58 = printerWidth === '58mm';
 
   // Deteksi apakah struk pengembalian (Return Receipt)
   const isReturnReceipt =
-    receiptData.status === 'COMPLETED' ||
-    receiptData.status === 'RETURNED_PARTIAL' ||
-    receiptData.status === 'returned' ||
-    receiptData.status === 'partially_returned' ||
-    !!receiptData.returnInfo ||
-    (Array.isArray(receiptData.returnHistory) && receiptData.returnHistory.length > 0);
+    receiptData?.status === 'COMPLETED' ||
+    receiptData?.status === 'RETURNED_PARTIAL' ||
+    receiptData?.status === 'returned' ||
+    receiptData?.status === 'partially_returned' ||
+    !!receiptData?.returnInfo ||
+    (Array.isArray(receiptData?.returnHistory) && receiptData.returnHistory.length > 0);
 
   // Ambil info return terakhir
-  const returnInfo = receiptData.returnInfo ||
-    (Array.isArray(receiptData.returnHistory) && receiptData.returnHistory.length > 0
+  const returnInfo = receiptData?.returnInfo ||
+    (Array.isArray(receiptData?.returnHistory) && receiptData.returnHistory.length > 0
       ? receiptData.returnHistory[receiptData.returnHistory.length - 1]
       : null);
+  const receiptQrKey = receiptData && !isReturnReceipt ? getReceiptQrPayload(receiptData) : '';
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!receiptQrKey) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    createReceiptQrDataUrl(receiptQrKey)
+      .then(url => {
+        if (isMounted) setQrPreview({ key: receiptQrKey, url });
+      })
+      .catch(() => {
+        if (isMounted) setQrPreview({ key: receiptQrKey, url: '' });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [receiptQrKey]);
+
+  if (!receiptData) return null;
+
+  const qrPreviewUrl = qrPreview.key === receiptQrKey ? qrPreview.url : '';
 
   const handlePrint = async () => {
     const qrPayload = getReceiptQrPayload(receiptData);
@@ -148,7 +173,7 @@ export default function ReceiptModal({ receiptData, onClose }) {
       printContent += `<div class="border-b border-black border-dashed mb-4 pb-3 space-y-1 text-[11px]">`;
       printContent += `<div class="flex justify-between text-gray-600"><span>Metode:</span><span class="font-bold">${receiptData.paymentMethod || 'Tunai'}</span></div>`;
 
-      if (receiptData.paymentMethod === 'Tunai') {
+      if (receiptData.paymentMethod === 'Tunai' || receiptData.paymentMethod === 'Mixed') {
          printContent += `<div class="flex justify-between text-gray-600"><span>Bayar:</span><span>${formatCurrency(receiptData.cashReceived || receiptData.totalAmount)}</span></div>`;
          printContent += `<div class="flex justify-between text-gray-600"><span>Kembali:</span><span>${formatCurrency(receiptData.change || 0)}</span></div>`;
       }
@@ -217,7 +242,7 @@ export default function ReceiptModal({ receiptData, onClose }) {
         if (receiptData.customerPhone) pdfHeight += 4;
         if (receiptData.customerAddress) pdfHeight += 8;
         if (receiptData.discountAmount > 0) pdfHeight += 8;
-        if (receiptData.paymentMethod === 'Tunai') pdfHeight += 8;
+        if (receiptData.paymentMethod === 'Tunai' || receiptData.paymentMethod === 'Mixed') pdfHeight += 8;
       }
 
       const { jsPDF } = window.jspdf;
@@ -339,7 +364,7 @@ export default function ReceiptModal({ receiptData, onClose }) {
         drawDashedLine(y); y += 4;
 
         doc.text(`Metode: ${receiptData.paymentMethod || 'Tunai'}`, left, y); y += 4;
-        if (receiptData.paymentMethod === 'Tunai') {
+        if (receiptData.paymentMethod === 'Tunai' || receiptData.paymentMethod === 'Mixed') {
            doc.text("Bayar:", left, y); doc.text(formatCurrency(receiptData.cashReceived || receiptData.totalAmount), right, y, { align: "right" }); y += 4;
            doc.text("Kembali:", left, y); doc.text(formatCurrency(receiptData.change || 0), right, y, { align: "right" }); y += 4;
         }
@@ -560,7 +585,7 @@ export default function ReceiptModal({ receiptData, onClose }) {
                 </div>
                 <div className="border-b border-black border-dashed mb-4 pb-3 text-[11px] space-y-1">
                   <div className="flex justify-between text-gray-600"><span>Metode:</span><span className="font-bold text-gray-800">{receiptData.paymentMethod || 'Tunai'}</span></div>
-                  {receiptData.paymentMethod === 'Tunai' && (
+                  {(receiptData.paymentMethod === 'Tunai' || receiptData.paymentMethod === 'Mixed') && (
                     <>
                       <div className="flex justify-between text-gray-600"><span>Bayar:</span><span>{formatCurrency(receiptData.cashReceived || receiptData.totalAmount)}</span></div>
                       <div className="flex justify-between text-gray-600"><span>Kembali:</span><span className="font-bold">{formatCurrency(receiptData.change || 0)}</span></div>
@@ -571,7 +596,12 @@ export default function ReceiptModal({ receiptData, onClose }) {
                   <p className="text-gray-600">Batas Pengembalian:</p>
                   <p className="font-bold text-[13px] border border-black inline-block px-2 py-1 mt-1 mb-3">{formatDate(receiptData.expectedReturnDate)}</p>
                   <div className="mb-3 rounded border border-dashed border-gray-300 p-2">
-                    <p className="text-[9px] text-gray-500">QR pengembalian tersedia saat cetak.</p>
+                    {qrPreviewUrl ? (
+                      <img src={qrPreviewUrl} alt="QR pengembalian" className="mx-auto h-28 w-28" />
+                    ) : (
+                      <p className="text-[9px] text-gray-500">QR pengembalian sedang disiapkan.</p>
+                    )}
+                    <p className="mt-1 text-[9px] text-gray-500">Scan untuk proses pengembalian.</p>
                     <p className="break-all text-[9px] font-bold">{getReceiptQrPayload(receiptData)}</p>
                   </div>
                   <p className="text-[9px] text-gray-500 italic mb-2">Catatan: Keterlambatan pengembalian<br/>akan dikenakan denda per hari.</p>

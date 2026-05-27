@@ -26,6 +26,10 @@ Update 5 sudah melewati QA otomatis dasar untuk scope POS kasir, checkout, QR no
 - [x] Diskon mengurangi total.
 - [x] Cash menghitung kembalian.
 - [x] Status payment otomatis menjadi `paid` saat pembayaran cukup.
+- [x] Variant picker POS ditambahkan sebelum produk multi-varian masuk cart.
+- [x] Qty awal dari variant picker masuk cart sesuai jumlah dipilih.
+- [x] Metode `Mixed` memakai validasi total pembayaran gabungan dan tidak lagi jatuh ke jalur non-tunai penuh.
+- [x] Preview nota menampilkan QR pengembalian di modal sebelum cetak.
 
 ## Manual QA Yang Masih Perlu Diklik
 
@@ -34,15 +38,17 @@ Checklist ini perlu dilakukan di browser dengan data demo/operasional aman:
 - [ ] Produk tampil di RentPage.
 - [ ] Search produk berfungsi.
 - [ ] Klik produk masuk cart.
+- [ ] Produk multi-varian membuka pilihan ukuran sebelum masuk cart.
 - [ ] Produk berukuran bisa dipilih/diubah ukurannya di cart.
 - [ ] Cart item bisa ubah qty.
 - [ ] Cart item bisa hapus item.
 - [ ] Total realtime berubah saat qty/deposit/diskon berubah.
+- [ ] Metode Mixed bisa checkout jika total pembayaran gabungan cukup.
 - [ ] Payment panel bisa dibuka walau pelanggan belum lengkap.
 - [ ] Customer panel bisa diisi kapan saja.
 - [ ] Checkout gagal dengan error list jika data wajib kosong.
 - [ ] Checkout sukses jika data lengkap dan stok cukup.
-- [ ] Nota cetak menampilkan invoice dan QR.
+- [ ] Preview dan nota cetak menampilkan invoice dan QR.
 - [ ] QR pada nota terbaca kamera/scanner.
 - [ ] Scan QR membuka transaksi return yang benar.
 - [ ] Scan transaksi returned menampilkan status sudah selesai.
